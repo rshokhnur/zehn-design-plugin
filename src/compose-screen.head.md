@@ -12,7 +12,9 @@ The full references are included BELOW this workflow:
 - **REFERENCE: zehn component catalog**: every component, its props, and the not-yet-componentized patterns
 - **REFERENCE: zehn tokens cheat sheet**: which token or class to use for what
 
-Important: the zehn Tailwind preset REPLACES Tailwind's defaults. Spacing keys are pixels (`p-16` = 16px, `p-6` = 6px), there are no `blue-500`-style colors, and radius is `rounded-4/8/12/16/full`.
+Important: the zehn Tailwind preset replaces colors, radius, font sizes/weights and shadows, and keeps Tailwind's standard spacing keys (`p-4` = 16px). Only the zehn spacing subset is allowed: `0 px 0.5 1 1.5 2 2.5 3 4 5 6 8 10 12 16 18 24 32`. There are no `blue-500`-style colors, no `shadow-lg`, no `rounded-md`.
+
+For a small change to an existing screen, the shorter `ui-tweak` skill is enough.
 
 ## Step 1: Figure out the context
 1. **Which app?** (procurement, hr, tasks, docs, edge, analytics, geo, intelligence, edu, desk). That sets `data-app` and the accent. If you can't tell, ask.
@@ -27,7 +29,7 @@ Important: the zehn Tailwind preset REPLACES Tailwind's defaults. Spacing keys a
 ## Step 2b: No design (compose from patterns)
 1. Pick the screen type from the table in the UI/UX rules §3 (table list, card feed, detail, modal, drawer, builder, board, dashboard, empty).
 2. Find the closest existing screen in the codebase that already follows these rules, and reuse its layout and shared components.
-3. Compose ONLY from existing components and the patterns in the component catalog ("Not yet library components"). Build a missing pattern once as a shared component; never inline it.
+3. Compose ONLY from the shared zehn components (`src/components/zehn/`; if the app doesn't have them, copy them in from the plugin's `components/react/` with `setup-tokens`). For a pattern that isn't there yet, build it once as a shared component following the catalog spec; never inline it.
 4. Copy: sentence case, short, friendly, second person. Formats: `30.06.2026`, `30.06.2026 14:27`, `24,000,000 UZS`, `#REQ-3`, ` · ` separators.
 5. Design every state, not just the happy path: empty, loading (skeleton / Button loading), validation error, success toast, permission-denied (disabled + reason), and a destructive confirm.
 
@@ -42,8 +44,11 @@ Important: the zehn Tailwind preset REPLACES Tailwind's defaults. Spacing keys a
 - [ ] Works in dark mode (`data-theme="dark"`).
 - [ ] Inter 400/600 only; Remix `-line` icons.
 
+## When the user asks for something off-system
+Say in one line which rule it breaks and offer the zehn alternative. If they still want it (or said "don't argue"), do it with `zehn-ignore: requested by <who>, <why>` on EVERY line that uses the value (never one ignored constant reused everywhere), and list each override under Design gaps. Never comply silently.
+
 ## Step 4: Report design gaps
-If there was no Figma design, end your message with a short **Design gaps** list: every decision you made that the rules didn't cover (new pattern, unclear copy, missing state), so the designer can review. If you had to keep a value with `zehn-ignore`, list it there too.
+End your message with a short **Design gaps** list when there was no Figma design, or when you overrode anything: every decision the rules didn't cover (new pattern, unclear copy, missing state) and every `zehn-ignore` (what, who asked, why), so the designer can review.
 
 ## If the codebase has no tokens yet
 Run the `setup-tokens` skill first.

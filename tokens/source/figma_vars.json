@@ -1,0 +1,23 @@
+{"colors":{
+"Grayscale/900":["#000000e5","#ffffffe5"],"Grayscale/800":["#000000cc","#ffffffcc"],"Grayscale/700":["#000000b2","#ffffffb2"],"Grayscale/600":["#00000099","#ffffff99"],"Grayscale/500":["#00000080","#ffffff80"],"Grayscale/400":["#00000066","#ffffff66"],"Grayscale/300":["#0000004d","#ffffff4d"],"Grayscale/200":["#00000033","#ffffff33"],"Grayscale/100":["#0000001a","#ffffff1a"],"Grayscale/50":["#0000000d","#ffffff0d"],
+"Alpha/900":["#ffffffe5","#ffffffe5"],"Alpha/800":["#ffffffcc","#ffffffcc"],"Alpha/700":["#ffffffb2","#ffffffb2"],"Alpha/600":["#ffffff99","#ffffff99"],"Alpha/500":["#ffffff80","#ffffff80"],"Alpha/400":["#ffffff66","#ffffff66"],"Alpha/300":["#ffffff4d","#ffffff4d"],"Alpha/200":["#ffffff33","#ffffff33"],"Alpha/100":["#ffffff1a","#ffffff1a"],"Alpha/50":["#ffffff0d","#ffffff0d"],
+"Background/Brand":["@Cyan/default","@Cyan/default"],"Background/B0":["#f4f4f4","#000000"],"Background/B1 - base":["#ffffff","#121212"],"Background/B2":["#ffffff","#272727"],"Background/b3":["#ffffff","#3a3a3a"],"Background/Segment Track":["#e8e8e8","#2c2c2e"],
+"Teal/default":["#29b48c","#3ae1b1"],"Teal/lighter":["#3dd1a6","#4bf4c4"],"Teal/darker":["#1da880","#2adba8"],"Teal/stroke":["#29b48c33","#3ae1b133"],"Teal/fill-2":["#29b48c1a","#3ae1b11f"],"Teal/fill-1":["#29b48c0d","#3ae1b114"],
+"Cyan/default":["#0ea9aa","#51e3e4"],"Cyan/lighter":["#0fc9ca","#5ef3f4"],"Cyan/darker":["#009495","#49dedf"],"Cyan/stroke":["#0ea9aa33","#51e3e433"],"Cyan/fill-2":["#0ea9aa1a","#51e3e41f"],"Cyan/fill-1":["#0ea9aa0d","#51e3e414"],
+"Orange/default":["#d89f37","#eec373"],"Orange/lighter":["#f0ba56","#fcd285"],"Orange/darker":["#ce9429","#e4b55e"],"Orange/stroke":["#d89f3733","#eec37333"],"Orange/fill-2":["#d89f371a","#eec3731f"],"Orange/fill-1":["#d89f370d","#eec37314"],
+"Lime/default":["#cfd436","#e1e64b"],"Lime/lighter":["#e4e94d","#f2f75e"],"Lime/darker":["#c4c92a","#dce240"],"Lime/stroke":["#cfd43633","#e1e64b33"],"Lime/fill-2":["#cfd4361a","#e1e64b1f"],"Lime/fill-1":["#cfd4360d","#e1e64b14"],
+"Coral/default":["#e28673","#f59c8a"],"Coral/lighter":["#f39a87","#ffad9d"],"Coral/darker":["#d2705c","#e5836f"],"Coral/stroke":["#e2867333","#f59c8a33"],"Coral/fill-2":["#e286731a","#f59c8a1f"],"Coral/fill-1":["#e286730d","#f59c8a14"],
+"Pink/default":["#dc6da5","#eb7fb6"],"Pink/lighter":["#ee82b9","#f98dc4"],"Pink/darker":["#ca5791","#de69a4"],"Pink/stroke":["#dc6da533","#eb7fb633"],"Pink/fill-2":["#dc6da51a","#eb7fb61f"],"Pink/fill-1":["#dc6da50d","#eb7fb614"],
+"Red/default":["#ca3b3d","#ea4648"],"Red/lighter":["#df4d50","#f85c5e"],"Red/darker":["#be2d30","#da3032"],"Red/stroke":["#ca3b3d33","#ea464833"],"Red/fill-2":["#ca3b3d1a","#ea46481f"],"Red/fill-1":["#ca3b3d0d","#ea464814"],
+"Green/default":["#009966","#009966"],"Green/lighter":["#0fb27b","#0fb27b"],"Green/darker":["#008357","#008357"],"Green/stroke":["#00996633","#00996633"],"Green/fill-2":["#0099661a","#0099661f"],"Green/fill-1":["#0099660d","#00996614"],"Green/background":["#00714b","#00714b"],
+"Blue/default":["#4c78df","#487fff"],"Blue/lighter":["#5e8af1","#6794ff"],"Blue/darker":["#3f6ad1","#3269ea"],"Blue/stroke":["#4c78df33","#487fff33"],"Blue/fill-2":["#4c78df1a","#487fff1f"],"Blue/fill-1":["#4c78df0d","#487fff14"],
+"Yellow-Green/default":["#7eaf30","#7eaf30"],"Yellow-Green/lighter":["#92c83d","#92c83d"],"Yellow-Green/darker":["#6d9b23","#6d9b23"],"Yellow-Green/stroke":["#7eaf3033","#7eaf3033"],"Yellow-Green/fill-2":["#7eaf301a","#7eaf301f"],"Yellow-Green/fill-1":["#7eaf300d","#7eaf3014"],"Yellow-Green/background":["#4a6d11","#4a6d11"],
+"Violet/default":["#884ebb","#9c5cd5"],"Violet/lighter":["#9f64d4","#b06eea"],"Violet/darker":["#783dac","#8b48c5"],"Violet/stroke":["#884ebb33","#9c5cd533"],"Violet/fill-2":["#884ebb1a","#9c5cd51f"],"Violet/fill-1":["#884ebb0d","#9c5cd514"],
+"Action/Text":["#ffffff","#000000"],"Action/Icon":["#ffffff99","#00000099"],"Action/Background Counter":["#ffffff33","#0000001a"],"Action/Background":["#000000","#ffffff"],"Action/Background Hover":["#000000e5","#ffffffe5"],
+"Constant Colors/White":["#ffffff","#ffffff"],"Constant Colors/Black":["#000000","#000000"]
+},
+"spacing":[0,1,2,4,6,8,10,12,16,20,24,32,40,48,64,72,96,128,256,320,512],
+"radius":{"0":0,"2":2,"4":4,"8":8,"12":12,"16":16,"24":24,"32":32,"full":9999},
+"text":[["7xl",72,80],["6xl",60,68],["5xl",48,56],["4xl",36,40],["3xl",30,36],["2xl",24,32],["xl",20,28],["lg",18,24],["base",16,24],["sm",14,20],["xs",12,16],["xxs",10,12]],
+"shadows":{"100":"0 1px 2px rgba(0,0,0,0.05)","200":"0 4px 8px rgba(0,0,0,0.05)","300":"0 8px 16px rgba(0,0,0,0.1)","mobile":"0 10px 60px rgba(0,0,0,0.05)","focus":"0 0 0 1px rgba(14,169,170,0.2), 0 0 0 4px rgba(14,169,170,0.2)"}
+}

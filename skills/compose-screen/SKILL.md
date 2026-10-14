@@ -12,7 +12,9 @@ The full references are included BELOW this workflow:
 - **REFERENCE: zehn component catalog**: every component, its props, and the not-yet-componentized patterns
 - **REFERENCE: zehn tokens cheat sheet**: which token or class to use for what
 
-Important: the zehn Tailwind preset REPLACES Tailwind's defaults. Spacing keys are pixels (`p-16` = 16px, `p-6` = 6px), there are no `blue-500`-style colors, and radius is `rounded-4/8/12/16/full`.
+Important: the zehn Tailwind preset replaces colors, radius, font sizes/weights and shadows, and keeps Tailwind's standard spacing keys (`p-4` = 16px). Only the zehn spacing subset is allowed: `0 px 0.5 1 1.5 2 2.5 3 4 5 6 8 10 12 16 18 24 32`. There are no `blue-500`-style colors, no `shadow-lg`, no `rounded-md`.
+
+For a small change to an existing screen, the shorter `ui-tweak` skill is enough.
 
 ## Step 1: Figure out the context
 1. **Which app?** (procurement, hr, tasks, docs, edge, analytics, geo, intelligence, edu, desk). That sets `data-app` and the accent. If you can't tell, ask.
@@ -27,7 +29,7 @@ Important: the zehn Tailwind preset REPLACES Tailwind's defaults. Spacing keys a
 ## Step 2b: No design (compose from patterns)
 1. Pick the screen type from the table in the UI/UX rules §3 (table list, card feed, detail, modal, drawer, builder, board, dashboard, empty).
 2. Find the closest existing screen in the codebase that already follows these rules, and reuse its layout and shared components.
-3. Compose ONLY from existing components and the patterns in the component catalog ("Not yet library components"). Build a missing pattern once as a shared component; never inline it.
+3. Compose ONLY from the shared zehn components (`src/components/zehn/`; if the app doesn't have them, copy them in from the plugin's `components/react/` with `setup-tokens`). For a pattern that isn't there yet, build it once as a shared component following the catalog spec; never inline it.
 4. Copy: sentence case, short, friendly, second person. Formats: `30.06.2026`, `30.06.2026 14:27`, `24,000,000 UZS`, `#REQ-3`, ` · ` separators.
 5. Design every state, not just the happy path: empty, loading (skeleton / Button loading), validation error, success toast, permission-denied (disabled + reason), and a destructive confirm.
 
@@ -42,8 +44,11 @@ Important: the zehn Tailwind preset REPLACES Tailwind's defaults. Spacing keys a
 - [ ] Works in dark mode (`data-theme="dark"`).
 - [ ] Inter 400/600 only; Remix `-line` icons.
 
+## When the user asks for something off-system
+Say in one line which rule it breaks and offer the zehn alternative. If they still want it (or said "don't argue"), do it with `zehn-ignore: requested by <who>, <why>` on EVERY line that uses the value (never one ignored constant reused everywhere), and list each override under Design gaps. Never comply silently.
+
 ## Step 4: Report design gaps
-If there was no Figma design, end your message with a short **Design gaps** list: every decision you made that the rules didn't cover (new pattern, unclear copy, missing state), so the designer can review. If you had to keep a value with `zehn-ignore`, list it there too.
+End your message with a short **Design gaps** list when there was no Figma design, or when you overrode anything: every decision the rules didn't cover (new pattern, unclear copy, missing state) and every `zehn-ignore` (what, who asked, why), so the designer can review.
 
 ## If the codebase has no tokens yet
 Run the `setup-tokens` skill first.
@@ -160,7 +165,9 @@ Use library components first. Never rebuild a Button, Badge, Input, Avatar, Menu
 - **Menu:** `Menu`. The destructive item goes last, red, after a divider.
 - **Activity:** circle icon + **Name** action + timestamp.
 - **Toast:** after save, copy or send. Success / Error types. An optional action ("View").
-- **Charts:** colors from variables (positive `Cyan`, negative `Coral`, series in Cyan → Blue → Violet → Pink → Orange → Yellow-Green). They must be readable in Dark. An empty-data widget shows a gray outline of its chart type.
+- **Charts:** use `--zm-chart-1…8` in order (Cyan → Blue → Violet → Pink → Coral → Yellow-Green → Teal → Orange; the light theme uses the darker shades so lines and bars keep 3:1 contrast). Positive `--zm-chart-positive`, negative `--zm-chart-negative`, grid and axis tokens. Never use raw hues for charts. They must be readable in Dark. An empty-data widget shows a gray outline of its chart type. **[open]** Chart card heights aren't specified in Figma yet; reuse the nearest existing dashboard and list it as a design gap.
+- **Tooltip:** dark (`--zm-tooltip-bg`), `text-xs`, radius 4, max one short sentence. Shows on hover and keyboard focus. Use it to explain an icon-only control or a truncated value, never for essential info.
+- **Progress bar:** 4px track `--zm-progress-track`, fill `--zm-progress-fill` (status color only when it means something), with a label or percentage next to it.
 - **Tabs inside a page:** `Segmented Control` (views and sections). No underline tabs.
 
 ## 5. Forms and behavior
@@ -174,6 +181,16 @@ Use library components first. Never rebuild a Button, Badge, Input, Avatar, Menu
 - **Confirm dialog (`Alert Dialog`) before every destructive action:** delete, terminate, withdraw, reject, stop, end session, log out of other devices. The title names the action and the object ("Withdraw request #REQ-3?"); one line says the consequence; buttons are Cancel + `Destructive - Primary` with the action verb.
 - Prefer Archive over Delete for user content.
 - **Permissions stay visible:** disabled actions explain why ("Only the owner can close this board."). Read-only viewers see a yellow "View-only access" banner. If the viewer must act, show a tinted role banner at the top (procurement approver).
+
+## 5a. Accessibility (baseline, zehn rules win on visuals)
+
+- Dialogs and drawers trap focus, close on Escape, and return focus to the button that opened them. Alert Dialog focuses Cancel first.
+- Menus: arrow keys, Home/End, Escape returns focus to the trigger. Segmented Control: arrow keys.
+- Toasts pause while hovered or focused. Errors use `role="alert"`.
+- Icon-only buttons need an `aria-label`. Inputs wire their label and hints (`aria-describedby`, `aria-invalid`).
+- Loading keeps the button's own color (a red button stays red) and sets `aria-busy`.
+- Animations (`animate-spin`, `animate-pulse`, transitions) go behind `motion-safe:`.
+- zehn sizes stay as designed (32px medium buttons on web, not 44px); mobile tap targets are at least 44px.
 
 ## 6. Mobile (edu, desk)
 
@@ -202,6 +219,12 @@ Use library components first. Never rebuild a Button, Badge, Input, Avatar, Menu
 - **Language:** web English; edu Uzbek (Latin, use `‘` in o‘/g‘); desk English. **[open]** Will web apps get uz/ru?
 - No placeholder, joke or real-person data in shipped UI. Spell-check all strings.
 
+## 8a. When someone asks for something off-system
+
+1. Say in one line which rule it breaks and offer the zehn alternative.
+2. If they still want it, do it, with `zehn-ignore: requested by <who>, <why>` on every line that uses the value (not one shared constant).
+3. List each override under **Design gaps** in the final message. Never comply silently.
+
 ## 9. Token gaps to add in Figma (designer)
 
 - `Edu Green/default #21aa31`, `/darker #038c17`, `/deep #005c3d` (+ stroke/fill-1/fill-2, Light & Dark). edu uses these as raw hex today.
@@ -213,8 +236,9 @@ Use library components first. Never rebuild a Button, Badge, Input, Avatar, Menu
 
 # REFERENCE: zehn component catalog
 
-Source: Figma page `UI Elements` in file ywFHunM35gYeHJozrBJpZO. Props mirror Figma exactly.
-**Rule:** if the codebase already has a component with this name, use it. If not, build it ONCE in the shared UI folder with these exact props, then reuse it. Never create one-off variants inline.
+Source: Figma page `UI Elements` in file ywFHunM35gYeHJozrBJpZO. Props mirror Figma.
+**Rule:** use the shared zehn components in `src/components/zehn/`. If the app doesn't have them, copy them in from the plugin's `components/react/` (the `setup-tokens` skill does this). Never rebuild one, and never create one-off variants inline. Non-React stacks: build each one ONCE in the shared UI folder with these exact props.
+In code, Figma's `style` property is the prop **`variant`** (`style` is reserved by React).
 
 ## Actions
 
@@ -222,11 +246,11 @@ Source: Figma page `UI Elements` in file ywFHunM35gYeHJozrBJpZO. Props mirror Fi
 | Prop | Values |
 |---|---|
 | size | `large` (40px) · `medium` (32px, default) · `small` (24px) |
-| style | `primary` · `secondary` · `ghost` · `color-primary` · `color-secondary` · `ai-primary` · `ai-secondary` · `destructive-primary` · `destructive-secondary` |
+| variant | `primary` · `secondary` · `ghost` · `color-primary` · `color-secondary` · `ai-primary` · `ai-secondary` · `destructive-primary` · `destructive-secondary` |
 | state | default · hover · focus · loading · disabled |
 | slots | `label`, `leftIcon`, `rightIcon`, `counter` |
 
-What each style is for:
+What each variant is for:
 - **primary:** black (`--zm-primary-bg`). The main action, at most one per view.
 - **secondary:** gray fill. Cancel and other actions. Small + icon for inline actions ("+ Add").
 - **ghost:** nav tabs and quiet toolbar actions.
@@ -235,19 +259,19 @@ What each style is for:
 - **ai-primary / ai-secondary:** pink. AI actions only, with a sparkle icon.
 - **destructive-primary:** red. The confirm button inside a destructive confirm dialog.
 - **destructive-secondary:** tinted red. Reject or Withdraw buttons that open a confirm.
-- **loading:** shows a spinner and keeps the width.
+- **loading:** shows a spinner, keeps the width and the variant's color (a red button stays red), sets `aria-busy`.
 
 ### Icon Button
-Same `size`, `style` and `state` as Button, with a single `icon`. Used for back, close, `…` menus, bell and toolbars. A ghost icon button needs an `aria-label`.
+Same `size`, `variant` and `state` as Button, with a single `icon`. Used for back, close, `…` menus, bell and toolbars. A ghost icon button needs an `aria-label`.
 
 ### Counter
 | Prop | Values |
 |---|---|
 | size | small · medium · large |
-| style | tinted · filled |
-| color | neutral · white · accent |
+| tone | tinted · filled |
+| color | neutral · white · accent · red |
 
-Used for counts in chips, tabs and the notification bell (filled red).
+Used for counts in chips, tabs and the notification bell (filled red: `bg-counter-bg text-counter-fg`).
 
 ## Display
 
@@ -255,8 +279,11 @@ Used for counts in chips, tabs and the notification bell (filled red).
 | Prop | Values |
 |---|---|
 | size | small · medium |
-| style | tinted (default for status) · filled · ghost |
-| color | neutral · accent · red · green · peach · teal · yellow · coral · pink · blue · violet |
+| appearance | tinted (default for status) · filled · ghost |
+| color | neutral · red · green · peach · teal · yellow · coral · pink · blue · violet |
+| status (shortcut) | success · warning · info · danger · neutral (sets color + icon) |
+
+`peach` uses the Orange hue and `yellow` the Lime hue. Figma also has an `accent` badge color; don't use it (the accent is reserved for the logo, header and first stat card).
 | slots | `label`, `leftIcon`, `rightIcon` |
 
 Status mapping (always tinted, with an icon):
@@ -369,23 +396,32 @@ Slots: `icon`, `title`, `subtitle`. Used for **every destructive confirm**:
 - Subtitle: one line on the consequence.
 - Buttons: `secondary` Cancel + `destructive-primary` with the verb.
 
+### Tooltip
+Dark (`bg-tooltip-bg text-tooltip-fg`), `text-xs`, radius 4, padding 4×8, `shadow-200`. Opens on hover and keyboard focus, closes on Escape. One short sentence. Explains icon-only controls, truncated values and disabled actions ("Only the owner can close this board.").
+
+### Progress Bar
+4px track (`bg-progress-track`), fill `bg-progress-fill` (a status color only when it means something), radius full, with a label or percentage beside it. `role="progressbar"`.
+
+### Skeleton
+`bg-surface-subtle`, radius 4 (8 for cards), `motion-safe:animate-pulse`. Match the shape of the content it replaces.
+
 ## Mobile only
 `Status Bar - iPhone Dynamic Island`, `Home Indicator` (Figma frames only, not built in code).
 
-## Not yet library components (build once as shared components, following these specs)
+## Patterns (not Figma components yet; React versions ship in `components/react/`)
 
 | Pattern | Spec |
 |---|---|
 | **TopBar** | 56px, bottom border `--zm-border-default`. Left: logo `zehn` + `/app` in `--zm-app-accent`, a 1×16 divider, Ghost nav tabs (active = `--zm-surface-subtle` fill). Right: bell IconButton + red Counter, divider, Ghost "Support", Avatar 32. |
 | **PageHeader** | 2px × 40px bar in `--zm-app-accent`, 32px accent icon, H1 `text-2xl semibold`, subtitle `text-sm` secondary. Actions on the right, primary last. |
 | **DetailHeader** | back IconButton or "< All {items}" link, `#ID` (xs, secondary), title (2xl semibold), meta row joined with ` · `, `…` IconButton on the right, divider below. |
-| **StatCard** | 288×96. Label (sm, secondary), value (2xl semibold), optional delta Badge. The first card in a row uses `--zm-app-accent-fill` with an accent label. |
+| **StatCard** | 288×96 (in a dashboard grid: equal columns, 16px gap). Label (sm, secondary), value (2xl semibold), optional delta Badge. The first card in a row uses `--zm-app-accent-fill` with an accent label. |
 | **DataTable** | header row 36px on `--zm-surface-subtle`, `text-xs semibold` secondary. Rows 48px (36 when dense), 1px bottom border. First column bold. Status column = Badge. Last column = `…` IconButton → Menu (Edit, divider, red Delete). The pager `< 1 / 45 >` sits in the toolbar. |
 | **Toolbar** | one row, 12px gap: Segmented Control or filter chips · search Input (flex) · filter Selects · pager. |
 | **FilterChips** | small Buttons. Active = primary, inactive = secondary, with a Counter. |
 | **PanelCard** | 1px border, radius 8, padding 16. Header: 16px icon + title (sm, secondary). Rows: label (secondary) left, value right, 12px apart. |
-| **ModalShell** | width 520 (600 or 904). Header 64px: tinted icon + title + subtitle + close. Body padding 24 with 16px field gap. Footer 56px sticky, right-aligned: Cancel (secondary) + primary. |
-| **DrawerShell** | same anatomy as ModalShell, full-height right side, 520px (640 when it holds a table). Add a stepper under the header for multi-step. |
+| **ModalShell** (`Modal`) | width 520 (600 or 904). Backdrop `bg-scrim` (stays dark in dark mode). Header 64px: tinted icon + title + subtitle + close. Body padding 24 with 16px field gap. Footer 56px sticky, right-aligned: Cancel (secondary) + primary. Focus trap, Escape closes, focus returns to the opener. |
+| **DrawerShell** (`Drawer`) | same anatomy as ModalShell, full-height right side, 520px (640 when it holds a table). Add a stepper under the header for multi-step. |
 | **InfoChip** | tinted 12px chip with an icon, under a field. |
 | **ActivityItem** | 32px circle icon on a vertical rule, **Name** + action (sm), timestamp (xs, secondary). |
 | **TaskCard / BoardCard** | exist in Figma on the tasks page (Task Card 264×131 with a 2px top accent; Board Card 389×117). Follow them. |
@@ -397,12 +433,12 @@ Slots: `icon`, `title`, `subtitle`. Used for **every destructive confirm**:
 
 # REFERENCE: zehn tokens cheat sheet
 
-Files: `tokens/tokens.css` (CSS variables, light + dark + app accents), `tokens/tailwind.preset.js` (Tailwind theme, **replaces** the default palette), `tokens/tokens.json` (other stacks).
+Files: `tokens/tokens.css` (CSS variables, light + dark + app accents), `tokens/tailwind.preset.cjs` (Tailwind theme: **replaces** colors, radius, font sizes/weights and shadows; **keeps** Tailwind's standard spacing keys), `tokens/tokens.json`, and `tokens/native/` (Swift, Dart, Kotlin).
 All values come from Figma variables. Never hardcode a value that exists here. If something is missing, ask; don't invent.
 
 ## Setup in an app (once)
 - Import `tokens.css` at the root.
-- Tailwind: `presets: [require('./zehn/tailwind.preset.js')]`. In v4: `@config "./zehn/tailwind.preset.js";` + `@import "./zehn/tokens.css";`.
+- Tailwind: see the `setup-tokens` skill (CJS, ESM and v4 snippets).
 - On `<html>`: `data-app="hr"` (picks the accent) and optionally `data-theme="dark"`.
 
 ## Use semantic tokens first
@@ -423,7 +459,12 @@ All values come from Figma variables. Never hardcode a value that exists here. I
 | App accent (logo, header bar and icon, first stat card only) | `--zm-app-accent`, `--zm-app-accent-fill` | `text-app-accent`, `bg-app-accent-fill` |
 | Status | `--zm-status-{success,warning,info,danger,neutral}` + `-bg` | `text-status-success bg-status-success-bg` |
 | AI | `--zm-ai`, `--zm-ai-bg` | `text-ai bg-ai-bg` |
-| Charts | `--zm-chart-1..8`, `--zm-chart-positive`, `--zm-chart-negative`, `--zm-chart-grid`, `--zm-chart-axis` | same names |
+| Disabled | `--zm-disabled-bg` / `--zm-disabled-fg` | `bg-disabled-bg text-disabled-fg` |
+| Dialog backdrop (stays dark in dark mode) | `--zm-scrim` | `bg-scrim` |
+| Notification counter (red) | `--zm-counter-bg` / `--zm-counter-fg` | `bg-counter-bg text-counter-fg` |
+| Tooltip | `--zm-tooltip-bg` / `--zm-tooltip-fg` | `bg-tooltip-bg text-tooltip-fg` |
+| Progress bar | `--zm-progress-track` / `--zm-progress-fill` | `bg-progress-track`, `bg-progress-fill` |
+| Charts (in this order; 1–7 keep 3:1 contrast in both themes, 8 needs labels) | `--zm-chart-1..8`, `--zm-chart-positive`, `--zm-chart-negative`, `--zm-chart-grid`, `--zm-chart-axis` | `fill-chart-1`, `stroke-chart-1`… |
 
 ## Primitives (only when no semantic token fits)
 - Each hue has `--zm-{hue}`, `-lighter`, `-darker`, `-stroke`, `-fill-1`, `-fill-2`. Hues: cyan, teal, blue, violet, pink, coral, red, orange, lime, yellow-green, green, edu-green.
@@ -445,21 +486,27 @@ All values come from Figma variables. Never hardcode a value that exists here. I
 | `text-3xl` | 30/36 | mobile large titles |
 | `text-4xl` to `text-7xl` | 36 to 72 | marketing only |
 
-## Spacing (px)
-0 1 2 4 6 8 10 12 16 20 24 32 40 48 64 72 96 128 256 320 512.
-Tailwind: `p-16` = 16px (the keys are pixel values, not the 4px scale).
+## Spacing
+zehn values (px): 0 1 2 4 6 8 10 12 16 20 24 32 40 48 64 72 96 128.
+Tailwind uses its **standard keys** (`p-4` = 16px, `gap-3` = 12px). Allowed keys for padding, margin, gap and space: `0 px 0.5 1 1.5 2 2.5 3 4 5 6 8 10 12 16 18 24 32`. Others (`p-7`, `mt-9`, `p-[13px]`) fail the style check.
+Width and height can use any standard key (`h-8` 32, `h-10` 40, `h-14` 56) or the layout keys below.
 
 ## Radius
-`rounded-4`, `-8` (default), `-12`, `-16` (mobile cards), `-full`.
+`rounded-sm` 2 · `rounded` 4 · `rounded-lg` 8 (default for buttons, inputs, cards) · `rounded-xl` 12 · `rounded-2xl` 16 (mobile cards) · `rounded-3xl` 24 · `rounded-full`. No `rounded-md`.
 
 ## Shadows
-`shadow-100` (cards), `-200` (popovers), `-300` (modals), `-mobile`, `-focus`.
+`shadow-100` (cards), `shadow-200` (popovers, menus), `shadow-300` (modals, drawers), `shadow-mobile`, `shadow-focus` (focus ring). Tailwind's `shadow-sm/md/lg` don't exist.
 
-## Layout constants
-| Constant | Value |
-|---|---|
-| top bar | 56 |
-| gutter | 24 |
-| narrow column | 768 |
-| detail | 896 (560 + 16 + 320) |
-| modal / drawer | 520 |
+## Layout constants (CSS var `--zm-<name>`, Tailwind `w-`/`h-`/`max-w-<name>`)
+| Name | px | Use |
+|---|---|---|
+| `topbar-height` | 56 | top bar |
+| `subbar-height` | 64 | builder sub-bar |
+| `gutter` | 24 | page side padding (`px-6`) |
+| `column-narrow` | 768 | feeds, settings: `max-w-column-narrow mx-auto` |
+| `column-detail` | 896 | detail pages (560 `detail-main` + 16 + 320 `side-panel`) |
+| `modal` / `modal-wide` / `modal-xl` | 520 / 600 / 904 | modals |
+| `alert-dialog` | 520 | destructive confirm |
+| `drawer` / `drawer-wide` | 520 / 640 | drawers (wide when it holds a table) |
+| `header-icon` | 32 | page-header icon (box `w-header-icon h-header-icon`, Remix glyph `text-header-icon`) |
+| `table-header` / `row` / `row-dense` | 36 / 48 / 36 | data tables |

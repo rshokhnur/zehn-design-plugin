@@ -107,7 +107,9 @@ Use library components first. Never rebuild a Button, Badge, Input, Avatar, Menu
 - **Menu:** `Menu`. The destructive item goes last, red, after a divider.
 - **Activity:** circle icon + **Name** action + timestamp.
 - **Toast:** after save, copy or send. Success / Error types. An optional action ("View").
-- **Charts:** colors from variables (positive `Cyan`, negative `Coral`, series in Cyan → Blue → Violet → Pink → Orange → Yellow-Green). They must be readable in Dark. An empty-data widget shows a gray outline of its chart type.
+- **Charts:** use `--zm-chart-1…8` in order (Cyan → Blue → Violet → Pink → Coral → Yellow-Green → Teal → Orange; the light theme uses the darker shades so lines and bars keep 3:1 contrast). Positive `--zm-chart-positive`, negative `--zm-chart-negative`, grid and axis tokens. Never use raw hues for charts. They must be readable in Dark. An empty-data widget shows a gray outline of its chart type. **[open]** Chart card heights aren't specified in Figma yet; reuse the nearest existing dashboard and list it as a design gap.
+- **Tooltip:** dark (`--zm-tooltip-bg`), `text-xs`, radius 4, max one short sentence. Shows on hover and keyboard focus. Use it to explain an icon-only control or a truncated value, never for essential info.
+- **Progress bar:** 4px track `--zm-progress-track`, fill `--zm-progress-fill` (status color only when it means something), with a label or percentage next to it.
 - **Tabs inside a page:** `Segmented Control` (views and sections). No underline tabs.
 
 ## 5. Forms and behavior
@@ -121,6 +123,16 @@ Use library components first. Never rebuild a Button, Badge, Input, Avatar, Menu
 - **Confirm dialog (`Alert Dialog`) before every destructive action:** delete, terminate, withdraw, reject, stop, end session, log out of other devices. The title names the action and the object ("Withdraw request #REQ-3?"); one line says the consequence; buttons are Cancel + `Destructive - Primary` with the action verb.
 - Prefer Archive over Delete for user content.
 - **Permissions stay visible:** disabled actions explain why ("Only the owner can close this board."). Read-only viewers see a yellow "View-only access" banner. If the viewer must act, show a tinted role banner at the top (procurement approver).
+
+## 5a. Accessibility (baseline, zehn rules win on visuals)
+
+- Dialogs and drawers trap focus, close on Escape, and return focus to the button that opened them. Alert Dialog focuses Cancel first.
+- Menus: arrow keys, Home/End, Escape returns focus to the trigger. Segmented Control: arrow keys.
+- Toasts pause while hovered or focused. Errors use `role="alert"`.
+- Icon-only buttons need an `aria-label`. Inputs wire their label and hints (`aria-describedby`, `aria-invalid`).
+- Loading keeps the button's own color (a red button stays red) and sets `aria-busy`.
+- Animations (`animate-spin`, `animate-pulse`, transitions) go behind `motion-safe:`.
+- zehn sizes stay as designed (32px medium buttons on web, not 44px); mobile tap targets are at least 44px.
 
 ## 6. Mobile (edu, desk)
 
@@ -148,6 +160,12 @@ Use library components first. Never rebuild a Button, Badge, Input, Avatar, Menu
 - **Tone:** short, friendly, second person ("Your requests", "Tell us what you need.").
 - **Language:** web English; edu Uzbek (Latin, use `‘` in o‘/g‘); desk English. **[open]** Will web apps get uz/ru?
 - No placeholder, joke or real-person data in shipped UI. Spell-check all strings.
+
+## 8a. When someone asks for something off-system
+
+1. Say in one line which rule it breaks and offer the zehn alternative.
+2. If they still want it, do it, with `zehn-ignore: requested by <who>, <why>` on every line that uses the value (not one shared constant).
+3. List each override under **Design gaps** in the final message. Never comply silently.
 
 ## 9. Token gaps to add in Figma (designer)
 

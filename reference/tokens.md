@@ -1,11 +1,11 @@
 # zehn tokens cheat sheet
 
-Files: `tokens/tokens.css` (CSS variables, light + dark + app accents), `tokens/tailwind.preset.js` (Tailwind theme, **replaces** the default palette), `tokens/tokens.json` (other stacks).
+Files: `tokens/tokens.css` (CSS variables, light + dark + app accents), `tokens/tailwind.preset.cjs` (Tailwind theme: **replaces** colors, radius, font sizes/weights and shadows; **keeps** Tailwind's standard spacing keys), `tokens/tokens.json`, and `tokens/native/` (Swift, Dart, Kotlin).
 All values come from Figma variables. Never hardcode a value that exists here. If something is missing, ask; don't invent.
 
 ## Setup in an app (once)
 - Import `tokens.css` at the root.
-- Tailwind: `presets: [require('./zehn/tailwind.preset.js')]`. In v4: `@config "./zehn/tailwind.preset.js";` + `@import "./zehn/tokens.css";`.
+- Tailwind: see the `setup-tokens` skill (CJS, ESM and v4 snippets).
 - On `<html>`: `data-app="hr"` (picks the accent) and optionally `data-theme="dark"`.
 
 ## Use semantic tokens first
@@ -26,7 +26,12 @@ All values come from Figma variables. Never hardcode a value that exists here. I
 | App accent (logo, header bar and icon, first stat card only) | `--zm-app-accent`, `--zm-app-accent-fill` | `text-app-accent`, `bg-app-accent-fill` |
 | Status | `--zm-status-{success,warning,info,danger,neutral}` + `-bg` | `text-status-success bg-status-success-bg` |
 | AI | `--zm-ai`, `--zm-ai-bg` | `text-ai bg-ai-bg` |
-| Charts | `--zm-chart-1..8`, `--zm-chart-positive`, `--zm-chart-negative`, `--zm-chart-grid`, `--zm-chart-axis` | same names |
+| Disabled | `--zm-disabled-bg` / `--zm-disabled-fg` | `bg-disabled-bg text-disabled-fg` |
+| Dialog backdrop (stays dark in dark mode) | `--zm-scrim` | `bg-scrim` |
+| Notification counter (red) | `--zm-counter-bg` / `--zm-counter-fg` | `bg-counter-bg text-counter-fg` |
+| Tooltip | `--zm-tooltip-bg` / `--zm-tooltip-fg` | `bg-tooltip-bg text-tooltip-fg` |
+| Progress bar | `--zm-progress-track` / `--zm-progress-fill` | `bg-progress-track`, `bg-progress-fill` |
+| Charts (in this order; 1–7 keep 3:1 contrast in both themes, 8 needs labels) | `--zm-chart-1..8`, `--zm-chart-positive`, `--zm-chart-negative`, `--zm-chart-grid`, `--zm-chart-axis` | `fill-chart-1`, `stroke-chart-1`… |
 
 ## Primitives (only when no semantic token fits)
 - Each hue has `--zm-{hue}`, `-lighter`, `-darker`, `-stroke`, `-fill-1`, `-fill-2`. Hues: cyan, teal, blue, violet, pink, coral, red, orange, lime, yellow-green, green, edu-green.
@@ -48,21 +53,27 @@ All values come from Figma variables. Never hardcode a value that exists here. I
 | `text-3xl` | 30/36 | mobile large titles |
 | `text-4xl` to `text-7xl` | 36 to 72 | marketing only |
 
-## Spacing (px)
-0 1 2 4 6 8 10 12 16 20 24 32 40 48 64 72 96 128 256 320 512.
-Tailwind: `p-16` = 16px (the keys are pixel values, not the 4px scale).
+## Spacing
+zehn values (px): 0 1 2 4 6 8 10 12 16 20 24 32 40 48 64 72 96 128.
+Tailwind uses its **standard keys** (`p-4` = 16px, `gap-3` = 12px). Allowed keys for padding, margin, gap and space: `0 px 0.5 1 1.5 2 2.5 3 4 5 6 8 10 12 16 18 24 32`. Others (`p-7`, `mt-9`, `p-[13px]`) fail the style check.
+Width and height can use any standard key (`h-8` 32, `h-10` 40, `h-14` 56) or the layout keys below.
 
 ## Radius
-`rounded-4`, `-8` (default), `-12`, `-16` (mobile cards), `-full`.
+`rounded-sm` 2 · `rounded` 4 · `rounded-lg` 8 (default for buttons, inputs, cards) · `rounded-xl` 12 · `rounded-2xl` 16 (mobile cards) · `rounded-3xl` 24 · `rounded-full`. No `rounded-md`.
 
 ## Shadows
-`shadow-100` (cards), `-200` (popovers), `-300` (modals), `-mobile`, `-focus`.
+`shadow-100` (cards), `shadow-200` (popovers, menus), `shadow-300` (modals, drawers), `shadow-mobile`, `shadow-focus` (focus ring). Tailwind's `shadow-sm/md/lg` don't exist.
 
-## Layout constants
-| Constant | Value |
-|---|---|
-| top bar | 56 |
-| gutter | 24 |
-| narrow column | 768 |
-| detail | 896 (560 + 16 + 320) |
-| modal / drawer | 520 |
+## Layout constants (CSS var `--zm-<name>`, Tailwind `w-`/`h-`/`max-w-<name>`)
+| Name | px | Use |
+|---|---|---|
+| `topbar-height` | 56 | top bar |
+| `subbar-height` | 64 | builder sub-bar |
+| `gutter` | 24 | page side padding (`px-6`) |
+| `column-narrow` | 768 | feeds, settings: `max-w-column-narrow mx-auto` |
+| `column-detail` | 896 | detail pages (560 `detail-main` + 16 + 320 `side-panel`) |
+| `modal` / `modal-wide` / `modal-xl` | 520 / 600 / 904 | modals |
+| `alert-dialog` | 520 | destructive confirm |
+| `drawer` / `drawer-wide` | 520 / 640 | drawers (wide when it holds a table) |
+| `header-icon` | 32 | page-header icon (box `w-header-icon h-header-icon`, Remix glyph `text-header-icon`) |
+| `table-header` / `row` / `row-dense` | 36 / 48 / 36 | data tables |
