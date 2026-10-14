@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { cx } from './cx';
 import { Icon } from './Icon';
 import { IconButton } from './IconButton';
+import { useZehnLabels } from './locale';
 
 export type DialogTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger' | 'ai';
 
@@ -26,6 +27,7 @@ export interface DialogHeaderProps {
 
 /** 64px header: tinted icon + title + subtitle + close. AI tone adds the pink wash. */
 export function DialogHeader({ titleId, subtitleId, title, subtitle, icon, tone = 'neutral', onClose }: DialogHeaderProps) {
+  const labels = useZehnLabels();
   return (
     <div
       className={cx(
@@ -48,7 +50,7 @@ export function DialogHeader({ titleId, subtitleId, title, subtitle, icon, tone 
           </p>
         )}
       </div>
-      <IconButton icon="close" aria-label="Close" onClick={onClose} />
+      <IconButton icon="close" aria-label={labels.close} onClick={onClose} />
     </div>
   );
 }

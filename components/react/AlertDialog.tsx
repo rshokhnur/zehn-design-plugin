@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { useDialog } from './hooks';
 import { Icon } from './Icon';
 import { Button } from './Button';
+import { useZehnLabels } from './locale';
 
 export interface AlertDialogProps {
   open: boolean;
@@ -14,6 +15,7 @@ export interface AlertDialogProps {
   subtitle?: ReactNode;
   /** The verb: "Delete", "Withdraw", "Reject"… */
   confirmLabel: string;
+  /** Defaults to the locale's "Cancel". */
   cancelLabel?: string;
   icon?: string;
   /** Confirm is running: spinner on the confirm button. */
@@ -21,7 +23,8 @@ export interface AlertDialogProps {
 }
 
 /** Confirm before every destructive action. Initial focus is on Cancel; the scrim does not close it. */
-export function AlertDialog({ open, onClose, onConfirm, title, subtitle, confirmLabel, cancelLabel = 'Cancel', icon = 'delete-bin', loading }: AlertDialogProps) {
+export function AlertDialog({ open, onClose, onConfirm, title, subtitle, confirmLabel, cancelLabel, icon = 'delete-bin', loading }: AlertDialogProps) {
+  const labels = useZehnLabels();
   const cancelRef = useRef<HTMLButtonElement>(null);
   const { panelRef, onKeyDown } = useDialog(open, loading ? () => {} : onClose, cancelRef);
   const titleId = useId();
@@ -57,7 +60,7 @@ export function AlertDialog({ open, onClose, onConfirm, title, subtitle, confirm
         </div>
         <div className="flex justify-end gap-2">
           <Button ref={cancelRef} variant="secondary" onClick={onClose} disabled={loading}>
-            {cancelLabel}
+            {cancelLabel ?? labels.cancel}
           </Button>
           <Button variant="destructive-primary" onClick={onConfirm} loading={loading}>
             {confirmLabel}

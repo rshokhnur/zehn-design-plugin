@@ -1,9 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { cx } from './cx';
 import { Icon, Spinner } from './Icon';
 import { Button } from './Button';
 import { IconButton } from './IconButton';
+import { useZehnLabels } from './locale';
 
 export type ToastType = 'default' | 'info' | 'loading' | 'success' | 'warning' | 'error';
 
@@ -13,7 +13,7 @@ export interface ToastOptions {
   subtitle?: string;
   /** One action button, e.g. { label: 'View', onClick }. */
   action?: { label: string; onClick: () => void };
-  /** Error shortcut: adds a "Retry" action. */
+  /** Error shortcut: adds a "Retry" action (localized). */
   onRetry?: () => void;
   /** ms. Default 5000, errors 8000, loading stays until updated or dismissed. */
   duration?: number;
@@ -39,11 +39,11 @@ export function useToast(): ToastApi {
 
 const icons: Record<ToastType, ReactNode> = {
   default: null,
-  info: <Icon name="information" className="text-lg text-status-info" />,
+  info: <Icon name="information" className="text-lg text-blue" />,
   loading: <Spinner className="text-lg text-text-secondary" />,
-  success: <Icon name="checkbox-circle" className="text-lg text-status-success" />,
-  warning: <Icon name="error-warning" className="text-lg text-status-warning" />,
-  error: <Icon name="close-circle" className="text-lg text-status-danger" />,
+  success: <Icon name="checkbox-circle" className="text-lg text-green" />,
+  warning: <Icon name="error-warning" className="text-lg text-orange" />,
+  error: <Icon name="close-circle" className="text-lg text-red" />,
 };
 
 function defaultDuration(t: ToastItem) {
@@ -53,6 +53,7 @@ function defaultDuration(t: ToastItem) {
 }
 
 function ToastView({ item, onDismiss }: { item: ToastItem; onDismiss: () => void }) {
+  const labels = useZehnLabels();
   const type = item.type ?? 'default';
   const total = defaultDuration(item);
   const remaining = useRef(total);
@@ -74,7 +75,7 @@ function ToastView({ item, onDismiss }: { item: ToastItem; onDismiss: () => void
     };
   }, [paused, item, onDismiss]);
 
-  const action = item.action ?? (item.onRetry ? { label: 'Retry', onClick: item.onRetry } : undefined);
+  const action = item.action ?? (item.onRetry ? { label: labels.retry, onClick: item.onRetry } : undefined);
 
   return (
     <div
@@ -84,10 +85,10 @@ function ToastView({ item, onDismiss }: { item: ToastItem; onDismiss: () => void
       onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}
       onBlur={() => setPaused(false)}
-      className="pointer-events-auto flex w-80 items-start gap-3 rounded-xl border border-border-default bg-surface-overlay p-4 shadow-300"
+      className="pointer-events-auto flex w-toast max-w-full items-start gap-3 rounded border border-border-default bg-surface-base px-4 py-3 shadow-200"
     >
-      {icons[type] && <span className="flex h-5 items-center">{icons[type]}</span>}
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+      {icons[type] && <span className="flex h-6 shrink-0 items-center">{icons[type]}</span>}
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5 py-0.5">
         <p className="text-sm font-semibold text-text-primary">{item.title}</p>
         {item.subtitle && <p className="text-sm text-text-secondary">{item.subtitle}</p>}
         {action && (
@@ -104,13 +105,14 @@ function ToastView({ item, onDismiss }: { item: ToastItem; onDismiss: () => void
           </Button>
         )}
       </div>
-      <IconButton icon="close" size="small" aria-label="Dismiss notification" onClick={onDismiss} />
+      <IconButton icon="close" size="small" aria-label={labels.dismissNotification} onClick={onDismiss} />
     </div>
   );
 }
 
-/** Wrap the app once. Toasts stack bottom-right. */
+/** Wrap the app once (inside ZehnLocaleProvider if you use one). Toasts stack bottom-right, 432px wide. */
 export function ToastProvider({ children }: { children: ReactNode }) {
+  const labels = useZehnLabels();
   const [items, setItems] = useState<ToastItem[]>([]);
   const nextId = useRef(1);
 
@@ -138,8 +140,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={api}>
       {children}
       <section
-        aria-label="Notifications"
-        className={cx('pointer-events-none fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2')}
+        aria-label={labels.notifications}
+        className="pointer-events-none fixed bottom-6 left-6 right-6 z-50 flex flex-col items-end gap-2"
       >
         {items.map((t) => (
           <ToastView key={t.id} item={t} onDismiss={dismisserFor(t.id)} />

@@ -3,6 +3,7 @@ import type { TextareaHTMLAttributes } from 'react';
 import { cx } from './cx';
 import { Field, controlClass, useFieldIds } from './Field';
 import type { FieldOwnProps } from './Field';
+import { useZehnLabels } from './locale';
 
 export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement>, Omit<FieldOwnProps, 'size'> {
   className?: string;
@@ -14,6 +15,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
   { label, required, topHint, bottomHint, error, id, className, textareaClassName, disabled, maxLength, value, defaultValue, onChange, rows = 4, ...rest },
   ref,
 ) {
+  const labels = useZehnLabels();
   const [innerLen, setInnerLen] = useState(String(defaultValue ?? '').length);
   const length = value !== undefined ? String(value).length : innerLen;
   const ids = useFieldIds(id, { topHint, bottomHint, error });
@@ -25,7 +27,10 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
       bottomRight={
         maxLength ? (
           <span id={counterId} className={cx('tabular-nums', length >= maxLength ? 'text-status-danger' : 'text-text-tertiary')}>
-            {length}/{maxLength}
+            <span aria-hidden>
+              {length}/{maxLength}
+            </span>
+            <span className="sr-only">{labels.characterCount(length, maxLength)}</span>
           </span>
         ) : undefined
       }

@@ -5,6 +5,7 @@ import { Icon } from './Icon';
 import { IconButton } from './IconButton';
 import { Menu } from './Menu';
 import type { MenuItem } from './Menu';
+import { useZehnLabels } from './locale';
 
 export interface DetailHeaderProps {
   /** With a label: "< All requests" link. Without: a back icon button. */
@@ -21,6 +22,7 @@ export interface DetailHeaderProps {
 }
 
 export function DetailHeader({ back, id, title, meta, menuItems, actions, className }: DetailHeaderProps) {
+  const labels = useZehnLabels();
   return (
     <div className={cx('flex flex-col gap-3 border-b border-border-default pb-4', className)}>
       {back?.label && (
@@ -35,7 +37,7 @@ export function DetailHeader({ back, id, title, meta, menuItems, actions, classN
       )}
       <div className="flex items-start gap-3">
         {back && !back.label && (
-          <IconButton icon="arrow-left" aria-label="Back" variant="secondary" onClick={back.onClick ?? (() => back.href && window.location.assign(back.href))} />
+          <IconButton icon="arrow-left" aria-label={labels.back} variant="secondary" onClick={back.onClick ?? (() => back.href && window.location.assign(back.href))} />
         )}
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           {id && <span className="text-xs text-text-secondary">{id}</span>}
@@ -54,7 +56,7 @@ export function DetailHeader({ back, id, title, meta, menuItems, actions, classN
         <div className="flex shrink-0 items-center gap-2">
           {actions}
           {menuItems && menuItems.length > 0 && (
-            <Menu items={menuItems} trigger={<IconButton icon="more-2" aria-label="More actions" />} />
+            <Menu items={menuItems} trigger={<IconButton icon="more-2" aria-label={labels.moreActions} />} />
           )}
         </div>
       </div>

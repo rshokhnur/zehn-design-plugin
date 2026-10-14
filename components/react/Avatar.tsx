@@ -3,6 +3,7 @@ import type { HTMLAttributes } from 'react';
 import { cx } from './cx';
 import { Icon } from './Icon';
 import { Counter } from './Counter';
+import { useZehnLabels } from './locale';
 
 export type AvatarSize = 16 | 20 | 24 | 32 | 48 | 64 | 96 | 128;
 
@@ -55,12 +56,13 @@ export const Avatar = forwardRef<HTMLSpanElement, AvatarProps>(function Avatar(
   { name, src, icon, size = 32, status, counter, className, ...rest },
   ref,
 ) {
+  const labels = useZehnLabels();
   const look = src ? 'bg-secondary-bg' : name && !icon ? tintFor(name) : 'bg-secondary-bg text-text-secondary';
   return (
     <span
       ref={ref}
       role="img"
-      aria-label={name ?? 'User'}
+      aria-label={name ?? labels.user}
       className={cx('relative inline-flex shrink-0 items-center justify-center rounded-full font-semibold', sizes[size], look, className)}
       {...rest}
     >

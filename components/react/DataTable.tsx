@@ -4,6 +4,7 @@ import { IconButton } from './IconButton';
 import { Menu } from './Menu';
 import type { MenuItem } from './Menu';
 import { Skeleton } from './Skeleton';
+import { useZehnLabels } from './locale';
 
 export interface DataTableColumn<T> {
   key: string;
@@ -24,7 +25,7 @@ export interface DataTableProps<T> {
   dense?: boolean;
   /** Last-column `…` menu: Edit, then a red Delete (destructive items move last automatically). */
   rowActions?: (row: T) => MenuItem[];
-  /** Name used in the row menu label, e.g. "Actions for #REQ-3". Defaults to the row id. */
+  /** Name used in the row menu label, e.g. "Actions for #REQ-3" (localized). Defaults to the row id. */
   getRowLabel?: (row: T) => string;
   onRowClick?: (row: T) => void;
   loading?: boolean;
@@ -35,12 +36,16 @@ export interface DataTableProps<T> {
 
 /** Full-width data table. First column bold; use a Badge for the status column. */
 export function DataTable<T>({ columns, rows, getRowId, caption, dense, rowActions, getRowLabel, onRowClick, loading, empty, className }: DataTableProps<T>) {
+  const labels = useZehnLabels();
   const rowH = dense ? 'h-row-dense' : 'h-row';
   const colCount = columns.length + (rowActions ? 1 : 0);
   return (
-    <div className={cx('w-full overflow-x-auto rounded-lg border border-border-default bg-surface-base', className)}>
+    <div className={cx('w-full overflow-x-auto rounded border border-border-default bg-surface-base', className)}>
       <table className="w-full border-collapse text-sm" aria-busy={loading || undefined}>
-        <caption className="sr-only">{caption}</caption>
+        <caption className="sr-only">
+          {caption}
+          {loading && `, ${labels.loading}`}
+        </caption>
         <thead>
           <tr className="h-table-header bg-surface-subtle">
             {columns.map((c) => (
@@ -54,7 +59,7 @@ export function DataTable<T>({ columns, rows, getRowId, caption, dense, rowActio
             ))}
             {rowActions && (
               <th scope="col" className="w-12 px-3">
-                <span className="sr-only">Actions</span>
+                <span className="sr-only">{labels.actions}</span>
               </th>
             )}
           </tr>
@@ -102,7 +107,7 @@ export function DataTable<T>({ columns, rows, getRowId, caption, dense, rowActio
                         <Menu
                           items={rowActions(row)}
                           trigger={
-                            <IconButton icon="more-2" size="small" aria-label={`Actions for ${getRowLabel ? getRowLabel(row) : getRowId(row)}`} />
+                            <IconButton icon="more-2" size="small" aria-label={labels.actionsFor(getRowLabel ? getRowLabel(row) : getRowId(row))} />
                           }
                         />
                       </td>

@@ -36,8 +36,7 @@ export const Switch = forwardRef<HTMLButtonElement, SwitchProps>(function Switch
         className={cx(
           'inline-flex shrink-0 items-center rounded-full p-0.5 focus-visible:outline-none focus-visible:shadow-focus motion-safe:transition-colors',
           medium ? 'h-5 w-9' : 'h-4 w-7',
-          on ? 'bg-primary-bg' : 'bg-border-strong',
-          disabled && 'cursor-not-allowed bg-disabled-bg',
+          disabled ? 'cursor-not-allowed bg-gray-100' : on ? 'bg-cyan' : 'bg-gray-100',
         )}
         {...rest}
       >
@@ -46,8 +45,8 @@ export const Switch = forwardRef<HTMLButtonElement, SwitchProps>(function Switch
           className={cx(
             'rounded-full shadow-100 motion-safe:transition-transform',
             medium ? 'h-4 w-4' : 'h-3 w-3',
-            on ? cx('bg-primary-fg', medium ? 'translate-x-4' : 'translate-x-3') : 'translate-x-0 bg-white',
-            disabled && 'bg-disabled-fg',
+            on ? (medium ? 'translate-x-4' : 'translate-x-3') : 'translate-x-0',
+            disabled ? 'bg-gray-100' : 'bg-const-white',
           )}
         />
       </button>

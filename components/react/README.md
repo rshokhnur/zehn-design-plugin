@@ -16,11 +16,12 @@ Icons are Remix names without prefix/suffix: `icon="close"` renders `ri-close-li
 | Group | Components |
 |---|---|
 | Actions | `Button`, `IconButton`, `Counter` |
-| Display | `Badge`, `Avatar`, `AvatarGroup`, `EmptyState`, `Skeleton`, `ProgressBar`, `Tooltip` |
+| Display | `Badge`, `Avatar`, `AvatarGroup`, `EmptyState`, `Skeleton`, `ProgressBar`, `Tooltip`, `HeaderPattern` |
 | Inputs | `Input`, `Textarea`, `Select`, `Checkbox`, `Radio`, `Switch` |
 | Navigation | `SegmentedControl`, `Menu`, `FilterChips` |
 | Feedback | `ToastProvider` / `useToast`, `Modal`, `Drawer`, `AlertDialog` |
-| Layout | `TopBar`, `PageHeader`, `DetailHeader`, `StatCard`, `PanelCard`, `DataTable`, `Toolbar` + `Pager`, `InfoChip`, `ActivityFeed` + `ActivityItem` |
+| Layout | `TopBar`, `PageHeader`, `DetailHeader`, `StatCard`, `PanelCard`, `DataTable`, `Toolbar` + `Pager`, `InfoChip`, `ActivityFeed` + `ActivityItem`, `RoleBanner` |
+| i18n | `ZehnLocaleProvider`, `useZehnLabels`, `useZehnLocale`, `formatDate`, `formatDateTime`, `formatMoney`, `formatNumber`, `formatDuration` |
 | Helpers | `cx`, `Icon`, `buttonClass`, `useControllable`, `useDialog` |
 
 ## Usage
@@ -62,9 +63,29 @@ toast({ type: 'success', title: 'Request sent' });
 toast({ type: 'error', title: "Couldn't save", subtitle: 'Check your connection.', onRetry: save });
 const id = toast({ type: 'loading', title: 'Uploading…' });
 update(id, { type: 'success', title: 'Uploaded' });
+
+// Locale: wrap the app once (outside ToastProvider). Without it everything is English.
+<ZehnLocaleProvider locale="uz" labels={{ support: 'Yordam markazi' }}>…</ZehnLocaleProvider>
+const locale = useZehnLocale();
+formatDate(d, locale);            // 30.06.2026
+formatDateTime(d, locale);        // 30.06.2026 14:27
+formatMoney(24000000, locale);    // en 24,000,000 UZS · ru/uz 24 000 000 UZS (U+00A0)
+formatDuration(ms);               // 14d 3h 22m
+
+// List/overview page art, behind the content.
+<main className="relative overflow-hidden">
+  <HeaderPattern />
+  <div className="relative">…</div>
+</main>
+
+<RoleBanner icon="shield-user" title="You're viewing as approver" description="You can approve or reject requests." actions={<Button size="small">Switch role</Button>} />
 ```
 
 ## Notes
+
+- Cards (`PanelCard`, `StatCard`, `DataTable`, `RoleBanner`, `Skeleton shape="rect"`) use 4px corners (`rounded`), as in Figma. Buttons, inputs, menus and dialogs keep theirs.
+- Built-in strings (Cancel, Close, Back, Retry, pager and notification labels, sr-only text…) come from `ZehnLocaleProvider` (`en` · `ru` · `uz`). Per-instance props such as `cancelLabel` still win.
+- `Badge` matches Figma: tinted = `bg-{hue}-stroke text-{hue}`, filled = `bg-{hue} text-alpha-900`.
 
 - `Button` uses `variant` (Figma calls it `style`). AI variants add a sparkle icon by default; `leftIcon={null}` removes it.
 - `Menu` takes an `items` array and always moves `destructive` items last, after a divider.

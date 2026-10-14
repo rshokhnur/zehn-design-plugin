@@ -34,3 +34,8 @@ export * from './Toolbar';
 export * from './FilterChips';
 export * from './InfoChip';
 export * from './ActivityItem';
+export * from './RoleBanner';
+export * from './HeaderPattern';
+export { ZehnLocaleProvider, useZehnLabels, useZehnLocale, zehnLabels } from './locale';
+export type { ZehnLabels, ZehnLocaleProviderProps } from './locale';
+export * from './format';

@@ -14,7 +14,7 @@ export interface PanelCardProps {
 /** Side panel card for detail pages (Details, People, Activity). */
 export function PanelCard({ title, icon, rows, children, className }: PanelCardProps) {
   return (
-    <section className={cx('flex flex-col gap-3 rounded-lg border border-border-default bg-surface-base p-4', className)}>
+    <section className={cx('flex flex-col gap-3 rounded border border-border-default bg-surface-base p-4', className)}>
       <h2 className="flex items-center gap-2 text-sm text-text-secondary">
         {icon && <Icon name={icon} className="text-base" />}
         {title}

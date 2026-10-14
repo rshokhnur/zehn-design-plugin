@@ -18,7 +18,7 @@ export function StatCard({ label, value, delta, highlighted, className }: StatCa
   return (
     <div
       className={cx(
-        'flex h-24 min-w-0 shrink grow basis-72 flex-col justify-between rounded-lg p-4',
+        'flex h-24 min-w-0 shrink grow basis-72 flex-col justify-between rounded p-4',
         highlighted ? 'bg-app-accent-fill' : 'border border-border-default bg-surface-base',
         className,
       )}

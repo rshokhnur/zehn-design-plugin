@@ -5,6 +5,7 @@ import { buttonClass } from './Button';
 import { IconButton } from './IconButton';
 import { Counter } from './Counter';
 import { Avatar } from './Avatar';
+import { useZehnLabels } from './locale';
 
 export interface TopBarNavItem {
   label: string;
@@ -30,13 +31,14 @@ const Divider = () => <span aria-hidden className="h-4 w-px bg-border-default" /
 
 /** 56px app shell bar. Nav = ghost tabs, the active one filled. No sidebars. */
 export function TopBar({ app, homeHref = '/', nav, unreadCount = 0, onNotificationsClick, onSupportClick, user, right }: TopBarProps) {
+  const labels = useZehnLabels();
   return (
     <header className="flex h-topbar-height shrink-0 items-center gap-4 border-b border-border-default bg-surface-base px-6">
       <a href={homeHref} className="rounded text-base font-semibold text-text-primary focus-visible:outline-none focus-visible:shadow-focus">
         zehn<span className="text-app-accent">/{app}</span>
       </a>
       <Divider />
-      <nav aria-label="Main" className="flex min-w-0 flex-1 items-center gap-1">
+      <nav aria-label={labels.mainNav} className="flex min-w-0 flex-1 items-center gap-1">
         {nav.map((item) => (
           <a
             key={item.href}
@@ -54,7 +56,7 @@ export function TopBar({ app, homeHref = '/', nav, unreadCount = 0, onNotificati
         <span className="relative inline-flex">
           <IconButton
             icon="notification-3"
-            aria-label={unreadCount ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+            aria-label={unreadCount ? labels.notificationsUnread(unreadCount) : labels.notifications}
             onClick={onNotificationsClick}
           />
           {unreadCount > 0 && (
@@ -63,7 +65,7 @@ export function TopBar({ app, homeHref = '/', nav, unreadCount = 0, onNotificati
         </span>
         <Divider />
         <button type="button" onClick={onSupportClick} className={buttonClass({ variant: 'ghost' })}>
-          Support
+          {labels.support}
         </button>
         <Avatar name={user.name} src={user.src} size={32} />
       </div>

@@ -19,18 +19,19 @@ export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
   children?: ReactNode;
 }
 
+// As in Figma: tinted = the 20% stroke color as fill + hue text; filled = hue fill + dark text; ghost = hue text.
 // peach → orange hue, yellow → lime hue.
 const palette: Record<BadgeColor, Record<BadgeAppearance, string>> = {
-  neutral: { tinted: 'bg-status-neutral-bg text-status-neutral', filled: 'bg-primary-bg text-primary-fg', ghost: 'text-text-secondary' },
-  red: { tinted: 'bg-red-fill-2 text-red', filled: 'bg-red text-white', ghost: 'text-red' },
-  green: { tinted: 'bg-green-fill-2 text-green', filled: 'bg-green text-white', ghost: 'text-green' },
-  peach: { tinted: 'bg-orange-fill-2 text-orange', filled: 'bg-orange text-white', ghost: 'text-orange' },
-  teal: { tinted: 'bg-teal-fill-2 text-teal', filled: 'bg-teal text-white', ghost: 'text-teal' },
-  yellow: { tinted: 'bg-lime-fill-2 text-lime-darker', filled: 'bg-lime text-white', ghost: 'text-lime-darker' },
-  coral: { tinted: 'bg-coral-fill-2 text-coral', filled: 'bg-coral text-white', ghost: 'text-coral' },
-  pink: { tinted: 'bg-pink-fill-2 text-pink', filled: 'bg-pink text-white', ghost: 'text-pink' },
-  blue: { tinted: 'bg-blue-fill-2 text-blue', filled: 'bg-blue text-white', ghost: 'text-blue' },
-  violet: { tinted: 'bg-violet-fill-2 text-violet', filled: 'bg-violet text-white', ghost: 'text-violet' },
+  neutral: { tinted: 'bg-gray-100 text-text-secondary', filled: 'bg-primary-bg text-primary-fg', ghost: 'text-text-secondary' },
+  red: { tinted: 'bg-red-stroke text-red', filled: 'bg-red text-alpha-900', ghost: 'text-red' },
+  green: { tinted: 'bg-green-stroke text-green', filled: 'bg-green text-alpha-900', ghost: 'text-green' },
+  peach: { tinted: 'bg-orange-stroke text-orange', filled: 'bg-orange text-alpha-900', ghost: 'text-orange' },
+  teal: { tinted: 'bg-teal-stroke text-teal', filled: 'bg-teal text-alpha-900', ghost: 'text-teal' },
+  yellow: { tinted: 'bg-lime-stroke text-lime', filled: 'bg-lime text-alpha-900', ghost: 'text-lime' },
+  coral: { tinted: 'bg-coral-stroke text-coral', filled: 'bg-coral text-alpha-900', ghost: 'text-coral' },
+  pink: { tinted: 'bg-pink-stroke text-pink', filled: 'bg-pink text-alpha-900', ghost: 'text-pink' },
+  blue: { tinted: 'bg-blue-stroke text-blue', filled: 'bg-blue text-alpha-900', ghost: 'text-blue' },
+  violet: { tinted: 'bg-violet-stroke text-violet', filled: 'bg-violet text-alpha-900', ghost: 'text-violet' },
 };
 
 const statusMap: Record<BadgeStatus, { hue: BadgeColor; icon: string }> = {
