@@ -46,9 +46,9 @@ Used for counts in chips, tabs and the notification bell (filled red: `bg-counte
 | appearance | tinted (default for status) · filled · ghost |
 | color | neutral · red · green · peach · teal · yellow · coral · pink · blue · violet |
 | status (shortcut) | success · warning · info · danger · neutral (sets color + icon) |
-
-`peach` uses the Orange hue and `yellow` the Lime hue. Figma also has an `accent` badge color; don't use it (the accent is reserved for the logo, header and first stat card).
 | slots | `label`, `leftIcon`, `rightIcon` |
+
+Radius 4. As in Figma: tinted = the hue's 20% `-stroke` color as fill + the hue as text; filled = the hue + white text; ghost = hue text only. `peach` uses the Orange hue and `yellow` the Lime hue. Figma also has an `accent` badge color; don't use it (the accent is reserved for the logo, header and first stat card).
 
 Status mapping (always tinted, with an icon):
 
@@ -75,8 +75,8 @@ Stacked avatars + a "+N" counter. Sizes 16–48.
 ### Empty State
 A 256px illustration block (icon with a soft glow) + `icon` slot + `blur` flag. Put a title and one line of copy under it, plus an optional small button.
 
-### Header Pattern
-A decorative wireframe swirl with a cyan/lime blur. Place it absolutely at the top-right of list/overview pages, behind the content (`pointer-events: none`).
+### Header Pattern (`HeaderPattern`)
+A decorative wireframe swirl with teal/cyan/lime blurred blobs, 768×256. Ships as `HeaderPattern` (inline SVG, follows light/dark). Place it absolutely at the top-right of list/overview pages, behind the content (`pointer-events: none`, parent `relative overflow-hidden`). Don't redraw it or download it from Figma.
 
 ### AI Gradient
 A pink/violet wash, used behind AI modal headers and AI panels only.
@@ -117,6 +117,8 @@ State: unchecked · checked · disabled · disabled checked.
 | size | medium · small |
 | state | off · on · disabled on · disabled off |
 
+Track: off `gray-100`, on **Cyan** (as in Figma), disabled `gray-100`. White thumb.
+
 ## Navigation
 
 ### Segmented Control
@@ -152,7 +154,7 @@ Rules:
 | type | default · info · loading · success · warning · error |
 | slots | `title`, `subtitle`, `button`, `close` |
 
-Show a toast after save, copy or send. Errors include a retry action.
+432px wide, white card (`surface-base`), 1px border, radius 4, `shadow-200`, a status-colored icon. Bottom-right stack. Show a toast after save, copy or send. Errors include a retry action. Pauses while hovered.
 
 ### Alert Dialog
 Slots: `icon`, `title`, `subtitle`. Used for **every destructive confirm**:
@@ -179,15 +181,15 @@ Dark (`bg-tooltip-bg text-tooltip-fg`), `text-xs`, radius 4, padding 4×8, `shad
 | **TopBar** | 56px, bottom border `--zm-border-default`. Left: logo `zehn` + `/app` in `--zm-app-accent`, a 1×16 divider, Ghost nav tabs (active = `--zm-surface-subtle` fill). Right: bell IconButton + red Counter, divider, Ghost "Support", Avatar 32. |
 | **PageHeader** | 2px × 40px bar in `--zm-app-accent`, 32px accent icon, H1 `text-2xl semibold`, subtitle `text-sm` secondary. Actions on the right, primary last. |
 | **DetailHeader** | back IconButton or "< All {items}" link, `#ID` (xs, secondary), title (2xl semibold), meta row joined with ` · `, `…` IconButton on the right, divider below. |
-| **StatCard** | 288×96 (in a dashboard grid: equal columns, 16px gap). Label (sm, secondary), value (2xl semibold), optional delta Badge. The first card in a row uses `--zm-app-accent-fill` with an accent label. |
+| **StatCard** | 288×96, radius 4 (in a dashboard grid: equal columns, 16px gap). Label (sm, secondary), value (2xl semibold), optional delta Badge. The first card in a row uses `--zm-app-accent-fill` with an accent label. |
 | **DataTable** | header row 36px on `--zm-surface-subtle`, `text-xs semibold` secondary. Rows 48px (36 when dense), 1px bottom border. First column bold. Status column = Badge. Last column = `…` IconButton → Menu (Edit, divider, red Delete). The pager `< 1 / 45 >` sits in the toolbar. |
 | **Toolbar** | one row, 12px gap: Segmented Control or filter chips · search Input (flex) · filter Selects · pager. |
 | **FilterChips** | small Buttons. Active = primary, inactive = secondary, with a Counter. |
-| **PanelCard** | 1px border, radius 8, padding 16. Header: 16px icon + title (sm, secondary). Rows: label (secondary) left, value right, 12px apart. |
+| **PanelCard** | 1px border, radius 4, padding 16. Header: 16px icon + title (sm, secondary). Rows: label (secondary) left, value right, 12px apart. |
 | **ModalShell** (`Modal`) | width 520 (600 or 904). Backdrop `bg-scrim` (stays dark in dark mode). Header 64px: tinted icon + title + subtitle + close. Body padding 24 with 16px field gap. Footer 56px sticky, right-aligned: Cancel (secondary) + primary. Focus trap, Escape closes, focus returns to the opener. |
 | **DrawerShell** (`Drawer`) | same anatomy as ModalShell, full-height right side, 520px (640 when it holds a table). Add a stepper under the header for multi-step. |
 | **InfoChip** | tinted 12px chip with an icon, under a field. |
 | **ActivityItem** | 32px circle icon on a vertical rule, **Name** + action (sm), timestamp (xs, secondary). |
 | **TaskCard / BoardCard** | exist in Figma on the tasks page (Task Card 264×131 with a 2px top accent; Board Card 389×117). Follow them. |
-| **RoleBanner** | tinted (`--zm-app-accent-fill` or `--zm-cyan-fill-2`) box, radius 8, padding 16. Title (base semibold) + one line + action buttons. |
+| **RoleBanner** (`RoleBanner`) | tinted (`--zm-app-accent-fill` or `--zm-cyan-fill-2`) box, radius 4, padding 16. Title (base semibold) + one line + action buttons. |
 | **MobileTabBar** | floating 386×64 pill, 5 items max, an icon + label per item, active = accent. |

@@ -37,7 +37,7 @@ The accent is **never** used on primary buttons, body text or status badges.
 - **Icons:** Remix Icon, `-line` style. 16–20px inline, 32px in page headers.
 - **Color:** variables from the `Colors` collection only. No hex, rgb or named colors. Light and Dark must both work.
 - **Spacing:** `Spacing/*` only: 0, 1, 2, 4, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48, 64, 72, 96, 128.
-- **Radius:** `Border Radius/*`: 0, 2, 4, 8, 12, 16, 24, 32, full.
+- **Radius:** `Border Radius/*`: 0, 2, 4, 8, 12, 16, 24, 32, full. **Web cards and panels use 4** (stat cards, panel cards, chart cards, table containers, banners, toasts), as drawn in Figma. Buttons and inputs use 8. Mobile cards use 16.
 - **Shadows:** `Drop Shadow/100|200|300|Mobile`. Focus ring is `Focus/Accent`.
 - **Primary action:** always `Action/Background` (black in light, white in dark), in **every app**, including docs, geo and edu.
 
@@ -107,7 +107,8 @@ Use library components first. Never rebuild a Button, Badge, Input, Avatar, Menu
 - **Menu:** `Menu`. The destructive item goes last, red, after a divider.
 - **Activity:** circle icon + **Name** action + timestamp.
 - **Toast:** after save, copy or send. Success / Error types. An optional action ("View").
-- **Charts:** use `--zm-chart-1…8` in order (Cyan → Blue → Violet → Pink → Coral → Yellow-Green → Teal → Orange; the light theme uses the darker shades so lines and bars keep 3:1 contrast). Positive `--zm-chart-positive`, negative `--zm-chart-negative`, grid and axis tokens. Never use raw hues for charts. They must be readable in Dark. An empty-data widget shows a gray outline of its chart type. **[open]** Chart card heights aren't specified in Figma yet; reuse the nearest existing dashboard and list it as a design gap.
+- **Chart cards (dashboards):** 334px tall (`h-chart-card`), radius 4, padding 16, 16px gap between cards in a full-width row; the plot area is 208px (`h-chart-plot`) under the title and legend. Up to 3 cards per row at 1440 (453px each), or one 2/3 + one 1/3.
+- **Charts:** use `--zm-chart-1…8` in order (Cyan → Blue → Violet → Pink → Coral → Yellow-Green → Teal → Orange; the light theme uses the darker shades so lines and bars keep 3:1 contrast). Positive `--zm-chart-positive`, negative `--zm-chart-negative`, grid and axis tokens. Never use raw hues for charts. They must be readable in Dark. An empty-data widget shows a gray outline of its chart type.
 - **Tooltip:** dark (`--zm-tooltip-bg`), `text-xs`, radius 4, max one short sentence. Shows on hover and keyboard focus. Use it to explain an icon-only control or a truncated value, never for essential info.
 - **Progress bar:** 4px track `--zm-progress-track`, fill `--zm-progress-fill` (status color only when it means something), with a label or percentage next to it.
 - **Tabs inside a page:** `Segmented Control` (views and sections). No underline tabs.
@@ -158,13 +159,15 @@ Use library components first. Never rebuild a Button, Badge, Input, Avatar, Menu
 - **IDs:** `#REQ-3`.
 - **Meta separator:** ` · `.
 - **Tone:** short, friendly, second person ("Your requests", "Tell us what you need.").
-- **Language:** web English; edu Uzbek (Latin, use `‘` in o‘/g‘); desk English. **[open]** Will web apps get uz/ru?
+- **Language:** web English; edu Uzbek (Latin, use `‘` in o‘/g‘); desk English. Web apps may add ru and uz.
+- **Locales (en / ru / uz):** dates and times are the same everywhere (`30.06.2026`, `30.06.2026 14:27`, 24h). Numbers and money: en `24,000,000 UZS`; ru and uz `24 000 000 UZS` (non-breaking space as the thousands separator, comma as the decimal mark). The currency code stays `UZS`. Use the shared `formatDate`, `formatDateTime`, `formatMoney`, `formatNumber`, `formatDuration` helpers, never hand-built strings.
+- **No hard-coded UI strings in shared components.** Labels (Cancel, Close, Retry, Previous page…) come from the zehn locale provider (`ZehnLocaleProvider locale="ru"`) or a `…Label` prop; translate there, never by editing the shared components (setup-tokens overwrites them).
 - No placeholder, joke or real-person data in shipped UI. Spell-check all strings.
 
 ## 8a. When someone asks for something off-system
 
 1. Say in one line which rule it breaks and offer the zehn alternative.
-2. If they still want it, do it, with `zehn-ignore: requested by <who>, <why>` on every line that uses the value (not one shared constant).
+2. If they still want it, do it, with `zehn-ignore: requested by <who>, <why>` on every line that uses the value (not one shared constant). This applies to bulk edits through scripts, sed or codemods too: push back first, then mark every changed line.
 3. List each override under **Design gaps** in the final message. Never comply silently.
 
 ## 9. Token gaps to add in Figma (designer)

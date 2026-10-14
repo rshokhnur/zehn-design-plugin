@@ -30,6 +30,12 @@ For the live Figma part, connect the Figma MCP in Claude Code (works with a Dev 
 Devs: `/plugin marketplace update zehn` (zip users: replace the folder first), then re-run `setup-tokens` in their apps.
 Designer, after Figma changes: re-export the variables to `tokens/source/figma_vars.json`, run `python3 scripts/gen-tokens.py`, edit `reference/*.md` if rules changed and run `scripts/build-skill.sh`, run `node tests/check-ui.test.js`, bump `version` in `.claude-plugin/plugin.json`, push.
 
+## Upgrading from 0.2
+- Web cards, panels, tables, toasts and badges use 4px corners (`rounded`), as in Figma. Badge tinted fills, Switch (cyan when on) and Toast (white card) now match the Figma components.
+- New components: `HeaderPattern`, `RoleBanner`, `ZehnLocaleProvider` (en / ru / uz labels) and `format*` helpers (dates, money, numbers, durations). Re-run `setup-tokens` to copy them in.
+- New layout tokens: `h-chart-card` (334), `h-chart-plot` (208), `w-toast` (432).
+- The style check also flags raw `<button>`/`<select>`/`confirm()` in app code, `!important` overrides, and named colors inside shorthands.
+
 ## Upgrading from 0.1
 - Tailwind spacing now uses the **standard Tailwind keys** (`p-4` = 16px). Code written with 0.1's pixel keys (`p-16`, `gap-12`) must be converted (`p-4`, `gap-3`). The style check flags the off-scale ones (`p-20`, `gap-40`), but `p-16`, `gap-12`, `p-24` etc. stay valid and silently grow 4×, so search for them.
 - Radius classes are now `rounded` (4), `rounded-lg` (8), `rounded-xl` (12), `rounded-2xl` (16), `rounded-full`; `rounded-4/8/12/16` are flagged.

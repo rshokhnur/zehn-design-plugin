@@ -48,6 +48,14 @@ const CASES = [
   ['dart', `padding: EdgeInsets.all(18),`, true],
   ['kt', `color = Color.Red,`, true],
   ['kt', `modifier = Modifier.padding(18.dp)`, true],
+  ['tsx', `<div style={{ outline: '2px solid red' }} />`, true],
+  ['tsx', `const s = { border: '1px solid tomato' }`, true],
+  ['tsx', `<div style={{ color: 'green' }} />`, true],
+  ['tsx', `<Button className="!px-2 hover:!bg-surface-subtle" />`, true],
+  ['css', `.btn { padding: 8px !important; }`, true],
+  ['tsx', `<button className="h-8 rounded-lg bg-primary-bg px-3">Save</button>`, true],
+  ['tsx', `if (window.confirm('Delete?')) remove()`, true],
+  ['swift', `Text("Title").font(.system(size: 22))`, true],
   // --- must NOT flag ---
   ['css', `.a { font-weight: 400; }`, false],
   ['css', `.a { font-weight: 600; }`, false],
@@ -71,6 +79,10 @@ const CASES = [
   ['dart', `padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),`, false],
   ['dart', `color: Colors.transparent,`, false],
   ['kt', `modifier = Modifier.padding(16.dp)`, false],
+  ['tsx', `const HUES = { success: { color: 'green', icon: 'check' } }`, false],
+  ['tsx', `<div className={cx('p-4', !open && 'hidden')} />`, false],
+  ['swift', `Image(systemName: "star").font(.system(size: 22))`, false],
+  ['tsx', `<Button variant="primary">Save</Button>`, false],
 ];
 
 let fail = 0;
@@ -93,6 +105,13 @@ if (fresh !== 2) { fail++; console.log('FAIL hook missed a new violation'); }
 const patch = hook({ tool_input: { file_path: '/x/a.tsx' }, tool_response: { structuredPatch: [{ newStart: 4, lines: ['-  <div className="bg-red-500">', '+    <div className="bg-red-500">', '+    <p className="text-[#111]">x</p>'] }] } });
 if (patch !== 2) { fail++; console.log('FAIL hook missed a violation in structuredPatch'); }
 
-console.log(fail ? `${fail} failing` : `all ${CASES.length + 3} cases pass`);
+// Raw primitives are fine inside the zehn components themselves.
+{
+  const zdir = path.join(dir, 'components', 'zehn'); fs.mkdirSync(zdir, { recursive: true });
+  const f = path.join(zdir, 'Button.tsx'); fs.writeFileSync(f, '<button className="h-8 rounded-lg px-3" />\n');
+  if (spawnSync('node', [CHECK, f], { encoding: 'utf8' }).status !== 0) { fail++; console.log('FAIL raw <button> flagged inside components/zehn'); }
+}
+
+console.log(fail ? `${fail} failing` : `all ${CASES.length + 4} cases pass`);
 fs.rmSync(dir, { recursive: true, force: true });
 process.exit(fail ? 1 : 0);

@@ -78,7 +78,8 @@ APPS = {"procurement": "cyan", "intelligence": "cyan", "desk": "cyan", "hr": "or
 
 LAYOUT = {"topbar-height": 56, "gutter": 24, "column-narrow": 768, "column-detail": 896, "detail-main": 560,
           "side-panel": 320, "modal": 520, "modal-wide": 600, "modal-xl": 904, "drawer": 520, "drawer-wide": 640,
-          "alert-dialog": 520, "header-icon": 32, "table-header": 36, "row": 48, "row-dense": 36, "subbar-height": 64}
+          "alert-dialog": 520, "header-icon": 32, "table-header": 36, "row": 48, "row-dense": 36, "subbar-height": 64,
+          "chart-card": 334, "chart-plot": 208, "toast": 432}
 
 # Tailwind spacing key for each zehn spacing value (Tailwind's standard 4px-based keys).
 TW_SPACE = {0: "0", 1: "px", 2: "0.5", 4: "1", 6: "1.5", 8: "2", 10: "2.5", 12: "3", 16: "4", 20: "5", 24: "6",

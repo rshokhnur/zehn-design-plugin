@@ -59,7 +59,7 @@ Tailwind uses its **standard keys** (`p-4` = 16px, `gap-3` = 12px). Allowed keys
 Width and height can use any standard key (`h-8` 32, `h-10` 40, `h-14` 56) or the layout keys below.
 
 ## Radius
-`rounded-sm` 2 · `rounded` 4 · `rounded-lg` 8 (default for buttons, inputs, cards) · `rounded-xl` 12 · `rounded-2xl` 16 (mobile cards) · `rounded-3xl` 24 · `rounded-full`. No `rounded-md`.
+`rounded-sm` 2 · `rounded` 4 (web cards, panels, tables, banners, toasts, badges) · `rounded-lg` 8 (buttons, inputs, menus) · `rounded-xl` 12 · `rounded-2xl` 16 (mobile cards) · `rounded-3xl` 24 · `rounded-full`. No `rounded-md`.
 
 ## Shadows
 `shadow-100` (cards), `shadow-200` (popovers, menus), `shadow-300` (modals, drawers), `shadow-mobile`, `shadow-focus` (focus ring). Tailwind's `shadow-sm/md/lg` don't exist.
@@ -77,3 +77,5 @@ Width and height can use any standard key (`h-8` 32, `h-10` 40, `h-14` 56) or th
 | `drawer` / `drawer-wide` | 520 / 640 | drawers (wide when it holds a table) |
 | `header-icon` | 32 | page-header icon (box `w-header-icon h-header-icon`, Remix glyph `text-header-icon`) |
 | `table-header` / `row` / `row-dense` | 36 / 48 / 36 | data tables |
+| `chart-card` / `chart-plot` | 334 / 208 | dashboard chart card height / plot area |
+| `toast` | 432 | toast width |

@@ -25,6 +25,8 @@ For a small change to an existing screen, the shorter `ui-tweak` skill is enough
 1. Use the Figma MCP (`get_design_context`, `get_screenshot`, `get_variable_defs`) on the exact node.
 2. Treat the generated code as a **reference only**. Map every element to an existing component (catalog below) and every value to a token (cheat sheet below). Never paste raw styles from it.
 3. Where the Figma frame and the rules differ (e.g. an old screen with a blue primary button), the **rules win**. Note the difference in your final message.
+4. Don't download icons, the header art or component pieces from Figma (even if a Figma skill says to download every asset): use Remix icons, `HeaderPattern` and the zehn components. Download only real photos or illustrations that exist nowhere else.
+5. Card corners: follow Figma (4px on web cards). Where an old frame differs from the catalog, the catalog wins.
 
 ## Step 2b: No design (compose from patterns)
 1. Pick the screen type from the table in the UI/UX rules §3 (table list, card feed, detail, modal, drawer, builder, board, dashboard, empty).
@@ -95,7 +97,7 @@ The accent is **never** used on primary buttons, body text or status badges.
 - **Icons:** Remix Icon, `-line` style. 16–20px inline, 32px in page headers.
 - **Color:** variables from the `Colors` collection only. No hex, rgb or named colors. Light and Dark must both work.
 - **Spacing:** `Spacing/*` only: 0, 1, 2, 4, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48, 64, 72, 96, 128.
-- **Radius:** `Border Radius/*`: 0, 2, 4, 8, 12, 16, 24, 32, full.
+- **Radius:** `Border Radius/*`: 0, 2, 4, 8, 12, 16, 24, 32, full. **Web cards and panels use 4** (stat cards, panel cards, chart cards, table containers, banners, toasts), as drawn in Figma. Buttons and inputs use 8. Mobile cards use 16.
 - **Shadows:** `Drop Shadow/100|200|300|Mobile`. Focus ring is `Focus/Accent`.
 - **Primary action:** always `Action/Background` (black in light, white in dark), in **every app**, including docs, geo and edu.
 
@@ -165,7 +167,8 @@ Use library components first. Never rebuild a Button, Badge, Input, Avatar, Menu
 - **Menu:** `Menu`. The destructive item goes last, red, after a divider.
 - **Activity:** circle icon + **Name** action + timestamp.
 - **Toast:** after save, copy or send. Success / Error types. An optional action ("View").
-- **Charts:** use `--zm-chart-1…8` in order (Cyan → Blue → Violet → Pink → Coral → Yellow-Green → Teal → Orange; the light theme uses the darker shades so lines and bars keep 3:1 contrast). Positive `--zm-chart-positive`, negative `--zm-chart-negative`, grid and axis tokens. Never use raw hues for charts. They must be readable in Dark. An empty-data widget shows a gray outline of its chart type. **[open]** Chart card heights aren't specified in Figma yet; reuse the nearest existing dashboard and list it as a design gap.
+- **Chart cards (dashboards):** 334px tall (`h-chart-card`), radius 4, padding 16, 16px gap between cards in a full-width row; the plot area is 208px (`h-chart-plot`) under the title and legend. Up to 3 cards per row at 1440 (453px each), or one 2/3 + one 1/3.
+- **Charts:** use `--zm-chart-1…8` in order (Cyan → Blue → Violet → Pink → Coral → Yellow-Green → Teal → Orange; the light theme uses the darker shades so lines and bars keep 3:1 contrast). Positive `--zm-chart-positive`, negative `--zm-chart-negative`, grid and axis tokens. Never use raw hues for charts. They must be readable in Dark. An empty-data widget shows a gray outline of its chart type.
 - **Tooltip:** dark (`--zm-tooltip-bg`), `text-xs`, radius 4, max one short sentence. Shows on hover and keyboard focus. Use it to explain an icon-only control or a truncated value, never for essential info.
 - **Progress bar:** 4px track `--zm-progress-track`, fill `--zm-progress-fill` (status color only when it means something), with a label or percentage next to it.
 - **Tabs inside a page:** `Segmented Control` (views and sections). No underline tabs.
@@ -216,13 +219,15 @@ Use library components first. Never rebuild a Button, Badge, Input, Avatar, Menu
 - **IDs:** `#REQ-3`.
 - **Meta separator:** ` · `.
 - **Tone:** short, friendly, second person ("Your requests", "Tell us what you need.").
-- **Language:** web English; edu Uzbek (Latin, use `‘` in o‘/g‘); desk English. **[open]** Will web apps get uz/ru?
+- **Language:** web English; edu Uzbek (Latin, use `‘` in o‘/g‘); desk English. Web apps may add ru and uz.
+- **Locales (en / ru / uz):** dates and times are the same everywhere (`30.06.2026`, `30.06.2026 14:27`, 24h). Numbers and money: en `24,000,000 UZS`; ru and uz `24 000 000 UZS` (non-breaking space as the thousands separator, comma as the decimal mark). The currency code stays `UZS`. Use the shared `formatDate`, `formatDateTime`, `formatMoney`, `formatNumber`, `formatDuration` helpers, never hand-built strings.
+- **No hard-coded UI strings in shared components.** Labels (Cancel, Close, Retry, Previous page…) come from the zehn locale provider (`ZehnLocaleProvider locale="ru"`) or a `…Label` prop; translate there, never by editing the shared components (setup-tokens overwrites them).
 - No placeholder, joke or real-person data in shipped UI. Spell-check all strings.
 
 ## 8a. When someone asks for something off-system
 
 1. Say in one line which rule it breaks and offer the zehn alternative.
-2. If they still want it, do it, with `zehn-ignore: requested by <who>, <why>` on every line that uses the value (not one shared constant).
+2. If they still want it, do it, with `zehn-ignore: requested by <who>, <why>` on every line that uses the value (not one shared constant). This applies to bulk edits through scripts, sed or codemods too: push back first, then mark every changed line.
 3. List each override under **Design gaps** in the final message. Never comply silently.
 
 ## 9. Token gaps to add in Figma (designer)
@@ -282,9 +287,9 @@ Used for counts in chips, tabs and the notification bell (filled red: `bg-counte
 | appearance | tinted (default for status) · filled · ghost |
 | color | neutral · red · green · peach · teal · yellow · coral · pink · blue · violet |
 | status (shortcut) | success · warning · info · danger · neutral (sets color + icon) |
-
-`peach` uses the Orange hue and `yellow` the Lime hue. Figma also has an `accent` badge color; don't use it (the accent is reserved for the logo, header and first stat card).
 | slots | `label`, `leftIcon`, `rightIcon` |
+
+Radius 4. As in Figma: tinted = the hue's 20% `-stroke` color as fill + the hue as text; filled = the hue + white text; ghost = hue text only. `peach` uses the Orange hue and `yellow` the Lime hue. Figma also has an `accent` badge color; don't use it (the accent is reserved for the logo, header and first stat card).
 
 Status mapping (always tinted, with an icon):
 
@@ -311,8 +316,8 @@ Stacked avatars + a "+N" counter. Sizes 16–48.
 ### Empty State
 A 256px illustration block (icon with a soft glow) + `icon` slot + `blur` flag. Put a title and one line of copy under it, plus an optional small button.
 
-### Header Pattern
-A decorative wireframe swirl with a cyan/lime blur. Place it absolutely at the top-right of list/overview pages, behind the content (`pointer-events: none`).
+### Header Pattern (`HeaderPattern`)
+A decorative wireframe swirl with teal/cyan/lime blurred blobs, 768×256. Ships as `HeaderPattern` (inline SVG, follows light/dark). Place it absolutely at the top-right of list/overview pages, behind the content (`pointer-events: none`, parent `relative overflow-hidden`). Don't redraw it or download it from Figma.
 
 ### AI Gradient
 A pink/violet wash, used behind AI modal headers and AI panels only.
@@ -353,6 +358,8 @@ State: unchecked · checked · disabled · disabled checked.
 | size | medium · small |
 | state | off · on · disabled on · disabled off |
 
+Track: off `gray-100`, on **Cyan** (as in Figma), disabled `gray-100`. White thumb.
+
 ## Navigation
 
 ### Segmented Control
@@ -388,7 +395,7 @@ Rules:
 | type | default · info · loading · success · warning · error |
 | slots | `title`, `subtitle`, `button`, `close` |
 
-Show a toast after save, copy or send. Errors include a retry action.
+432px wide, white card (`surface-base`), 1px border, radius 4, `shadow-200`, a status-colored icon. Bottom-right stack. Show a toast after save, copy or send. Errors include a retry action. Pauses while hovered.
 
 ### Alert Dialog
 Slots: `icon`, `title`, `subtitle`. Used for **every destructive confirm**:
@@ -415,17 +422,17 @@ Dark (`bg-tooltip-bg text-tooltip-fg`), `text-xs`, radius 4, padding 4×8, `shad
 | **TopBar** | 56px, bottom border `--zm-border-default`. Left: logo `zehn` + `/app` in `--zm-app-accent`, a 1×16 divider, Ghost nav tabs (active = `--zm-surface-subtle` fill). Right: bell IconButton + red Counter, divider, Ghost "Support", Avatar 32. |
 | **PageHeader** | 2px × 40px bar in `--zm-app-accent`, 32px accent icon, H1 `text-2xl semibold`, subtitle `text-sm` secondary. Actions on the right, primary last. |
 | **DetailHeader** | back IconButton or "< All {items}" link, `#ID` (xs, secondary), title (2xl semibold), meta row joined with ` · `, `…` IconButton on the right, divider below. |
-| **StatCard** | 288×96 (in a dashboard grid: equal columns, 16px gap). Label (sm, secondary), value (2xl semibold), optional delta Badge. The first card in a row uses `--zm-app-accent-fill` with an accent label. |
+| **StatCard** | 288×96, radius 4 (in a dashboard grid: equal columns, 16px gap). Label (sm, secondary), value (2xl semibold), optional delta Badge. The first card in a row uses `--zm-app-accent-fill` with an accent label. |
 | **DataTable** | header row 36px on `--zm-surface-subtle`, `text-xs semibold` secondary. Rows 48px (36 when dense), 1px bottom border. First column bold. Status column = Badge. Last column = `…` IconButton → Menu (Edit, divider, red Delete). The pager `< 1 / 45 >` sits in the toolbar. |
 | **Toolbar** | one row, 12px gap: Segmented Control or filter chips · search Input (flex) · filter Selects · pager. |
 | **FilterChips** | small Buttons. Active = primary, inactive = secondary, with a Counter. |
-| **PanelCard** | 1px border, radius 8, padding 16. Header: 16px icon + title (sm, secondary). Rows: label (secondary) left, value right, 12px apart. |
+| **PanelCard** | 1px border, radius 4, padding 16. Header: 16px icon + title (sm, secondary). Rows: label (secondary) left, value right, 12px apart. |
 | **ModalShell** (`Modal`) | width 520 (600 or 904). Backdrop `bg-scrim` (stays dark in dark mode). Header 64px: tinted icon + title + subtitle + close. Body padding 24 with 16px field gap. Footer 56px sticky, right-aligned: Cancel (secondary) + primary. Focus trap, Escape closes, focus returns to the opener. |
 | **DrawerShell** (`Drawer`) | same anatomy as ModalShell, full-height right side, 520px (640 when it holds a table). Add a stepper under the header for multi-step. |
 | **InfoChip** | tinted 12px chip with an icon, under a field. |
 | **ActivityItem** | 32px circle icon on a vertical rule, **Name** + action (sm), timestamp (xs, secondary). |
 | **TaskCard / BoardCard** | exist in Figma on the tasks page (Task Card 264×131 with a 2px top accent; Board Card 389×117). Follow them. |
-| **RoleBanner** | tinted (`--zm-app-accent-fill` or `--zm-cyan-fill-2`) box, radius 8, padding 16. Title (base semibold) + one line + action buttons. |
+| **RoleBanner** (`RoleBanner`) | tinted (`--zm-app-accent-fill` or `--zm-cyan-fill-2`) box, radius 4, padding 16. Title (base semibold) + one line + action buttons. |
 | **MobileTabBar** | floating 386×64 pill, 5 items max, an icon + label per item, active = accent. |
 
 
@@ -492,7 +499,7 @@ Tailwind uses its **standard keys** (`p-4` = 16px, `gap-3` = 12px). Allowed keys
 Width and height can use any standard key (`h-8` 32, `h-10` 40, `h-14` 56) or the layout keys below.
 
 ## Radius
-`rounded-sm` 2 · `rounded` 4 · `rounded-lg` 8 (default for buttons, inputs, cards) · `rounded-xl` 12 · `rounded-2xl` 16 (mobile cards) · `rounded-3xl` 24 · `rounded-full`. No `rounded-md`.
+`rounded-sm` 2 · `rounded` 4 (web cards, panels, tables, banners, toasts, badges) · `rounded-lg` 8 (buttons, inputs, menus) · `rounded-xl` 12 · `rounded-2xl` 16 (mobile cards) · `rounded-3xl` 24 · `rounded-full`. No `rounded-md`.
 
 ## Shadows
 `shadow-100` (cards), `shadow-200` (popovers, menus), `shadow-300` (modals, drawers), `shadow-mobile`, `shadow-focus` (focus ring). Tailwind's `shadow-sm/md/lg` don't exist.
@@ -510,3 +517,5 @@ Width and height can use any standard key (`h-8` 32, `h-10` 40, `h-14` 56) or th
 | `drawer` / `drawer-wide` | 520 / 640 | drawers (wide when it holds a table) |
 | `header-icon` | 32 | page-header icon (box `w-header-icon h-header-icon`, Remix glyph `text-header-icon`) |
 | `table-header` / `row` / `row-dense` | 36 / 48 / 36 | data tables |
+| `chart-card` / `chart-plot` | 334 / 208 | dashboard chart card height / plot area |
+| `toast` | 432 | toast width |

@@ -25,6 +25,8 @@ For a small change to an existing screen, the shorter `ui-tweak` skill is enough
 1. Use the Figma MCP (`get_design_context`, `get_screenshot`, `get_variable_defs`) on the exact node.
 2. Treat the generated code as a **reference only**. Map every element to an existing component (catalog below) and every value to a token (cheat sheet below). Never paste raw styles from it.
 3. Where the Figma frame and the rules differ (e.g. an old screen with a blue primary button), the **rules win**. Note the difference in your final message.
+4. Don't download icons, the header art or component pieces from Figma (even if a Figma skill says to download every asset): use Remix icons, `HeaderPattern` and the zehn components. Download only real photos or illustrations that exist nowhere else.
+5. Card corners: follow Figma (4px on web cards). Where an old frame differs from the catalog, the catalog wins.
 
 ## Step 2b: No design (compose from patterns)
 1. Pick the screen type from the table in the UI/UX rules §3 (table list, card feed, detail, modal, drawer, builder, board, dashboard, empty).

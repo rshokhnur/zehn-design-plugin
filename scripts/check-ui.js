@@ -96,7 +96,13 @@ const WEB_RULES = [
   { id: 'rgb-hsl', msg: MSG.rgb, re: /\b(?:rgba?|hsla?|oklch|oklab|lab|lch|hwb|color)\(\s*(?:[\d.]|var\((?!--zm-))/g,
     ok: (line) => /^\s*(\/\/|\*|\/\*)/.test(line) },
   { id: 'named-color', msg: MSG.named,
-    re: new RegExp(`(?:\\b(?:color|background(?:-color)?|border(?:-[a-z]+)?-color|border|outline(?:-color)?|fill|stroke|caret-color|text-decoration-color|accent-color)\\s*:\\s*(?:[^;'"{}]*\\s)?|\\b(?:color|backgroundColor|borderColor|fill|stroke|outlineColor|background)\\s*:\\s*['"\`])(?:${NAMED})\\b(?![-\\w])`, 'g') },
+    re: new RegExp(`\\b(?:color|background(?:-color)?|border(?:-[a-z]+)?-color|border(?:-[a-z]+)?|outline(?:-color)?|fill|stroke|caret-color|text-decoration(?:-color)?|accent-color|box-shadow)\\s*:\\s*(?:[^;'"{}]*\\s)?(?:${NAMED})\\b(?![-\\w])`, 'g') },
+  // CSS-in-JS: unambiguous keys always; color/fill/stroke/background only in a style context (not data like { color: 'green' }).
+  { id: 'named-color', msg: MSG.named,
+    re: new RegExp(`\\b(color|fill|stroke|background|backgroundColor|borderColor|borderTopColor|borderBottomColor|outlineColor|textDecorationColor|caretColor|accentColor|border|borderTop|borderRight|borderBottom|borderLeft|outline|boxShadow|textDecoration)\\s*:\\s*['"\`](?:[^'"\`]*\\s)?(?:${NAMED})\\b(?![-\\w])`, 'g'),
+    ok: (line, i, kind, m) => /^(color|fill|stroke|background)$/.test(m[1]) && !/\bstyle\b|\bsx\b|\bcss\b|styled|StyleSheet|CSSProperties/.test(line) },
+  { id: 'important', msg: 'Overriding zehn styles with !important is not allowed. Use the component props or tokens; if you truly must, add zehn-ignore with a reason.',
+    re: /!important\b/g, ok: (line) => /^\s*(\/\/|\*|\/\*)/.test(line) },
   { id: 'tw-default-palette', msg: MSG.palette, cls: true,
     re: new RegExp(`(?<![\\w-])${V}(?:${COLOR_PROPS})-(?:${TW_HUES}|gray)-\\d{2,3}(?:\\/\\d+)?(?![\\w-])`, 'g'),
     ok: (line, i, kind, m) => /-gray-/.test(m[0]) && COLOR_KEYS && COLOR_KEYS.has(m[0].replace(/^.*?-(gray-\d+).*$/, '$1')) },
@@ -150,6 +156,35 @@ function deadColorClasses(line, kind, push) {
     if (COLOR_KEYS.has(val)) continue;
     if (!inClassContext(line, m.index, kind)) continue;
     push(m.index, m[0], 'dead-class', MSG.deadColor);
+  }
+}
+
+// Tailwind's !important prefix (!p-2, hover:!bg-x) inside a class string.
+function importantClasses(line, push) {
+  const re = /(["'`])((?:\\.|(?!\1).)*)\1/g;
+  let m;
+  while ((m = re.exec(line))) {
+    if (!classLike(m[2]) && !CLASS_CTX.test(line)) continue;
+    const t = /(?:^|\s)((?:[a-z0-9-]+:)*![a-z][\w\-[\]/.:]*)/g;
+    let c;
+    while ((c = t.exec(m[2]))) push(m.index + 1 + c.index, c[1], 'important', 'Tailwind !important override. Use the component props or tokens instead of forcing styles onto zehn components.');
+  }
+}
+
+// Hand-made primitives in app code (the zehn components live in components/zehn or the plugin's components/react).
+const OWN_COMPONENTS = /components\/(zehn|react)\//;
+const PRIMITIVES = [
+  [/<button\b/g, 'Raw <button>. Use the zehn <Button variant=…> or <IconButton>.'],
+  [/<select\b/g, 'Raw <select>. Use the zehn <Select>.'],
+  [/<input\b[^>]*type=["'](?:checkbox|radio)["']/g, 'Raw checkbox/radio. Use the zehn <Checkbox>, <Radio> or <Switch>.'],
+  [/<dialog\b|\bwindow\.confirm\(|(?<![\w.])confirm\(\s*['"`]|(?<![\w.])alert\(\s*['"`]/g, 'Native dialog. Use the zehn <Modal>, <AlertDialog> (destructive confirm) or a Toast.'],
+];
+function rawPrimitives(line, push) {
+  if (/^\s*(\/\/|\*|\/\*)/.test(line)) return;
+  for (const [re, msg] of PRIMITIVES) {
+    re.lastIndex = 0;
+    let m;
+    while ((m = re.exec(line))) push(m.index, m[0], 'raw-primitive', msg);
   }
 }
 
@@ -209,7 +244,7 @@ const NATIVE_SCALES = {
 };
 
 // ---------- line checker ----------
-function checkLine(line, file) {
+function checkLine(line, file, prev = '') {
   const out = [];
   if (/zehn-ignore/.test(line)) {
     if (!/zehn-ignore:\s*\S.{3,}/.test(line)) out.push({ id: 'ignore-reason', text: 'zehn-ignore', msg: MSG.ignore });
@@ -234,15 +269,23 @@ function checkLine(line, file) {
       }
     }
     deadColorClasses(line, kind, push);
+    importantClasses(line, push);
+    if (kind === 'web' && !OWN_COMPONENTS.test(file)) rawPrimitives(line, push);
     if (!/^\s*(\/\/|\*|\/\*)/.test(line)) cssPx(line, push);
   } else {
     if (/^\s*(\/\/|\*|\/\*)/.test(line)) return out;
+    // .font(.system(size:)) on an SF Symbol / icon image sizes the glyph, not text.
+    const iconSizing = kind === 'swift' && /Image\(\s*(systemName|"|ZehnIcon)|\.imageScale/.test(prev + line);
     for (const r of NATIVE[kind]) {
+      if (iconSizing && r.id === 'native-font') continue;
       r.re.lastIndex = 0;
       let m;
       while ((m = r.re.exec(line))) push(m.index, m[0], r.id, r.msg);
     }
-    for (const [re, set, label] of NATIVE_SCALES[kind]) { re.lastIndex = 0; scaleCheck(set, label)(line, push, re); }
+    for (const [re, set, label] of NATIVE_SCALES[kind]) {
+      if (iconSizing && label === 'font size') continue;
+      re.lastIndex = 0; scaleCheck(set, label)(line, push, re);
+    }
     // hex strings in native code
     const hx = /["'](#[0-9a-fA-F]{6,8})["']/g;
     let m;
@@ -254,7 +297,10 @@ function checkLine(line, file) {
 // lines: [{n, text}]
 function checkLines(lines, file) {
   const probs = [];
-  for (const { n, text } of lines) for (const p of checkLine(text, file)) probs.push({ file, line: n, ...p });
+  lines.forEach(({ n, text }, i) => {
+    const prev = lines.slice(Math.max(0, i - 2), i).map((l) => l.text).join('\n');
+    for (const p of checkLine(text, file, prev)) probs.push({ file, line: n, ...p });
+  });
   return probs;
 }
 

@@ -320,7 +320,10 @@ module.exports = {
         "table-header": "36px",
         "row": "48px",
         "row-dense": "36px",
-        "subbar-height": "64px"
+        "subbar-height": "64px",
+        "chart-card": "334px",
+        "chart-plot": "208px",
+        "toast": "432px"
       },
       "width": {
         "topbar-height": "56px",
@@ -339,7 +342,10 @@ module.exports = {
         "table-header": "36px",
         "row": "48px",
         "row-dense": "36px",
-        "subbar-height": "64px"
+        "subbar-height": "64px",
+        "chart-card": "334px",
+        "chart-plot": "208px",
+        "toast": "432px"
       },
       "height": {
         "topbar-height": "56px",
@@ -358,7 +364,10 @@ module.exports = {
         "table-header": "36px",
         "row": "48px",
         "row-dense": "36px",
-        "subbar-height": "64px"
+        "subbar-height": "64px",
+        "chart-card": "334px",
+        "chart-plot": "208px",
+        "toast": "432px"
       },
       "minHeight": {
         "topbar-height": "56px",
@@ -377,7 +386,10 @@ module.exports = {
         "table-header": "36px",
         "row": "48px",
         "row-dense": "36px",
-        "subbar-height": "64px"
+        "subbar-height": "64px",
+        "chart-card": "334px",
+        "chart-plot": "208px",
+        "toast": "432px"
       },
       "minWidth": {
         "topbar-height": "56px",
@@ -396,7 +408,10 @@ module.exports = {
         "table-header": "36px",
         "row": "48px",
         "row-dense": "36px",
-        "subbar-height": "64px"
+        "subbar-height": "64px",
+        "chart-card": "334px",
+        "chart-plot": "208px",
+        "toast": "432px"
       }
     }
   }

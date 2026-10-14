@@ -244,6 +244,9 @@
   --zm-row: 48px;
   --zm-row-dense: 36px;
   --zm-subbar-height: 64px;
+  --zm-chart-card: 334px;
+  --zm-chart-plot: 208px;
+  --zm-toast: 432px;
 }
 [data-theme="dark"] {
   color-scheme: dark;

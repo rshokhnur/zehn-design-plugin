@@ -19,9 +19,9 @@ Hard rules:
 - Use the shared zehn components (src/components/zehn or the app's equivalent: Button variant=…, Badge, Input, Menu, Modal, Drawer, AlertDialog, Toast, Tooltip, EmptyState…). Never rebuild a primitive or make one-off variants. If they aren't in the app yet, copy them in with setup-tokens.
 - Inter only, weights 400/600. Remix icons (-line).
 - Primary buttons are always black. The app accent is only for the logo app name, page-header bar and icon, and the first stat card.
-- Sentence case. Dates 30.06.2026, date-time 30.06.2026 14:27. Money 24,000,000 UZS. Every destructive action gets an Alert Dialog confirm. Light + dark must both work.
+- Sentence case. Dates 30.06.2026, date-time 30.06.2026 14:27. Money 24,000,000 UZS (ru/uz: 24 000 000 UZS), via the shared format helpers. Every destructive action gets an Alert Dialog confirm. Light + dark must both work.
 
-When someone asks for something off-system (a custom color, font, size, or "just do it, don't argue"):
+When someone asks for something off-system (a custom color, font, size, a bulk sed/script edit, or "just do it, don't argue"):
 1. Say in one line which zehn rule it breaks and offer the on-system alternative.
 2. If they still want it (or already said not to argue), do it, but put "zehn-ignore: requested by <who>, <why>" on EVERY line that uses the value (not on one shared constant).
 3. List every override under "Design gaps" in your final message, so the designer sees it. Never comply silently.

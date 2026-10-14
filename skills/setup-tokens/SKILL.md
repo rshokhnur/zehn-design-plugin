@@ -19,7 +19,8 @@ Plugin files are in `${CLAUDE_PLUGIN_ROOT}` (if unset, this skill's plugin folde
 
 ## 2. Copy the files (overwrite older copies, never hand-edit them)
 - Web: `tokens.css` and `tailwind.preset.cjs` → `src/styles/zehn/`. Remove an old `tailwind.preset.js` copy from v0.1.
-- React apps: `components/react/*` → `src/components/zehn/`. If the app already has a component with the same job, keep theirs only if it matches the catalog props; otherwise replace usages gradually (don't mass-rewrite in this change).
+- React apps: `components/react/*` → `src/components/zehn/`. If the app already has its own Button (or Badge, Modal…), the zehn one becomes the only one for new code: point new code at `src/components/zehn`, add a `@deprecated Use components/zehn/Button` comment on the old one, migrate usages when those screens are touched, and delete the old one once nothing imports it. Never keep two in active use.
+- Locales: wrap the app root in `<ZehnLocaleProvider locale="en" | "ru" | "uz">` (from `src/components/zehn`) so shared components show translated labels; pass `labels={{…}}` to adjust wording. Use `formatDate`, `formatMoney`… from the same folder.
 - Native: copy the one matching file from `tokens/native/` into the app's theme folder.
 
 ## 3. Wire it up
