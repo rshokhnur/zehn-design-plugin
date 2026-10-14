@@ -1,0 +1,12 @@
+{
+  "name": "zehn",
+  "description": "zehn design system for AI coding agents",
+  "owner": { "name": "Shokhnur" },
+  "plugins": [
+    {
+      "name": "zehn-design",
+      "source": "./",
+      "description": "zehn tokens, components, UI/UX rules, compose-screen skill and style check"
+    }
+  ]
+}

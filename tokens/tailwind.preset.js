@@ -1,0 +1,306 @@
+/* zehn Tailwind preset. GENERATED from Figma. The theme is REPLACED (not extended):
+   only zehn tokens exist, so classes like bg-blue-500 or p-[13px]-style off-scale values fail the style check. */
+module.exports = {
+  "theme": {
+    "colors": {
+      "gray-900": "var(--zm-gray-900)",
+      "gray-800": "var(--zm-gray-800)",
+      "gray-700": "var(--zm-gray-700)",
+      "gray-600": "var(--zm-gray-600)",
+      "gray-500": "var(--zm-gray-500)",
+      "gray-400": "var(--zm-gray-400)",
+      "gray-300": "var(--zm-gray-300)",
+      "gray-200": "var(--zm-gray-200)",
+      "gray-100": "var(--zm-gray-100)",
+      "gray-50": "var(--zm-gray-50)",
+      "alpha-900": "var(--zm-alpha-900)",
+      "alpha-800": "var(--zm-alpha-800)",
+      "alpha-700": "var(--zm-alpha-700)",
+      "alpha-600": "var(--zm-alpha-600)",
+      "alpha-500": "var(--zm-alpha-500)",
+      "alpha-400": "var(--zm-alpha-400)",
+      "alpha-300": "var(--zm-alpha-300)",
+      "alpha-200": "var(--zm-alpha-200)",
+      "alpha-100": "var(--zm-alpha-100)",
+      "alpha-50": "var(--zm-alpha-50)",
+      "bg-brand": "var(--zm-bg-brand)",
+      "bg-b0": "var(--zm-bg-b0)",
+      "bg-b1": "var(--zm-bg-b1)",
+      "bg-b2": "var(--zm-bg-b2)",
+      "bg-b3": "var(--zm-bg-b3)",
+      "bg-segment-track": "var(--zm-bg-segment-track)",
+      "teal": "var(--zm-teal)",
+      "teal-lighter": "var(--zm-teal-lighter)",
+      "teal-darker": "var(--zm-teal-darker)",
+      "teal-stroke": "var(--zm-teal-stroke)",
+      "teal-fill-2": "var(--zm-teal-fill-2)",
+      "teal-fill-1": "var(--zm-teal-fill-1)",
+      "cyan": "var(--zm-cyan)",
+      "cyan-lighter": "var(--zm-cyan-lighter)",
+      "cyan-darker": "var(--zm-cyan-darker)",
+      "cyan-stroke": "var(--zm-cyan-stroke)",
+      "cyan-fill-2": "var(--zm-cyan-fill-2)",
+      "cyan-fill-1": "var(--zm-cyan-fill-1)",
+      "orange": "var(--zm-orange)",
+      "orange-lighter": "var(--zm-orange-lighter)",
+      "orange-darker": "var(--zm-orange-darker)",
+      "orange-stroke": "var(--zm-orange-stroke)",
+      "orange-fill-2": "var(--zm-orange-fill-2)",
+      "orange-fill-1": "var(--zm-orange-fill-1)",
+      "lime": "var(--zm-lime)",
+      "lime-lighter": "var(--zm-lime-lighter)",
+      "lime-darker": "var(--zm-lime-darker)",
+      "lime-stroke": "var(--zm-lime-stroke)",
+      "lime-fill-2": "var(--zm-lime-fill-2)",
+      "lime-fill-1": "var(--zm-lime-fill-1)",
+      "coral": "var(--zm-coral)",
+      "coral-lighter": "var(--zm-coral-lighter)",
+      "coral-darker": "var(--zm-coral-darker)",
+      "coral-stroke": "var(--zm-coral-stroke)",
+      "coral-fill-2": "var(--zm-coral-fill-2)",
+      "coral-fill-1": "var(--zm-coral-fill-1)",
+      "pink": "var(--zm-pink)",
+      "pink-lighter": "var(--zm-pink-lighter)",
+      "pink-darker": "var(--zm-pink-darker)",
+      "pink-stroke": "var(--zm-pink-stroke)",
+      "pink-fill-2": "var(--zm-pink-fill-2)",
+      "pink-fill-1": "var(--zm-pink-fill-1)",
+      "red": "var(--zm-red)",
+      "red-lighter": "var(--zm-red-lighter)",
+      "red-darker": "var(--zm-red-darker)",
+      "red-stroke": "var(--zm-red-stroke)",
+      "red-fill-2": "var(--zm-red-fill-2)",
+      "red-fill-1": "var(--zm-red-fill-1)",
+      "green": "var(--zm-green)",
+      "green-lighter": "var(--zm-green-lighter)",
+      "green-darker": "var(--zm-green-darker)",
+      "green-stroke": "var(--zm-green-stroke)",
+      "green-fill-2": "var(--zm-green-fill-2)",
+      "green-fill-1": "var(--zm-green-fill-1)",
+      "green-bg-strong": "var(--zm-green-bg-strong)",
+      "blue": "var(--zm-blue)",
+      "blue-lighter": "var(--zm-blue-lighter)",
+      "blue-darker": "var(--zm-blue-darker)",
+      "blue-stroke": "var(--zm-blue-stroke)",
+      "blue-fill-2": "var(--zm-blue-fill-2)",
+      "blue-fill-1": "var(--zm-blue-fill-1)",
+      "yellow-green": "var(--zm-yellow-green)",
+      "yellow-green-lighter": "var(--zm-yellow-green-lighter)",
+      "yellow-green-darker": "var(--zm-yellow-green-darker)",
+      "yellow-green-stroke": "var(--zm-yellow-green-stroke)",
+      "yellow-green-fill-2": "var(--zm-yellow-green-fill-2)",
+      "yellow-green-fill-1": "var(--zm-yellow-green-fill-1)",
+      "yellow-green-bg-strong": "var(--zm-yellow-green-bg-strong)",
+      "violet": "var(--zm-violet)",
+      "violet-lighter": "var(--zm-violet-lighter)",
+      "violet-darker": "var(--zm-violet-darker)",
+      "violet-stroke": "var(--zm-violet-stroke)",
+      "violet-fill-2": "var(--zm-violet-fill-2)",
+      "violet-fill-1": "var(--zm-violet-fill-1)",
+      "action-text": "var(--zm-action-text)",
+      "action-icon": "var(--zm-action-icon)",
+      "action-counter-bg": "var(--zm-action-counter-bg)",
+      "action-bg": "var(--zm-action-bg)",
+      "action-bg-hover": "var(--zm-action-bg-hover)",
+      "const-white": "var(--zm-const-white)",
+      "const-black": "var(--zm-const-black)",
+      "edu-green": "var(--zm-edu-green)",
+      "edu-green-darker": "var(--zm-edu-green-darker)",
+      "edu-green-deep": "var(--zm-edu-green-deep)",
+      "edu-green-stroke": "var(--zm-edu-green-stroke)",
+      "edu-green-fill-2": "var(--zm-edu-green-fill-2)",
+      "edu-green-fill-1": "var(--zm-edu-green-fill-1)",
+      "text-primary": "var(--zm-text-primary)",
+      "text-secondary": "var(--zm-text-secondary)",
+      "text-tertiary": "var(--zm-text-tertiary)",
+      "text-disabled": "var(--zm-text-disabled)",
+      "text-link": "var(--zm-text-link)",
+      "text-danger": "var(--zm-text-danger)",
+      "border-default": "var(--zm-border-default)",
+      "border-strong": "var(--zm-border-strong)",
+      "surface-canvas": "var(--zm-surface-canvas)",
+      "surface-base": "var(--zm-surface-base)",
+      "surface-raised": "var(--zm-surface-raised)",
+      "surface-overlay": "var(--zm-surface-overlay)",
+      "surface-subtle": "var(--zm-surface-subtle)",
+      "surface-hover": "var(--zm-surface-hover)",
+      "primary-bg": "var(--zm-primary-bg)",
+      "primary-bg-hover": "var(--zm-primary-bg-hover)",
+      "primary-fg": "var(--zm-primary-fg)",
+      "secondary-bg": "var(--zm-secondary-bg)",
+      "secondary-bg-hover": "var(--zm-secondary-bg-hover)",
+      "secondary-fg": "var(--zm-secondary-fg)",
+      "focus-ring": "var(--zm-focus-ring)",
+      "status-success": "var(--zm-status-success)",
+      "status-success-bg": "var(--zm-status-success-bg)",
+      "status-warning": "var(--zm-status-warning)",
+      "status-warning-bg": "var(--zm-status-warning-bg)",
+      "status-info": "var(--zm-status-info)",
+      "status-info-bg": "var(--zm-status-info-bg)",
+      "status-danger": "var(--zm-status-danger)",
+      "status-danger-bg": "var(--zm-status-danger-bg)",
+      "status-neutral": "var(--zm-status-neutral)",
+      "status-neutral-bg": "var(--zm-status-neutral-bg)",
+      "ai": "var(--zm-ai)",
+      "ai-bg": "var(--zm-ai-bg)",
+      "chart-1": "var(--zm-chart-1)",
+      "chart-2": "var(--zm-chart-2)",
+      "chart-3": "var(--zm-chart-3)",
+      "chart-4": "var(--zm-chart-4)",
+      "chart-5": "var(--zm-chart-5)",
+      "chart-6": "var(--zm-chart-6)",
+      "chart-7": "var(--zm-chart-7)",
+      "chart-8": "var(--zm-chart-8)",
+      "chart-positive": "var(--zm-chart-positive)",
+      "chart-negative": "var(--zm-chart-negative)",
+      "chart-grid": "var(--zm-chart-grid)",
+      "chart-axis": "var(--zm-chart-axis)",
+      "app-accent": "var(--zm-app-accent)",
+      "app-accent-stroke": "var(--zm-app-accent-stroke)",
+      "app-accent-fill": "var(--zm-app-accent-fill)",
+      "transparent": "transparent",
+      "current": "currentColor"
+    },
+    "spacing": {
+      "0": "0px",
+      "1": "1px",
+      "2": "2px",
+      "4": "4px",
+      "6": "6px",
+      "8": "8px",
+      "10": "10px",
+      "12": "12px",
+      "16": "16px",
+      "20": "20px",
+      "24": "24px",
+      "32": "32px",
+      "40": "40px",
+      "48": "48px",
+      "64": "64px",
+      "72": "72px",
+      "96": "96px",
+      "128": "128px",
+      "256": "256px",
+      "320": "320px",
+      "512": "512px",
+      "px": "1px"
+    },
+    "borderRadius": {
+      "none": "var(--zm-radius-0)",
+      "2": "var(--zm-radius-2)",
+      "4": "var(--zm-radius-4)",
+      "8": "var(--zm-radius-8)",
+      "12": "var(--zm-radius-12)",
+      "16": "var(--zm-radius-16)",
+      "24": "var(--zm-radius-24)",
+      "32": "var(--zm-radius-32)",
+      "full": "var(--zm-radius-full)",
+      "DEFAULT": "var(--zm-radius-8)"
+    },
+    "fontFamily": {
+      "sans": [
+        "Inter",
+        "system-ui",
+        "sans-serif"
+      ]
+    },
+    "fontWeight": {
+      "normal": "400",
+      "semibold": "600"
+    },
+    "fontSize": {
+      "7xl": [
+        "72px",
+        {
+          "lineHeight": "80px",
+          "letterSpacing": "-0.01em"
+        }
+      ],
+      "6xl": [
+        "60px",
+        {
+          "lineHeight": "68px",
+          "letterSpacing": "-0.01em"
+        }
+      ],
+      "5xl": [
+        "48px",
+        {
+          "lineHeight": "56px",
+          "letterSpacing": "-0.01em"
+        }
+      ],
+      "4xl": [
+        "36px",
+        {
+          "lineHeight": "40px",
+          "letterSpacing": "-0.01em"
+        }
+      ],
+      "3xl": [
+        "30px",
+        {
+          "lineHeight": "36px",
+          "letterSpacing": "-0.01em"
+        }
+      ],
+      "2xl": [
+        "24px",
+        {
+          "lineHeight": "32px",
+          "letterSpacing": "-0.01em"
+        }
+      ],
+      "xl": [
+        "20px",
+        {
+          "lineHeight": "28px",
+          "letterSpacing": "-0.01em"
+        }
+      ],
+      "lg": [
+        "18px",
+        {
+          "lineHeight": "24px",
+          "letterSpacing": "-0.01em"
+        }
+      ],
+      "base": [
+        "16px",
+        {
+          "lineHeight": "24px",
+          "letterSpacing": "-0.01em"
+        }
+      ],
+      "sm": [
+        "14px",
+        {
+          "lineHeight": "20px",
+          "letterSpacing": "-0.01em"
+        }
+      ],
+      "xs": [
+        "12px",
+        {
+          "lineHeight": "16px",
+          "letterSpacing": "-0.01em"
+        }
+      ],
+      "xxs": [
+        "10px",
+        {
+          "lineHeight": "12px",
+          "letterSpacing": "-0.01em"
+        }
+      ]
+    },
+    "boxShadow": {
+      "100": "var(--zm-shadow-100)",
+      "200": "var(--zm-shadow-200)",
+      "300": "var(--zm-shadow-300)",
+      "mobile": "var(--zm-shadow-mobile)",
+      "focus": "var(--zm-shadow-focus)",
+      "none": "none"
+    }
+  }
+};
