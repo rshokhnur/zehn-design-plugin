@@ -1,56 +1,51 @@
 ---
 name: compose-screen
-description: Build or change any zehn UI (screen, flow, modal, drawer, component, or styling) on the zehn design system, from a Figma link or composed from existing patterns when there is no design. Use for all frontend/UI work in zehn apps.
+description: Build a new zehn screen, page, flow, modal or drawer, or restructure an existing layout, from a Figma link or composed from patterns. Holds the full rules, component catalog and tokens; works through the app's own components via zehn.project.json. For edits that keep the current layout (a button, column, field, badge, copy, spacing) use ui-tweak. To review a PR or migrate an old page to zehn use ui-review.
 ---
 
 # Compose a screen the zehn way
 
-You are building UI for a zehn app. Figma is the source of truth. Your job is to make the result look like the designer made it.
+You are building UI for a zehn app. Make the result look like the designer made it.
 
-The full references are included BELOW this workflow:
-- **REFERENCE: zehn UI/UX rules**: layout, screen types, patterns, forms, copy, formats
-- **REFERENCE: zehn component catalog**: every component, its props, and the not-yet-componentized patterns
+Wrong skill? If the change adds no screen, modal, drawer or flow and keeps the current layout, use `ui-tweak`. Migrating an old page to zehn: `ui-review`.
+
+The references below this workflow:
+- **REFERENCE: zehn UI/UX rules**: who wins, layout, screen types, forms, copy and formats, off-system requests
+- **REFERENCE: zehn component catalog**: what ships, the real props, and what to build
 - **REFERENCE: zehn tokens cheat sheet**: which token or class to use for what
 
-Important: the zehn Tailwind preset replaces colors, radius, font sizes/weights and shadows, and keeps Tailwind's standard spacing keys (`p-4` = 16px). Only the zehn spacing subset is allowed: `0 px 0.5 1 1.5 2 2.5 3 4 5 6 8 10 12 16 18 24 32`. There are no `blue-500`-style colors, no `shadow-lg`, no `rounded-md`.
+When sources disagree, follow "Who wins" at the top of the rules. When unsure, follow Figma.
 
-For a small change to an existing screen, the shorter `ui-tweak` skill is enough.
-
-## Step 1: Figure out the context
-1. **Which app?** (procurement, hr, tasks, docs, edge, analytics, geo, intelligence, edu, desk). That sets `data-app` and the accent. If you can't tell, ask.
-2. **Is there a Figma design?** Look for a figma.com link in the task, ticket or PR description.
-3. **Platform:** web (1440 desktop) or mobile (edu/desk, 402 iOS).
+## Step 1: Context
+1. **Read `zehn.project.json`** at the app root: the components, tokens and example screens to use. Missing → run `setup-project` before anything else.
+2. **Which app?** (procurement, hr, tasks, docs, edge, analytics, geo, intelligence, edu, desk). It sets `data-app` and the accent. If you can't tell, ask.
+3. **Figma design?** Look for a figma.com link in the task, ticket or PR description.
+4. **Platform:** web (1440 desktop) or mobile (edu, desk: 402 iOS).
 
 ## Step 2a: With a Figma link
-1. Use the Figma MCP (`get_design_context`, `get_screenshot`, `get_variable_defs`) on the exact node.
-2. Treat the generated code as a **reference only**. Map every element to an existing component (catalog below) and every value to a token (cheat sheet below). Never paste raw styles from it.
-3. Where the Figma frame and the rules differ (e.g. an old screen with a blue primary button), the **rules win**. Note the difference in your final message.
-4. Don't download icons, the header art or component pieces from Figma (even if a Figma skill says to download every asset): use Remix icons, `HeaderPattern` and the zehn components. Download only real photos or illustrations that exist nowhere else.
-5. Card corners: follow Figma (4px on web cards). Where an old frame differs from the catalog, the catalog wins.
+1. Load figma:figma-design-to-code as it requires, then read the exact node (`get_design_context`, `get_screenshot`). Where that skill conflicts with this one, this one wins: no downloaded icons, header art or component images (use the app's icon set and mapped components, and `HeaderPattern` where the app has no header art), and no generated styles (map every value to the project's token through `tokens.figmaMap`). Why: downloaded assets are frozen copies that don't follow dark mode, the app accent or later redesigns. Download only real photos or illustrations that exist nowhere else.
+2. Treat the generated code as a reference only. Map each element to a mapped component and each value to a project token. Never paste raw styles.
+3. Copy the page structure of the example screen mapped for this screen type (`screens`) and fill it with the frame's content.
+4. A value in the frame differs from the rules or a mapped component → apply "Who wins" and add the Design gaps line.
 
-## Step 2b: No design (compose from patterns)
-1. Pick the screen type from the table in the UI/UX rules §3 (table list, card feed, detail, modal, drawer, builder, board, dashboard, empty).
-2. Find the closest existing screen in the codebase that already follows these rules, and reuse its layout and shared components.
-3. Compose ONLY from the shared zehn components (`src/components/zehn/`; if the app doesn't have them, copy them in from the plugin's `components/react/` with `setup-tokens`). For a pattern that isn't there yet, build it once as a shared component following the catalog spec; never inline it.
-4. Copy: sentence case, short, friendly, second person. Formats: `30.06.2026`, `30.06.2026 14:27`, `24,000,000 UZS`, `#REQ-3`, ` · ` separators.
-5. Design every state, not just the happy path: empty, loading (skeleton / Button loading), validation error, success toast, permission-denied (disabled + reason), and a destructive confirm.
+## Step 2b: No design
+1. Pick the screen type and the create/edit container (rules §3) and the content width (rules §2).
+2. Copy the layout of the example screen mapped for that type (`screens` in `zehn.project.json`), or the closest existing screen.
+3. Use the components mapped in `zehn.project.json` first (their names, imports and props), then the zehn fallback components (`fallback.zehnDir`), then build from the catalog spec with the app's primitives. List the mapping's `gaps` for each component you use under Design gaps. Never invent a component, variant or style; if one is truly needed, build it once from their primitives in their style (catalog intro) and list it.
+4. Design every state: empty, loading (Skeleton, Button `loading`), validation error, success toast, permission (`disabledReason`), destructive confirm.
 
-## Step 3: Checklist before you finish
-- [ ] No hex/rgb, no default Tailwind palette, no arbitrary `[...]` values. Only `--zm-*` tokens or zehn preset classes.
-- [ ] Only existing components; no new button, badge or input variants.
-- [ ] Shell: 56px top bar with ghost tabs, page header with the accent bar and icon, correct content width (full width for tables/dashboards, 768 for feeds/settings, 896 for detail).
-- [ ] One primary (black) button per view, placed last on the right.
-- [ ] Status badges are tinted with an icon and use the status color meaning, never the app accent.
-- [ ] Forms: labels above, red `*` for required, errors under the field, Cancel + primary in the footer.
-- [ ] Destructive actions open an Alert Dialog.
-- [ ] Works in dark mode (`data-theme="dark"`).
-- [ ] Inter 400/600 only; Remix `-line` icons.
+## Step 3: Before you finish
+The zehn style check runs after every edit and again before you finish (Bash and sed edits included). Fix every line it reports, or mark a user request per rules §8a. Don't finish while it reports issues.
+- [ ] Only the project's tokens; no hex, unlisted Tailwind colors or arbitrary `[...]` values.
+- [ ] Only mapped (or fallback) components; no new component, variant or style. The layout matches the mapped example screen.
+- [ ] Shell: 56px top bar with ghost tabs; list and overview pages have PageHeader + HeaderPattern; detail pages have DetailHeader; width per rules §2.
+- [ ] One primary per surface (rules §4). Accent only in the rules §0 list.
+- [ ] Badges use `status` by meaning. Destructive actions open an AlertDialog.
+- [ ] Copy and formats per rules §8, through the app's formatters (or zehn's `format*`) with the locale.
+- [ ] Works in dark mode.
 
-## When the user asks for something off-system
-Say in one line which rule it breaks and offer the zehn alternative. If they still want it (or said "don't argue"), do it with `zehn-ignore: requested by <who>, <why>` on EVERY line that uses the value (never one ignored constant reused everywhere), and list each override under Design gaps. Never comply silently.
+## Off-system requests
+Follow rules §8a exactly, including for sed, scripts and codemods.
 
-## Step 4: Report design gaps
-End your message with a short **Design gaps** list when there was no Figma design, or when you overrode anything: every decision the rules didn't cover (new pattern, unclear copy, missing state) and every `zehn-ignore` (what, who asked, why), so the designer can review.
-
-## If the codebase has no tokens yet
-Run the `setup-tokens` skill first.
+## Step 4: Design gaps
+Always end with **Design gaps**: every decision the rules didn't cover, every place a lower source lost (`<element>: Figma <value>, used <value> (why)`), every component you built from the catalog, and every `zehn-ignore` (what, who asked, why). Write "Design gaps: none" if there are none.

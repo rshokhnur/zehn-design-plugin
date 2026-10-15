@@ -1,12 +1,14 @@
 # zehn tokens cheat sheet
 
-Files: `tokens/tokens.css` (CSS variables, light + dark + app accents), `tokens/tailwind.preset.cjs` (Tailwind theme: **replaces** colors, radius, font sizes/weights and shadows; **keeps** Tailwind's standard spacing keys), `tokens/tokens.json`, and `tokens/native/` (Swift, Dart, Kotlin).
-All values come from Figma variables. Never hardcode a value that exists here. If something is missing, ask; don't invent.
+In an app with its own theme, use its tokens (`tokens` in `zehn.project.json`; Figma variable → token in `tokens.figmaMap`). The zehn tokens below are the fallback, and their names tell you which role a token plays.
+
+All values come from Figma variables. Never hardcode a value that exists here. Before you call a token missing, check this sheet and the semantic tokens below; if nothing fits, use the nearest token and list it under Design gaps.
+A fallback app gets copies of the token files through setup-project (`src/styles/zehn/`). The originals are in `${CLAUDE_PLUGIN_ROOT}/tokens/`.
 
 ## Setup in an app (once)
-- Import `tokens.css` at the root.
-- Tailwind: see the `setup-tokens` skill (CJS, ESM and v4 snippets).
-- On `<html>`: `data-app="hr"` (picks the accent) and optionally `data-theme="dark"`.
+- setup-project wires `tokens.css` and the Tailwind preset (fallback only). The preset **replaces** colors, radius, font sizes and weights, and shadows; it **keeps** Tailwind's spacing keys.
+- On `<html>`: `data-app` = procurement | intelligence | desk (cyan) · hr | tasks | analytics | edge (orange) · docs (blue) · geo (yellow-green) · edu (edu-green). Without it the accent is cyan.
+- `data-theme="light"|"dark"` forces a theme. Without it the OS setting decides, so a light-only app must set `data-theme="light"`.
 
 ## Use semantic tokens first
 
@@ -15,67 +17,76 @@ All values come from Figma variables. Never hardcode a value that exists here. I
 | Main text | `--zm-text-primary` | `text-text-primary` |
 | Secondary text / labels / meta | `--zm-text-secondary` | `text-text-secondary` |
 | Placeholder / tertiary | `--zm-text-tertiary` | `text-text-tertiary` |
+| Disabled text | `--zm-text-disabled` | `text-text-disabled` |
+| Error text | `--zm-text-danger` | `text-text-danger` |
 | Link | `--zm-text-link` | `text-text-link` |
 | Page background | `--zm-surface-base` | `bg-surface-base` |
 | Canvas behind cards / boards | `--zm-surface-canvas` | `bg-surface-canvas` |
-| Subtle fill (table header, hover, active tab) | `--zm-surface-subtle` | `bg-surface-subtle` |
-| Card / popover | `--zm-surface-raised` | `bg-surface-raised` |
+| Subtle fill (table header, active tab) | `--zm-surface-subtle` | `bg-surface-subtle` |
+| Hover fill (rows, ghost buttons, menu items) | `--zm-surface-hover` | `hover:bg-surface-hover` |
+| Card, modal, drawer | `--zm-surface-raised` | `bg-surface-raised` |
+| Menu / popover panel | `--zm-surface-overlay` | `bg-surface-overlay` |
 | Borders / dividers | `--zm-border-default` | `border-border-default` |
-| Primary button | `--zm-primary-bg` / `--zm-primary-fg` | `bg-primary-bg text-primary-fg` |
-| Secondary button | `--zm-secondary-bg` / `--zm-secondary-fg` | `bg-secondary-bg` |
-| App accent (logo, header bar and icon, first stat card only) | `--zm-app-accent`, `--zm-app-accent-fill` | `text-app-accent`, `bg-app-accent-fill` |
+| Input border | `--zm-border-strong` | `border-border-strong` |
+| Focus border | `--zm-focus-ring` | `focus:border-focus-ring` |
+| Primary button | `--zm-primary-bg` / `-bg-hover` / `-fg` | `bg-primary-bg hover:bg-primary-bg-hover text-primary-fg` |
+| Secondary button | `--zm-secondary-bg` / `-bg-hover` / `-fg` | `bg-secondary-bg text-secondary-fg` |
+| App accent (allowed uses: rules §0) | `--zm-app-accent`, `--zm-app-accent-fill`, `--zm-app-accent-stroke` | `text-app-accent`, `bg-app-accent-fill` |
 | Status | `--zm-status-{success,warning,info,danger,neutral}` + `-bg` | `text-status-success bg-status-success-bg` |
 | AI | `--zm-ai`, `--zm-ai-bg` | `text-ai bg-ai-bg` |
-| Disabled | `--zm-disabled-bg` / `--zm-disabled-fg` | `bg-disabled-bg text-disabled-fg` |
+| Disabled control | `--zm-disabled-bg` / `--zm-disabled-fg` | `bg-disabled-bg text-disabled-fg` |
 | Dialog backdrop (stays dark in dark mode) | `--zm-scrim` | `bg-scrim` |
 | Notification counter (red) | `--zm-counter-bg` / `--zm-counter-fg` | `bg-counter-bg text-counter-fg` |
 | Tooltip | `--zm-tooltip-bg` / `--zm-tooltip-fg` | `bg-tooltip-bg text-tooltip-fg` |
 | Progress bar | `--zm-progress-track` / `--zm-progress-fill` | `bg-progress-track`, `bg-progress-fill` |
-| Charts (in this order; 1–7 keep 3:1 contrast in both themes, 8 needs labels) | `--zm-chart-1..8`, `--zm-chart-positive`, `--zm-chart-negative`, `--zm-chart-grid`, `--zm-chart-axis` | `fill-chart-1`, `stroke-chart-1`… |
+| Segmented Control track | `--zm-bg-segment-track` | `bg-bg-segment-track` |
+| Always white / always black (switch thumb, text on a solid hue) | `--zm-const-white` / `--zm-const-black` | `bg-const-white`, `text-white` |
+| Charts (in this order; 1–7 keep 3:1 contrast, 8 needs labels) | `--zm-chart-1..8`, `-positive`, `-negative`, `-grid`, `-axis` | `fill-chart-1`, `stroke-chart-1`… |
+
+Dark mode: `const-white`, `const-black` and `gray-*` don't flip the way surfaces do. Never use them for surfaces or body text.
 
 ## Primitives (only when no semantic token fits)
-- Each hue has `--zm-{hue}`, `-lighter`, `-darker`, `-stroke`, `-fill-1`, `-fill-2`. Hues: cyan, teal, blue, violet, pink, coral, red, orange, lime, yellow-green, green, edu-green.
-- Grays: `--zm-gray-50…900` (black at alpha; flips to white in dark). `--zm-alpha-50…900` is white at alpha, for use on dark or colored backgrounds.
-- Backgrounds: `--zm-bg-b0`, `-b1`, `-b2`, `-b3`.
-- Action: `--zm-action-bg`, `-bg-hover`, `-text`, `-icon`, `-counter-bg`.
+- Each hue: `--zm-{hue}`, `-lighter`, `-darker`, `-stroke`, `-fill-1`, `-fill-2`. Tailwind: `text-cyan`, `bg-cyan-fill-2`, `border-cyan-stroke`. Hues: cyan, teal, blue, violet, pink, coral, red, orange, lime, yellow-green, green, edu-green. `edu-green` has `-deep` and no `-lighter`; `green` and `yellow-green` add `-bg-strong`.
+- Grays: `--zm-gray-50…900` (black at alpha; flips to white in dark). `--zm-alpha-50…900` is white at alpha, for dark or colored backgrounds.
 
-## Type (Inter; weights 400 `font-normal` and 600 `font-semibold` only)
+## Type (Inter; 400 `font-normal` and 600 `font-semibold` only)
+Every size already includes -0.01em tracking; never add `tracking-*`.
 
-| Token | Size / line height | Typical use |
+| Token | Size / line height | Use |
 |---|---|---|
-| `text-xxs` | 10/12 | tiny tags |
+| `text-xxs` | 10/12 | tiny tags, small counters |
 | `text-xs` | 12/16 | meta, IDs, helper text, table headers |
 | `text-sm` | 14/20 | body default, labels, buttons |
-| `text-base` | 16/24 | lead text, banner titles |
+| `text-base` | 16/24 | lead text, banner and dialog titles |
 | `text-lg` | 18/24 | card titles |
-| `text-xl` | 20/28 | mobile titles |
+| `text-xl` | 20/28 | mobile pushed-screen titles |
 | `text-2xl` | 24/32 | page H1 |
 | `text-3xl` | 30/36 | mobile large titles |
-| `text-4xl` to `text-7xl` | 36 to 72 | marketing only |
+| `text-4xl` to `text-7xl` | 36 to 72 | marketing pages only |
 
 ## Spacing
-zehn values (px): 0 1 2 4 6 8 10 12 16 20 24 32 40 48 64 72 96 128.
-Tailwind uses its **standard keys** (`p-4` = 16px, `gap-3` = 12px). Allowed keys for padding, margin, gap and space: `0 px 0.5 1 1.5 2 2.5 3 4 5 6 8 10 12 16 18 24 32`. Others (`p-7`, `mt-9`, `p-[13px]`) fail the style check.
-Width and height can use any standard key (`h-8` 32, `h-10` 40, `h-14` 56) or the layout keys below.
+Tailwind's standard keys (`p-4` = 16px, `gap-3` = 12px). Allowed keys for padding, margin, gap and space: `0 px 0.5 1 1.5 2 2.5 3 4 5 6 8 10 12 16 18 24 32` (0–128px), plus `64 80 128` (256/320/512px) for section spacing only. Any other key (`p-7`, `mt-9`, `p-[13px]`) fails the style check.
+Width and height can use any standard key (`h-8` 32, `h-10` 40) or the layout keys below.
 
 ## Radius
-`rounded-sm` 2 · `rounded` 4 (web cards, panels, tables, banners, toasts, badges) · `rounded-lg` 8 (buttons, inputs, menus) · `rounded-xl` 12 · `rounded-2xl` 16 (mobile cards) · `rounded-3xl` 24 · `rounded-full`. No `rounded-md`.
+Classes: `rounded-none` 0 · `rounded-sm` 2 · `rounded` 4 · `rounded-lg` 8 · `rounded-xl` 12 · `rounded-2xl` 16 · `rounded-3xl` 24 · `rounded-4xl` 32 · `rounded-full`. No `rounded-md`. Which element gets which: the radius table in rules §1.
 
 ## Shadows
-`shadow-100` (cards), `shadow-200` (popovers, menus), `shadow-300` (modals, drawers), `shadow-mobile`, `shadow-focus` (focus ring). Tailwind's `shadow-sm/md/lg` don't exist.
+`shadow-100`, `shadow-200`, `shadow-300`, `shadow-mobile`, `shadow-focus`. Which element gets which: rules §1. Tailwind's `shadow-sm/md/lg` don't exist.
 
 ## Layout constants (CSS var `--zm-<name>`, Tailwind `w-`/`h-`/`max-w-<name>`)
 | Name | px | Use |
 |---|---|---|
+| (none) | full | tables, boards, builders, dashboards: `px-6`, no max width |
+| `column-narrow` | 768 | feeds, settings, a form page: `max-w-column-narrow mx-auto` |
+| `column-detail` | 896 | detail pages (560 `detail-main` + 16 + 320 `side-panel`) |
 | `topbar-height` | 56 | top bar |
 | `subbar-height` | 64 | builder sub-bar |
 | `gutter` | 24 | page side padding (`px-6`) |
-| `column-narrow` | 768 | feeds, settings: `max-w-column-narrow mx-auto` |
-| `column-detail` | 896 | detail pages (560 `detail-main` + 16 + 320 `side-panel`) |
 | `modal` / `modal-wide` / `modal-xl` | 520 / 600 / 904 | modals |
 | `alert-dialog` | 520 | destructive confirm |
 | `drawer` / `drawer-wide` | 520 / 640 | drawers (wide when it holds a table) |
-| `header-icon` | 32 | page-header icon (box `w-header-icon h-header-icon`, Remix glyph `text-header-icon`) |
+| `header-icon` | 32 | page-header icon box and glyph |
 | `table-header` / `row` / `row-dense` | 36 / 48 / 36 | data tables |
-| `chart-card` / `chart-plot` | 334 / 208 | dashboard chart card height / plot area |
+| `chart-card` / `chart-plot` | 334 / 208 | dashboard chart card / plot area height |
 | `toast` | 432 | toast width |

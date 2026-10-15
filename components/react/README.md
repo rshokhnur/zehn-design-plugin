@@ -1,13 +1,10 @@
 # zehn React components (reference)
 
-Reference implementations of the components in `reference/components.md`: React 18 + TypeScript + Tailwind v3 with the zehn preset. Only `react` is needed, with no other runtime dependencies.
+The zehn React components from the catalog: React 18 + TypeScript + Tailwind 3.4+ with the zehn preset. Only `react` is needed at runtime.
 
 ## Setup
 
-1. Copy this folder into your app as `src/components/zehn/`.
-2. `npm i remixicon` and import `remixicon/fonts/remixicon.css` once.
-3. Add the preset to `tailwind.config` (`presets: [require('./tokens/tailwind.preset.cjs')]`, Tailwind **3.4+**) and include `src/components/zehn/**/*.tsx` in `content`.
-4. Import `tokens/tokens.css` once. Dark mode and per-app accents (`data-app="hr"`) come from its CSS variables.
+These are a fallback. The zehn-design plugin's `setup-project` skill maps the app's own components in `zehn.project.json` and copies here only the ones the app lacks (plus their helpers). Include `src/components/zehn/**/*.tsx` in Tailwind's `content`.
 
 Icons are Remix names without prefix/suffix: `icon="close"` renders `ri-close-line`.
 
@@ -32,6 +29,7 @@ import { Button, Modal, AlertDialog, Input, useToast } from '@/components/zehn';
 <Button variant="primary" leftIcon="add">New request</Button>
 <Button variant="secondary" size="small" leftIcon="add">Add</Button>
 <Button variant="primary" loading={saving}>Save</Button>
+<Button variant="secondary" disabledReason="Only the owner can close this board.">Close board</Button>
 <Button variant="ghost" counter={3}>Inbox</Button>
 
 <Modal
@@ -65,12 +63,12 @@ const id = toast({ type: 'loading', title: 'Uploading…' });
 update(id, { type: 'success', title: 'Uploaded' });
 
 // Locale: wrap the app once (outside ToastProvider). Without it everything is English.
-<ZehnLocaleProvider locale="uz" labels={{ support: 'Yordam markazi' }}>…</ZehnLocaleProvider>
+<ZehnLocaleProvider locale={i18n.language as ZehnLocale} labels={{ support: 'Yordam markazi' }}>…</ZehnLocaleProvider>
 const locale = useZehnLocale();
 formatDate(d, locale);            // 30.06.2026
 formatDateTime(d, locale);        // 30.06.2026 14:27
 formatMoney(24000000, locale);    // en 24,000,000 UZS · ru/uz 24 000 000 UZS (U+00A0)
-formatDuration(ms);               // 14d 3h 22m
+formatDuration(ms, locale);       // 14d 3h 22m
 
 // List/overview page art, behind the content.
 <main className="relative overflow-hidden">
@@ -83,11 +81,13 @@ formatDuration(ms);               // 14d 3h 22m
 
 ## Notes
 
-- Cards (`PanelCard`, `StatCard`, `DataTable`, `RoleBanner`, `Skeleton shape="rect"`) use 4px corners (`rounded`), as in Figma. Buttons, inputs, menus and dialogs keep theirs.
+- Radius per element is in the rules (radius table): cards, banners, toasts, badges and small buttons 4; buttons, inputs and menus 8; modals and alert dialogs 12.
 - Built-in strings (Cancel, Close, Back, Retry, pager and notification labels, sr-only text…) come from `ZehnLocaleProvider` (`en` · `ru` · `uz`). Per-instance props such as `cancelLabel` still win.
 - `Badge` matches Figma: tinted = `bg-{hue}-stroke text-{hue}`, filled = `bg-{hue} text-alpha-900`.
 
 - `Button` uses `variant` (Figma calls it `style`). AI variants add a sparkle icon by default; `leftIcon={null}` removes it.
 - `Menu` takes an `items` array and always moves `destructive` items last, after a divider.
-- `Modal`, `Drawer` and `AlertDialog` render in place (no portal) as `fixed` overlays. They trap focus, close on Escape and return focus to the opener. `AlertDialog` focuses Cancel and ignores scrim clicks.
+- `Modal`, `Drawer` and `AlertDialog` render in place (no portal) as `fixed` overlays. Render them at page level, never inside a card, table or an element with `transform`, `filter` or `overflow-hidden`, or the overlay is clipped and mispositioned. They trap focus, close on Escape and return focus to the opener. `AlertDialog` focuses Cancel and ignores scrim clicks.
+- `disabledReason` on `Button`/`IconButton` keeps the button focusable (`aria-disabled`), ignores clicks and shows the reason in a `Tooltip`. Use it instead of `disabled` when the user should learn why.
+- `RoleBanner tone`: `accent` (the viewer must act), `info`, `warning` (view-only access). `Counter` has no accent color.
 - `ProgressBar` sets its fill width with an inline `style` percentage, because the width is data.

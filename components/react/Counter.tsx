@@ -4,12 +4,12 @@ import { cx } from './cx';
 
 export type CounterSize = 'small' | 'medium' | 'large';
 export type CounterTone = 'tinted' | 'filled';
-export type CounterColor = 'neutral' | 'white' | 'accent' | 'red';
+export type CounterColor = 'neutral' | 'white' | 'red';
 
 export interface CounterProps extends HTMLAttributes<HTMLSpanElement> {
   size?: CounterSize;
   tone?: CounterTone;
-  /** white = on a primary (black) button. red + filled = notification counter. */
+  /** white = on a solid button (Button sets it). red + filled = notification counter. No accent: the app accent never marks counts. */
   color?: CounterColor;
   value: number | string;
   /** Caps the number, e.g. max 99 → "99+". */
@@ -26,13 +26,11 @@ const colors: Record<CounterTone, Record<CounterColor, string>> = {
   tinted: {
     neutral: 'bg-secondary-bg-hover text-text-secondary',
     white: 'bg-action-counter-bg text-primary-fg',
-    accent: 'bg-app-accent-fill text-app-accent',
     red: 'bg-red-fill-2 text-red',
   },
   filled: {
     neutral: 'bg-primary-bg text-primary-fg',
     white: 'bg-primary-fg text-primary-bg',
-    accent: 'bg-app-accent text-white',
     red: 'bg-counter-bg text-counter-fg',
   },
 };

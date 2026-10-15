@@ -1,6 +1,6 @@
 {
   "name": "zehn-design",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Keeps AI coding agents on the zehn design system: tokens from Figma, component catalog, UI/UX rules, a compose-screen skill and an automatic style check.",
   "author": {
     "name": "Shokhnur"

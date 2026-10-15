@@ -1,8 +1,9 @@
 import { forwardRef } from 'react';
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import type { ButtonHTMLAttributes, MouseEvent, ReactElement, ReactNode } from 'react';
 import { cx } from './cx';
 import { Icon, Spinner } from './Icon';
 import { Counter } from './Counter';
+import { Tooltip } from './Tooltip';
 
 export type ButtonVariant =
   | 'primary'
@@ -41,7 +42,17 @@ export const baseButtonClass =
   'relative inline-flex shrink-0 items-center justify-center whitespace-nowrap font-semibold select-none ' +
   'focus-visible:outline-none focus-visible:shadow-focus motion-safe:transition-colors';
 
-export const disabledButtonClass = 'disabled:cursor-not-allowed disabled:bg-disabled-bg disabled:text-disabled-fg';
+export const disabledButtonClass =
+  'disabled:cursor-not-allowed disabled:bg-disabled-bg disabled:text-disabled-fg ' +
+  'aria-disabled:cursor-not-allowed aria-disabled:bg-disabled-bg aria-disabled:text-disabled-fg';
+
+/**
+ * Soft-disabled button with a reason: stays focusable (aria-disabled), ignores clicks and shows the reason
+ * in a Tooltip. A natively disabled button can't take focus, so a Tooltip on it never reaches keyboard users.
+ */
+export function withDisabledReason(button: ReactElement, reason: string | undefined) {
+  return reason ? <Tooltip content={reason}>{button}</Tooltip> : button;
+}
 
 /** Class string for a button-looking element (e.g. an <a> nav tab). */
 export function buttonClass({
@@ -61,26 +72,31 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   counter?: number | string;
   /** Shows a spinner, keeps width and color, disables the button and sets aria-busy. */
   loading?: boolean;
+  /** Use instead of `disabled` to say why the action is unavailable: the button stays focusable and shows this in a Tooltip. */
+  disabledReason?: string;
 }
 
 const renderIcon = (icon: ButtonProps['leftIcon'], size: ButtonSize) =>
   typeof icon === 'string' ? <Icon name={icon} className={size === 'small' ? 'text-sm' : 'text-base'} /> : icon;
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { variant = 'secondary', size = 'medium', leftIcon, rightIcon, counter, loading = false, disabled, className, children, type = 'button', ...rest },
+  { variant = 'secondary', size = 'medium', leftIcon, rightIcon, counter, loading = false, disabled, disabledReason, className, children, type = 'button', onClick, ...rest },
   ref,
 ) {
   const left = leftIcon === undefined && variant.startsWith('ai-') ? 'sparkling-2' : leftIcon;
-  return (
+  const reason = loading ? undefined : disabledReason;
+  return withDisabledReason(
     <button
       ref={ref}
       type={type}
-      disabled={disabled || loading}
+      disabled={(disabled && !reason) || loading}
+      aria-disabled={reason ? true : undefined}
       aria-busy={loading || undefined}
+      onClick={reason ? (e: MouseEvent<HTMLButtonElement>) => e.preventDefault() : onClick}
       className={cx(
         buttonClass({ variant, size }),
         loading ? 'cursor-wait' : disabledButtonClass,
-        variant === 'ghost' && 'disabled:bg-transparent',
+        variant === 'ghost' && 'disabled:bg-transparent aria-disabled:bg-transparent',
         className,
       )}
       {...rest}
@@ -102,6 +118,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
           <Spinner className={size === 'small' ? 'text-sm' : 'text-base'} />
         </span>
       )}
-    </button>
+    </button>,
+    reason,
   );
 });
