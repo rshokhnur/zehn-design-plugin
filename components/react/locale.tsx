@@ -19,6 +19,8 @@ export interface ZehnLabels {
   pagination: string;
   tableControls: string;
   mainNav: string;
+  /** AppSwitcher nav label. */
+  apps: string;
   support: string;
   user: string;
   actions: string;
@@ -52,6 +54,7 @@ export const zehnLabels: Record<ZehnLocale, ZehnLabels> = {
     pagination: 'Pagination',
     tableControls: 'Table controls',
     mainNav: 'Main',
+    apps: 'Apps',
     support: 'Support',
     user: 'User',
     actions: 'Actions',
@@ -73,6 +76,7 @@ export const zehnLabels: Record<ZehnLocale, ZehnLabels> = {
     pagination: 'Страницы',
     tableControls: 'Управление таблицей',
     mainNav: 'Основная навигация',
+    apps: 'Приложения',
     support: 'Поддержка',
     user: 'Пользователь',
     actions: 'Действия',
@@ -94,6 +98,7 @@ export const zehnLabels: Record<ZehnLocale, ZehnLabels> = {
     pagination: 'Sahifalar',
     tableControls: 'Jadval boshqaruvi',
     mainNav: 'Asosiy menyu',
+    apps: 'Ilovalar',
     support: 'Yordam',
     user: 'Foydalanuvchi',
     actions: 'Amallar',

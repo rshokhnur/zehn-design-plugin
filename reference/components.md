@@ -4,7 +4,7 @@ Figma page `UI Elements` (file `ywFHunM35gYeHJozrBJpZO`). Each entry is the spec
 
 **Which component to use:** Use the components mapped in `zehn.project.json` first (their names, imports and props), then the zehn fallback components (`fallback.zehnDir`), then build from the catalog spec with the app's primitives. `components.map` in `zehn.project.json` names the app's component for each catalog entry below, its import, how the props translate, and its `gaps` from Figma. The app's component is the one in use; zehn's only fill gaps. Never rebuild a component, and never make a one-off variant inline.
 
-**Neither mapped nor shipped** (in zehn, these are marked "not in code": Multi-select, OTP Input, Breadcrumbs, MobileTabBar, TaskCard/BoardCard, AI Gradient): build it once in the app's `components.dir` (or `fallback.zehnDir` in a zehn-fallback app) from the spec here, with the app's existing primitives and tokens and in their style, following the closest existing component. List it under Design gaps. Never inline it in a screen.
+**Neither mapped nor shipped** (in zehn, these are marked "not in code": Multi-select, OTP Input, Breadcrumbs, MobileTabBar): build it once in the app's `components.dir` (or `fallback.zehnDir` in a zehn-fallback app) from the spec here, with the app's existing primitives and tokens and in their style, following the closest existing component. List it under Design gaps. Never inline it in a screen.
 
 A mapped or shipped component and a Figma frame differ (radius, padding, color)? Use the component as it is and note it under Design gaps (for a mapped one, its `gaps` entries). Never restyle it to match the frame. Why: one component must look the same on every screen.
 
@@ -14,7 +14,7 @@ Non-React stacks: build each component once in the shared UI folder with these p
 
 ### Button
 Figma: size large 40 · medium 32 · small 24; style (9 variants).
-React: `<Button variant size leftIcon rightIcon counter loading disabled disabledReason still>`. Hover, focus and press feedback (scale 0.96) are automatic; `still` turns press feedback off for dense, high-frequency spots (table row actions, toolbars, pagers).
+React: `<Button variant size leftIcon rightIcon counter loading disabled disabledReason still>`. Theme: switch light/dark with `setTheme()` / `useTheme()` (transitions stay off during the switch). Hover, focus and press feedback (scale 0.96) are automatic; `still` turns press feedback off for dense, high-frequency spots (table row actions, toolbars, pagers).
 - `size`: `large` · `medium` (default) · `small`. Small is radius 4, the others 8.
 - `leftIcon` / `rightIcon`: Remix name or a node. AI variants add a sparkle; `leftIcon={null}` removes it.
 - `loading`: spinner, keeps the width and the variant's color, sets `aria-busy`.
@@ -68,8 +68,8 @@ The top-right art for list and overview pages (never detail pages or modals). Ne
 </main>
 ```
 
-### AI Gradient (Figma only, not in code)
-In code, AI surfaces are flat: `Modal`/`Drawer tone="ai"` for dialogs, `bg-ai-bg` for a panel. Never hand-build a gradient.
+### AI gradient and the assistant orb
+AI surfaces are flat: `Modal`/`Drawer tone="ai"` for dialogs, `bg-ai-bg` for a panel. The only gradient is the intelligence assistant's orb (Figma "zehn/intelligence"): `<Orb state size aria-label>` (`state` default · listening · thinking; `size` launcher 64 · hero 128) and `<OrbLauncher aria-label state onClick>` (fixed bottom-right). Never hand-build a gradient or another orb.
 
 ## Inputs
 
@@ -134,7 +134,9 @@ React: `<Skeleton shape="text|rect|circle">`, sized with `h-`/`w-`. Radius 4 lik
 
 | Component | React | Notes |
 |---|---|---|
-| **TopBar** | `<TopBar app nav={[{label, icon, href, active}]} unreadCount user onNotificationsClick onSupportClick right>` | The whole 56px shell bar. |
+| **TopBar** | `<TopBar app nav={[{label, icon, href, active}]} unreadCount user onNotificationsClick onSupportClick right>` | The whole 56px shell bar. The active tab gets the subtle fill (`buttonClass({ variant: 'ghost', selected })` for your own nav). |
+| **AppSwitcher** | `<AppSwitcher apps={[{id, name, href, icon, badge}]} current version renderLink>` | Cross-module sidebar (240px) in zehn office. Each item takes its own app accent on `/name`; the current one is neutral `surface-subtle`. |
+| **ObjectCard**, **ObjectGrid** | `<ObjectCard title href/onOpen description meta footer menu badge accentBar renderLink>` in `<ObjectGrid>` | Boards, dashboards, projects (Figma Board Card, 389×117, radius 4). The whole card opens the object; `menu` stays clickable; `footer` is display only. `accentBar` = TaskCard's 2px accent top bar. |
 | **PageHeader** | `<PageHeader title subtitle icon actions>` | Action order: rules §2. |
 | **DetailHeader** | `<DetailHeader back={{href, label}} id title meta={[…]} menuItems actions>` | `meta` is joined with ` · `. |
 | **StatCard** | `<StatCard label value delta={{label, status}} highlighted>` | Put 3–5 in `<div className="flex gap-4">`; they grow from a 288px basis. Only the first gets `highlighted`. |
@@ -153,7 +155,6 @@ Which container to pick: rules §3. Modal, Drawer and AlertDialog render in plac
 
 | Pattern | Spec | Follow |
 |---|---|---|
-| **TaskCard / BoardCard** | Figma tasks page: Task Card 264×131 with a 2px accent top bar; Board Card 389×117. Radius 4, 1px border. | `PanelCard` |
 | **MobileTabBar** | Floating 386×64 pill, 5 items max, icon + label per item, active item in the accent. | `SegmentedControl` |
 
 ## Locale

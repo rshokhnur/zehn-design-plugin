@@ -12,6 +12,8 @@ const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zehn-check-'));
 const CASES = [
   // --- must flag ---
   ['tsx', `<div className="bg-blue-500 p-4" />`, true],
+  ['tsx', `<span className="rounded-full bg-ai-gradient blur-3xl" />`, false],
+  ['tsx', `<div className="bg-gradient-to-r from-violet-500 to-pink" />`, true],
   ['tsx', `<span className="uppercase tracking-wide">New</span>`, true],
   ['tsx', `<div className="rounded-full px-4 h-8" onClick={go}>Save</div>`, true],
   ['tsx', `<div onClick={() => open(row)}>{row.name}</div>`, true],

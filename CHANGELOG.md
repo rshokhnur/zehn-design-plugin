@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.2.0 (15.10.2026)
+From the designer's rounds 3 and 4 (the office welcome page, and the task and analytics module pages).
+
+- **TopBar fix:** the active nav tab now shows its subtle fill. The ghost button's transparent background used to win. `buttonClass` has a `selected` option; disabled ghost buttons no longer stack two backgrounds either.
+- **App accents:** office (Cyan, from the Figma logo), meet (Pink, from the Figma product tag), aip (the intelligence assistant, Cyan), `task` as an alias of tasks. anbar and abat stay on the default Cyan until the designer picks theirs.
+- **Assistant orb:** `Orb` (default, listening, thinking) and `OrbLauncher`, from the Figma intelligence frames. Its glow uses the new `bg-ai-gradient` token, the one gradient the rules allow.
+- **Theme switch:** `setTheme()` / `useTheme()` turn transitions off while light and dark swap, so hover colors don't animate across the page.
+- **New patterns:** `AppSwitcher` (the cross-module sidebar in zehn office, active item neutral, each module in its own accent) and `ObjectCard` + `ObjectGrid` (the Figma Board Card, for boards, dashboards and projects).
+- Style check: knows `bg-ai-gradient`.
+
 ## 1.1.0 (15.10.2026)
 From the designer's own test (a Shopify admin screen rebuilt as zehn, plus a date range picker).
 

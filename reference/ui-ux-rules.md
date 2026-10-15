@@ -56,11 +56,14 @@ Anything else is off-system: buttons, badges, counters, links, selection, body t
 
 | App (`data-app` value) | Accent |
 |---|---|
-| procurement, intelligence, desk | `Cyan` |
-| hr, tasks, analytics, edge | `Orange` |
+| procurement, intelligence, aip, desk, office | `Cyan` |
+| hr, tasks (task), analytics, edge | `Orange` |
+| meet | `Pink` |
 | docs | `Blue` |
 | geo | `Yellow-Green` |
 | edu | `Edu Green` (`--zm-edu-green*`) |
+
+A module not in this table (anbar, abat for now) uses the default Cyan until the designer picks its accent; list it under Design gaps. A page that shows several modules (a launcher, an app switcher) sets `data-app` per item, so each `zehn/<app>` takes its own accent.
 
 ## 1. Foundations
 
@@ -82,7 +85,7 @@ Anything else is off-system: buttons, badges, counters, links, selection, body t
 
 - **Shadows:** web cards use a 1px `border-border-default` and no shadow. `shadow-100`: raised controls (segmented thumb, switch thumb). `shadow-200`: tooltips, toasts. `shadow-300`: menus, modals, drawers, alert dialogs. `shadow-focus`: the focus ring.
 - **Primary action:** always `primary` (black in light, white in dark), in **every app**, including docs, geo and edu.
-- **Never pill buttons or inputs, never gradients.** Buttons and inputs use the radius table above. The AI gradient lives only in the AI components.
+- **Never pill buttons or inputs, never gradients.** Buttons and inputs use the radius table above. The AI gradient (`bg-ai-gradient`) lives only in the assistant `Orb`.
 
 ## 1a. Craft details
 Small things the components can't do for you:
@@ -112,6 +115,8 @@ Use the app's own shell. These are the zehn defaults for a new app or a screen w
   - Everything else (card feeds, inbox rows, settings, a form on a page) → 768 centered (`max-w-column-narrow mx-auto`).
 
 - **Narrow screens:** no sideways scroll down to 1024px wide (or the app's minimum). Card and stat rows wrap (`flex-wrap` or a responsive grid); top-bar nav that doesn't fit moves into a `…` Menu; tables scroll inside their container, not the page.
+- **Cross-module navigation** (zehn office: moving between modules): `AppSwitcher`, a 240px sidebar list, active item neutral. A module's own pages keep their TopBar tabs.
+- **Grids of objects** (boards, dashboards, projects): `ObjectCard` in `ObjectGrid`, full width. The whole card opens the object; its `…` menu stays separately clickable.
 - **Which app:** use the `data-app` the repo already sets. A new area that isn't one of the zehn apps: ask; until answered, use the closest app and list it under Design gaps.
 
 ## 3. Screen types (default recipes)
@@ -208,7 +213,7 @@ Use the components mapped in `zehn.project.json` first, then the zehn fallback c
 ## 7. AI
 
 - In-app AI actions: `ai-primary` / `ai-secondary` (pink, sparkle icon by default). AI dialogs: `Modal`/`Drawer tone="ai"` (flat `bg-ai-bg` header). An AI panel uses `bg-ai-bg`. No gradient ships in code, so never hand-build one.
-- The zehn intelligence assistant uses the orb (default / listening / thinking), a 64px launcher bottom-right, and accent send button and chat bubbles. Don't use the orb anywhere else.
+- The zehn intelligence assistant uses `Orb` (`state` default / listening / thinking) and `OrbLauncher` (64px, bottom-right), plus the accent send button and chat bubbles. The orb is the one place a gradient is allowed. Don't use it anywhere else, and never rebuild it by hand.
 
 ## 8. Copy and formatting
 

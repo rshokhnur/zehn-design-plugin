@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { cx } from './cx';
 import { Icon } from './Icon';
 import { buttonClass } from './Button';
 import { IconButton } from './IconButton';
@@ -44,7 +43,7 @@ export function TopBar({ app, homeHref = '/', nav, unreadCount = 0, onNotificati
             key={item.href}
             href={item.href}
             aria-current={item.active ? 'page' : undefined}
-            className={buttonClass({ variant: 'ghost', className: cx('gap-1.5', item.active && 'bg-surface-subtle') })}
+            className={buttonClass({ variant: 'ghost', selected: item.active, className: 'gap-1.5' })}
           >
             {item.icon && <Icon name={item.icon} className="text-base" />}
             {item.label}

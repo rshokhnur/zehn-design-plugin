@@ -29,6 +29,14 @@ export const variantClasses: Record<ButtonVariant, string> = {
   'destructive-secondary': 'bg-red-fill-2 hover:bg-red-stroke text-red',
 };
 
+/** Ghost in its selected state (the active nav tab): the fill replaces bg-transparent instead of fighting it. */
+export const ghostSelectedClass = 'bg-surface-subtle hover:bg-surface-hover text-text-primary';
+
+/** Variant colors, with `selected` swapping the ghost background. Other variants ignore `selected`. */
+export function variantClass(variant: ButtonVariant, selected = false) {
+  return selected && variant === 'ghost' ? ghostSelectedClass : variantClasses[variant];
+}
+
 /** Solid variants get the light-on-dark Counter tint. */
 export const solidVariants: ButtonVariant[] = ['primary', 'color-primary', 'ai-primary', 'destructive-primary'];
 
@@ -51,6 +59,17 @@ export const disabledButtonClass =
   'disabled:cursor-not-allowed disabled:bg-disabled-bg disabled:text-disabled-fg ' +
   'aria-disabled:cursor-not-allowed aria-disabled:bg-disabled-bg aria-disabled:text-disabled-fg';
 
+/** Ghost stays transparent when disabled, so it gets its own set rather than a second, conflicting disabled:bg-*. */
+const ghostDisabledClass =
+  'disabled:cursor-not-allowed disabled:bg-transparent disabled:text-disabled-fg ' +
+  'aria-disabled:cursor-not-allowed aria-disabled:bg-transparent aria-disabled:text-disabled-fg';
+
+/** Disabled styles for a variant; `loading` keeps the colors and shows a wait cursor. */
+export function disabledClassFor(variant: ButtonVariant, loading = false) {
+  if (loading) return variant === 'ghost' ? 'cursor-wait disabled:bg-transparent' : 'cursor-wait';
+  return variant === 'ghost' ? ghostDisabledClass : disabledButtonClass;
+}
+
 /**
  * Soft-disabled button with a reason: stays focusable (aria-disabled), ignores clicks and shows the reason
  * in a Tooltip. A natively disabled button can't take focus, so a Tooltip on it never reaches keyboard users.
@@ -59,14 +78,19 @@ export function withDisabledReason(button: ReactElement, reason: string | undefi
   return reason ? <Tooltip content={reason}>{button}</Tooltip> : button;
 }
 
-/** Class string for a button-looking element (e.g. an <a> nav tab). `press` adds the press scale; off by default. */
+/**
+ * Class string for a button-looking element (e.g. an <a> nav tab). `press` adds the press scale; off by default.
+ * `selected` gives a ghost its filled state (active nav tab); pair it with aria-current or aria-pressed.
+ * Don't pass a bg-* in `className` to change the fill: cx doesn't merge Tailwind classes, so it would fight the variant's.
+ */
 export function buttonClass({
   variant = 'secondary',
   size = 'medium',
   press = false,
+  selected = false,
   className,
-}: { variant?: ButtonVariant; size?: ButtonSize; press?: boolean; className?: string } = {}) {
-  return cx(baseButtonClass, sizeClasses[size], variantClasses[variant], press ? buttonPressMotion : buttonColorMotion, className);
+}: { variant?: ButtonVariant; size?: ButtonSize; press?: boolean; selected?: boolean; className?: string } = {}) {
+  return cx(baseButtonClass, sizeClasses[size], variantClass(variant, selected), press ? buttonPressMotion : buttonColorMotion, className);
 }
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -104,8 +128,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       onClick={reason ? (e: MouseEvent<HTMLButtonElement>) => e.preventDefault() : onClick}
       className={cx(
         buttonClass({ variant, size, press }),
-        loading ? 'cursor-wait' : disabledButtonClass,
-        variant === 'ghost' && 'disabled:bg-transparent aria-disabled:bg-transparent',
+        disabledClassFor(variant, loading),
         className,
       )}
       {...rest}

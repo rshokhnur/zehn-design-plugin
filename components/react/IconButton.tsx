@@ -2,7 +2,7 @@ import { forwardRef } from 'react';
 import type { ButtonHTMLAttributes, MouseEvent } from 'react';
 import { cx } from './cx';
 import { Icon, Spinner } from './Icon';
-import { baseButtonClass, buttonColorMotion, buttonPressMotion, disabledButtonClass, variantClasses, withDisabledReason } from './Button';
+import { baseButtonClass, buttonColorMotion, buttonPressMotion, disabledClassFor, variantClasses, withDisabledReason } from './Button';
 import type { ButtonSize, ButtonVariant } from './Button';
 
 export interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'aria-label'> {
@@ -44,8 +44,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
         sizes[size],
         variantClasses[variant],
         press ? buttonPressMotion : buttonColorMotion,
-        loading ? 'cursor-wait' : disabledButtonClass,
-        variant === 'ghost' && 'disabled:bg-transparent aria-disabled:bg-transparent',
+        disabledClassFor(variant, loading),
         className,
       )}
       {...rest}

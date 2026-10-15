@@ -46,7 +46,7 @@ Exits run faster and quieter than enters. Nothing in product UI goes over 300ms.
 - **Expanding content** (accordion, "show more"): don't animate `height`. Use `grid-template-rows: 0fr → 1fr` or a fade of the content; or open instantly.
 - **Icon swap** (copy → check, play → pause): cross-fade with scale 0.3 → 1 (+ a 2–3px blur if the stack allows), base duration, no bounce. Copy-to-clipboard shows the check for about 1.5s.
 - **Loading:** Skeleton (pulse) for lists and cards, spinner only inside buttons (`loading`). Both stop under reduced motion. A wait over 400ms needs one of them.
-- **Theme switch:** turn transitions off while swapping light/dark (e.g. a `disable-transitions` class for one frame, or `disableTransitionOnChange` in next-themes).
+- **Theme switch:** turn transitions off while swapping light/dark. zehn: `setTheme()` / `useTheme()` do it; next-themes: `disableTransitionOnChange`; otherwise one shared helper that suppresses transitions for a frame. Never per page.
 - **Hover-only motion** (a lift, a reveal): only on real pointers (`@media (hover: hover) and (pointer: fine)`), and animate a child so the hover area doesn't move.
 
 ## 4. Hard rules (the style check flags these)

@@ -30,6 +30,9 @@ For the live Figma part, connect the Figma MCP in Claude Code (works with a Dev 
 Devs: `/plugin marketplace update zehn`, then run setup-project again (it keeps your `zehn.project.json` and only adds or fixes entries).
 Designer, after Figma changes: re-export the variables to `tokens/source/figma_vars.json`, run `python3 scripts/gen-tokens.py`, edit `reference/*.md` if rules changed and run `scripts/build-skill.sh`, run `node tests/check-ui.test.js` and `bash tests/build-skill.test.sh`, bump `version` in `.claude-plugin/plugin.json`, push.
 
+## Upgrading to 1.2
+`/plugin marketplace update zehn`. Apps that copied zehn's components: run setup-project again to pick up the TopBar fix and the new `Orb`, `AppSwitcher`, `ObjectCard` and `setTheme`.
+
 ## Upgrading to 1.1
 Nothing to run: `/plugin marketplace update zehn`. Layout rules are now defaults (see CHANGELOG.md), and shared-folder edits show a note instead of an error.
 
@@ -73,4 +76,5 @@ Run "set up zehn for this project" again: it adds `motion`, `i18n` and (if your 
 - Confirm the edge accent (Orange in the plugin; the edge logo in Figma says "tasks").
 - Confirm the small (24px) button radius: the code ships 4 (`rounded`), the other sizes 8.
 - Confirm menus use `Drop Shadow/300` (the code ships `shadow-300`).
-- Build or approve specs for the Figma-only components: Multi-select, OTP Input, Breadcrumbs, MobileTabBar, TaskCard/BoardCard.
+- Build or approve specs for the Figma-only components: Multi-select, OTP Input, Breadcrumbs, MobileTabBar.
+- Pick accents for anbar and abat (they use Cyan until then). office (Cyan) and meet (Pink) come from Figma; confirm them.

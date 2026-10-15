@@ -74,7 +74,12 @@ SEM = [(s[0], s[1], s[2] if len(s) > 2 else None) for s in SEM]
 RAW_SEM = [("scrim", "rgb(0 0 0 / 0.4)", "rgb(0 0 0 / 0.6)")]
 
 APPS = {"procurement": "cyan", "intelligence": "cyan", "desk": "cyan", "hr": "orange", "tasks": "orange",
-        "analytics": "orange", "edge": "orange", "docs": "blue", "geo": "yellow-green", "edu": "edu-green"}
+        "analytics": "orange", "edge": "orange", "docs": "blue", "geo": "yellow-green", "edu": "edu-green",
+        # office: Figma logo "/office" in cyan; meet: Figma ProductTag "Meet" in Pink/default; aip = the intelligence assistant; task = tasks
+        "office": "cyan", "meet": "pink", "aip": "cyan", "task": "orange"}
+
+# The assistant orb's glow (Figma "zehn/intelligence": angular gradient, 6 stops, layer blur 100). Only the Orb component uses it.
+AI_GRADIENT = "conic-gradient(from 0deg, #37cdce 0%, #3ae1b1 20%, #e1e64b 47%, #e28673 68%, #dc6da5 84%, #884ebb 100%)"
 
 LAYOUT = {"topbar-height": 56, "gutter": 24, "column-narrow": 768, "column-detail": 896, "detail-main": 560,
           "side-panel": 320, "modal": 520, "modal-wide": 600, "modal-xl": 904, "drawer": 520, "drawer-wide": 640,
@@ -145,6 +150,7 @@ for k, v in DURATION.items():
 for k, v in EASE.items():
     L.append(f"  --zm-ease-{k}: {v};")
 L.append(f"  --zm-press-scale: {PRESS_SCALE};")
+L.append(f"  --zm-ai-gradient: {AI_GRADIENT};")
 L.append("}")
 L.append("@media (prefers-reduced-motion: reduce) {\n  :root {" + "".join(f" --zm-duration-{k}: 0ms;" for k in DURATION) + " --zm-press-scale: 1; }\n}")
 L.append("[data-theme=\"dark\"] {\n  color-scheme: dark;")
@@ -184,6 +190,7 @@ preset = {
         "extend": {
             "spacing": {"18": "72px", "128": "512px"},
             "scale": {"press": "var(--zm-press-scale)"},
+            "backgroundImage": {"ai-gradient": "var(--zm-ai-gradient)"},
             "maxWidth": sizes, "width": sizes, "height": sizes, "minHeight": sizes, "minWidth": sizes,
         },
     }

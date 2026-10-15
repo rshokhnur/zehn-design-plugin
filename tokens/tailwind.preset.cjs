@@ -320,6 +320,9 @@ module.exports = {
       "scale": {
         "press": "var(--zm-press-scale)"
       },
+      "backgroundImage": {
+        "ai-gradient": "var(--zm-ai-gradient)"
+      },
       "maxWidth": {
         "topbar-height": "56px",
         "gutter": "24px",

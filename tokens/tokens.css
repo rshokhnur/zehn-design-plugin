@@ -254,6 +254,7 @@
   --zm-ease-in-out: cubic-bezier(0.645, 0.045, 0.355, 1);
   --zm-ease-in: cubic-bezier(0.55, 0.055, 0.675, 0.19);
   --zm-press-scale: 0.96;
+  --zm-ai-gradient: conic-gradient(from 0deg, #37cdce 0%, #3ae1b1 20%, #e1e64b 47%, #e28673 68%, #dc6da5 84%, #884ebb 100%);
 }
 @media (prefers-reduced-motion: reduce) {
   :root { --zm-duration-fast: 0ms; --zm-duration-base: 0ms; --zm-duration-slow: 0ms; --zm-press-scale: 1; }
@@ -508,4 +509,8 @@
 [data-app="docs"] { --zm-app-accent: var(--zm-blue); --zm-app-accent-stroke: var(--zm-blue-stroke); --zm-app-accent-fill: var(--zm-blue-fill-2); }
 [data-app="geo"] { --zm-app-accent: var(--zm-yellow-green); --zm-app-accent-stroke: var(--zm-yellow-green-stroke); --zm-app-accent-fill: var(--zm-yellow-green-fill-2); }
 [data-app="edu"] { --zm-app-accent: var(--zm-edu-green); --zm-app-accent-stroke: var(--zm-edu-green-stroke); --zm-app-accent-fill: var(--zm-edu-green-fill-2); }
+[data-app="office"] { --zm-app-accent: var(--zm-cyan); --zm-app-accent-stroke: var(--zm-cyan-stroke); --zm-app-accent-fill: var(--zm-cyan-fill-2); }
+[data-app="meet"] { --zm-app-accent: var(--zm-pink); --zm-app-accent-stroke: var(--zm-pink-stroke); --zm-app-accent-fill: var(--zm-pink-fill-2); }
+[data-app="aip"] { --zm-app-accent: var(--zm-cyan); --zm-app-accent-stroke: var(--zm-cyan-stroke); --zm-app-accent-fill: var(--zm-cyan-fill-2); }
+[data-app="task"] { --zm-app-accent: var(--zm-orange); --zm-app-accent-stroke: var(--zm-orange-stroke); --zm-app-accent-fill: var(--zm-orange-fill-2); }
 html { font-family: var(--zm-font-sans); letter-spacing: var(--zm-tracking); color: var(--zm-text-primary); background: var(--zm-surface-base); }

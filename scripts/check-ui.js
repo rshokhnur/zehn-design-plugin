@@ -52,6 +52,7 @@ function closestVar(name, known = KNOWN_VARS) {
 }
 const PRESET = (() => { try { return require('../tokens/tailwind.preset.cjs'); } catch { return null; } })();
 // Color keys in the preset (so we can tell a real color class from one that renders nothing).
+const BG_IMAGES = (() => { try { return new Set(Object.keys(PRESET.theme.extend.backgroundImage || {})); } catch { return new Set(); } })();
 const COLOR_KEYS = (() => { try { return new Set(Object.keys(PRESET.theme.colors)); } catch { return null; } })();
 const themeKeys = (k, dflt) => { try { return new Set(Object.keys(PRESET.theme[k]).map((x) => (x === 'DEFAULT' ? '' : x))); } catch { return new Set(dflt); } };
 const ZEHN_RADIUS_KEYS = themeKeys('borderRadius', ['none', 'sm', '', 'lg', 'xl', '2xl', '3xl', '4xl', 'full']);
@@ -463,6 +464,7 @@ function deadColorClasses(line, kind, push) {
     const base = m[1].startsWith('border') ? 'border' : m[1];
     const val = m[2];
     if (NON_COLOR[base] && NON_COLOR[base].test(val)) continue;
+    if (base === 'bg' && BG_IMAGES.has(val)) continue;
     if (m[1] !== 'border' && /^border-/.test(m[1]) && /^\d+$/.test(val)) continue;
     if (CTX.colors.has(val)) continue;
     if (!inClassContext(line, m.index, kind)) continue;

@@ -15,11 +15,12 @@ Icons are Remix names without prefix/suffix: `icon="close"` renders `ri-close-li
 | Actions | `Button`, `IconButton`, `Counter` |
 | Display | `Badge`, `Avatar`, `AvatarGroup`, `EmptyState`, `Skeleton`, `ProgressBar`, `Tooltip`, `HeaderPattern` |
 | Inputs | `Input`, `Textarea`, `Select`, `Checkbox`, `Radio`, `Switch` |
-| Navigation | `SegmentedControl`, `Menu`, `FilterChips` |
+| Navigation | `SegmentedControl`, `Menu`, `FilterChips`, `AppSwitcher` |
 | Feedback | `ToastProvider` / `useToast`, `Modal`, `Drawer`, `AlertDialog` |
-| Layout | `TopBar`, `PageHeader`, `DetailHeader`, `StatCard`, `PanelCard`, `DataTable`, `Toolbar` + `Pager`, `InfoChip`, `ActivityFeed` + `ActivityItem`, `RoleBanner` |
+| Layout | `TopBar`, `PageHeader`, `DetailHeader`, `StatCard`, `PanelCard`, `DataTable`, `Toolbar` + `Pager`, `InfoChip`, `ActivityFeed` + `ActivityItem`, `RoleBanner`, `ObjectCard` + `ObjectGrid` |
+| AI | `Orb`, `OrbLauncher` (intelligence assistant only) |
 | i18n | `ZehnLocaleProvider`, `useZehnLabels`, `useZehnLocale`, `formatDate`, `formatDateTime`, `formatMoney`, `formatNumber`, `formatDuration` |
-| Helpers | `cx`, `Icon`, `buttonClass`, `useControllable`, `useDialog`, `usePresence`, `motionMs` |
+| Helpers | `cx`, `Icon`, `buttonClass`, `useControllable`, `useDialog`, `usePresence`, `motionMs`, `setTheme`, `useTheme`, `RenderLink` |
 
 ## Usage
 
@@ -92,6 +93,69 @@ formatDuration(ms, locale);       // 14d 3h 22m
 - `RoleBanner tone`: `accent` (the viewer must act), `info`, `warning` (view-only access). `Counter` has no accent color.
 - `ProgressBar` positions its fill with an inline `style` transform percentage, because the value is data.
 
+- `buttonClass({ variant: 'ghost', selected })` is the filled ghost (active nav tab); `TopBar` uses it with `aria-current="page"`. Never pass a `bg-*` through `className` to change a variant's fill: `cx` doesn't merge Tailwind classes, so both backgrounds end up in the class list and the variant's usually wins. (This was why the active TopBar tab never showed its fill.)
+
+## Orb
+
+The zehn intelligence assistant's orb: an ai-gradient sphere with a blurred glow. Only for the assistant (rules §7); the one place a gradient is allowed.
+
+```tsx
+<Orb state="thinking" size="hero" aria-label="zehn intelligence is thinking" />
+<OrbLauncher aria-label="Ask zehn intelligence" onClick={openAssistant} aria-expanded={open} />
+```
+
+- `state`: `default` (glow the size of the core), `listening` (glow grows ~1.5× and pulses), `thinking` (glow grows and turns). The glow grows with a transform (slow, ease-in-out); the pulse and turn are `motion-safe:` loops, so they stop under reduced motion.
+- `size`: `launcher` (64px) or `hero` (128px). Without `aria-label` the orb is hidden from screen readers (use that when text next to it names it).
+- `OrbLauncher` is a real `<button>`, fixed `bottom-6 right-6`, `z-40` (under modals, drawers and toasts). `aria-label` is required.
+
+## Theme
+
+```tsx
+setTheme('dark');                      // 'light' | 'dark' | 'system' (system removes data-theme)
+const [theme, setTheme] = useTheme();  // persisted to localStorage 'zehn-theme'
+```
+
+Transitions are switched off for the one frame of the switch, so hover fades don't animate the page into the new colors. `useTheme` starts as `'system'` and reads storage after mount (SSR safe); to avoid a flash on load, also set `data-theme` from storage in an inline `<head>` script.
+
+## AppSwitcher
+
+Cross-module list (zehn office): a 240px column, one row per module as `zehn/<name>`, each row in its own app accent (`data-app` per item).
+
+```tsx
+<AppSwitcher
+  current="office"
+  version="v2.4.0"
+  apps={[
+    { id: 'office', name: 'office', href: '/office', icon: 'building-2' },
+    { id: 'meet', name: 'meet', href: '/meet', icon: 'video-chat', badge: 'Beta' },
+  ]}
+  renderLink={({ href, ...p }) => <Link to={href} {...p} />}
+/>
+```
+
+The current app gets the neutral `bg-surface-subtle` fill, its `-fill` icon and `aria-current="page"`, never the accent fill. `badge` is a violet Badge. Rows are links, so the keyboard order is the normal tab order.
+
+## ObjectCard
+
+Card for grids of boards, dashboards and projects (Figma BoardCard): radius 4, 1px border, `bg-surface-raised`.
+
+```tsx
+<ObjectGrid>
+  <ObjectCard
+    title="Q3 procurement"
+    href="/boards/12"
+    description="Spend and approvals by department."
+    meta="4 widgets · Updated 05.08.2026"
+    footer={<AvatarGroup … />}
+    menu={<Menu trigger={<IconButton icon="more-2" aria-label="Actions for Q3 procurement" />} items={…} />}
+  />
+</ObjectGrid>
+```
+
+- The title is the link (`href`, through `renderLink`) or a button (`onOpen`); its `::after` covers the card, so the whole card is clickable and the focus ring wraps the card. The `menu` sits above it and stays clickable. `footer` content is under the overlay, so keep it non-interactive.
+- `accentBar` adds a 2px app-accent bar on top (task cards). Hover darkens the border (fast).
+- `ObjectGrid`: 1 column, 2 from `sm`, 3 from `xl`, gap 16.
+
 ## Motion
 
 Only `transform` and `opacity` animate (plus color on hover). Durations and easings come from the motion tokens: `duration-fast` (150ms), `duration-base` (200ms), `duration-slow` (300ms), `ease-out` for enters, `ease-in` for exits, `ease-in-out` for on-screen moves, `scale-press` (0.96).
@@ -109,6 +173,8 @@ Only `transform` and `opacity` animate (plus color on hover). Durations and easi
 | `SegmentedControl` | Selection changes instantly. |
 | `ProgressBar` | Fill moves with a transform, base + ease-out. |
 | `Skeleton`, spinners | Pulse and spin; both stop under reduced motion. |
+| `Orb` | Glow grows on listening/thinking (slow, ease-in-out); pulses while listening, turns while thinking. Loops stop under reduced motion. |
+| `AppSwitcher`, `ObjectCard` | Colors only (fast). |
 
 - `still` on `Button` / `IconButton` drops the press scale. Use it in dense, high-frequency UI: table row actions, toolbars, pagers. `DataTable` row actions and the `Pager` already use it.
 - Reduced motion: the duration tokens become 0ms and the press scale 1, so everything changes instantly. Exits unmount at once (the wait is a timeout read from the token, not `transitionend`).
