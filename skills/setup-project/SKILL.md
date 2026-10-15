@@ -51,6 +51,8 @@ Tell the user to commit it: everyone who opens the repo is then prompted to enab
       "Modal": { "component": "Dialog", "import": "@/components/ui/dialog", "props": {}, "gaps": [] }
     }
   },
+  "app": { "id": "procurement", "accent": "cyan" },
+  "decisions": {},
   "screens": { "table list": "src/app/requests/page.tsx", "detail": "src/app/requests/[id]/page.tsx" },
   "motion": { "library": "framer-motion", "durations": [150, 200, 300], "easings": { "out": "--ease-out" }, "reducedMotion": "global" },
   "i18n": { "library": "react-i18next", "locales": ["en", "ru", "uz"] },
@@ -65,6 +67,9 @@ Tell the user to commit it: everyone who opens the repo is then prompted to enab
 - `tokens.figmaMap`: each Figma variable the designs use → their token.
 - `components.map`: each catalog component (`${CLAUDE_PLUGIN_ROOT}/reference/components.md`) → their component, its import, how the catalog props map to theirs, and `gaps` (every style difference from the Figma component). Leave a catalog component out when they have none.
 - `screens`: screen type → the best existing example file. Agents copy its layout.
+- `app`: which zehn app this repo is (`id`, as in `data-app`) and its accent (rules §0). For a module with no accent in the rules (anbar, abat, a new one), ask the developer which accent to use (AskUserQuestion: Cyan recommended, then two or three free hues such as Violet, Coral, Teal) and save it. With zehn tokens, also add `[data-app="<id>"] { --zm-app-accent: var(--zm-<hue>); --zm-app-accent-stroke: var(--zm-<hue>-stroke); --zm-app-accent-fill: var(--zm-<hue>-fill-2); }` to the app's global CSS; with their own tokens, map the accent token.
+- `decisions`: answers to forks agents asked the developer (rules, "Ask the developer"). Start empty; agents add to it.
+- Several equally good mappings (two Button components, two theme files)? Ask the developer which is the real one instead of guessing.
 - `motion`: `library` (`css`, `tailwind`, `framer-motion`, `motion`, `react-spring`); `durations` (allowed ms; leave out to use zehn's 150/200/300); `easings` (role → their token); `reducedMotion`: `"global"` if handled once at the root, else `"per-component"`. If they have no motion tokens and use Tailwind with zehn tokens, the zehn ones apply. Don't add a motion library.
 - `i18n`: their library and locales, or `null`. With `null`, agents write English and list it as a gap, and zehn formatters default to `en`.
 - On an update, keep the file and only add or fix entries.

@@ -490,6 +490,19 @@ const OWN_COMPONENTS = /components\/(zehn|react)\//;
 function inComponentLibrary(file) {
   return OWN_COMPONENTS.test(file) || inside(path.resolve(file), CTX.dirs);
 }
+// Inside the shared folder, raw elements belong only to the components that wrap them (Button.tsx, Input.tsx, the
+// zehn components, the mapped ones). A new shared component builds on those, so moving markup there doesn't dodge the check.
+const ZEHN_SHIPPED = (() => { try { return new Set(fs.readdirSync(path.join(PLUGIN_ROOT, 'components/react')).map((f) => f.replace(/\.[^.]+$/, '').toLowerCase())); } catch { return new Set(); } })();
+const PRIMITIVE_OWNER = /^(button|icon-?button|input|text-?input|textarea|select|checkbox|radio|radio-?group|switch|toggle|field|form-?field|dialog|modal|alert-?dialog|drawer|sheet|menu|dropdown(-?menu)?|popover|tooltip|segmented-?control|tabs?|toast|pager|pagination|data-?table|table|toolbar|filter-?chips?|top-?bar|nav)$/i;
+function primitiveOwner(file) {
+  const abs = path.resolve(file);
+  if (abs.startsWith(PLUGIN_ROOT + path.sep)) return true;
+  const base = path.basename(abs).replace(/\.[^.]+$/, '');
+  if (base.toLowerCase() === 'index') return true;
+  if (PRIMITIVE_OWNER.test(base) || ZEHN_SHIPPED.has(base.toLowerCase())) return true;
+  const map = (CTX.project && CTX.project.map) || {};
+  return Object.values(map).some((e) => e && ((e.import && path.basename(String(e.import)).toLowerCase() === base.toLowerCase()) || String(e.component || '').toLowerCase() === base.toLowerCase()));
+}
 const use = (name, zehn) => (mapped(name) ? `Use ${mapped(name)} (zehn.project.json).` : `Use the app's ${name} (see zehn.project.json) or the zehn ${zehn}.`);
 const PRIMITIVES = [
   [/<button\b/g, () => `Raw <button>. ${use('Button', 'Button / IconButton aria-label')} Clickable table row → the table's row click. Tooltip on a disabled action → Button disabledReason.`],
@@ -503,6 +516,27 @@ function rawPrimitives(line, push) {
     re.lastIndex = 0;
     let m;
     while ((m = re.exec(line))) push(m.index, m[0], 'raw-primitive', msg());
+  }
+}
+
+// Restyling a component through className: <Button className="bg-… rounded-full">. Visual classes fight the
+// component's own (cx doesn't merge Tailwind classes) and fork its look. Layout classes (margin, width, flex) are fine.
+const STYLED = ['Button', 'IconButton', 'Badge', 'Input', 'Select', 'Textarea', 'Avatar', 'Counter', 'Checkbox', 'Radio', 'Switch', 'Tooltip', 'SegmentedControl'];
+const VISUAL_CLASS = new RegExp(`(?<![\\w-])${V}(?:bg-(?!clip|origin|fixed|local|scroll|repeat|no-repeat|cover|contain|center)[\\w-]+|text-(?!left|center|right|justify|start|end|wrap|nowrap|balance|pretty|ellipsis|clip)[\\w-]+|border-(?!0\\b|x\\b|y\\b)[a-z][\\w-]*|rounded(?:-[\\w-]+)?|shadow(?:-[\\w-]+)?|font-[\\w-]+|ring-[a-z][\\w-]*|p[xytrbl]?-[\\d.]+|h-[\\d.]+|opacity-\\d+)(?![\\w-])`, 'g');
+function restyledComponents(line, push) {
+  const names = new Set(STYLED);
+  if (CTX.project) for (const e of Object.values(CTX.project.map || {})) if (e && e.component) names.add(String(e.component));
+  const re = /<([A-Z][\w.]*)\b[^>]*?\bclassName=(?:"([^"]*)"|'([^']*)'|\{`([^`]*)`\}|\{\s*(?:cx|cn|clsx)\(([^)]*)\))/g;
+  let m;
+  while ((m = re.exec(line))) {
+    const name = m[1].split('.').pop();
+    if (!names.has(name)) continue;
+    const cls = m[2] || m[3] || m[4] || m[5] || '';
+    // round IconButtons and avatars are on-system
+    const hits = (cls.match(VISUAL_CLASS) || []).filter((c) => !(/(?:^|:)rounded-full$/.test(c) && /^(IconButton|Avatar)$/.test(name)));
+    if (!hits.length) continue;
+    push(m.index, `<${name} className="${hits.join(' ')}"`, 'restyled-component',
+      `Don't restyle ${name} through className: visual classes fight the component's own and fork its look. Pick a variant or size; if none fits, it's a gap (or a new variant in the shared component, with sign-off). Layout classes (margin, width, flex, grid) are fine.`);
   }
 }
 
@@ -764,7 +798,8 @@ function checkLine(line, file, prev = '', ctx = contextFor(file), back = () => p
     }
     deadColorClasses(line, kind, push);
     importantClasses(line, push);
-    if (kind === 'web' && !inComponentLibrary(file)) rawPrimitives(line, push);
+    if (kind === 'web' && (!inComponentLibrary(file) || !primitiveOwner(file))) rawPrimitives(line, push);
+    if (kind === 'web' && !inComponentLibrary(file)) restyledComponents(line, push);
     if (!/^\s*(\/\/|\*|\/\*)/.test(line)) cssPx(line, push, kind, back);
     motionRules(line, kind, push);
   } else {

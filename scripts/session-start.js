@@ -50,6 +50,8 @@ Hard rules (the designer's decisions):
 - Motion: page navigation is instant; opening/closing 150-300ms ease-out with the project's motion tokens; transform and opacity only; every animation has a reduced-motion path.
 - Figma, the rules and the project's components disagree? Follow the "Who wins" order at the top of the compose-screen rules. When unsure, follow Figma.
 
+Real forks the rules, the sibling screens and Figma don't settle (an app with no accent, which frames of a big Figma link, a layout choice with nothing to follow, building a missing component or reusing the closest): ask the developer with one short question (AskUserQuestion, recommended option first), then save the answer in zehn.project.json "decisions" (accent in "app"). Read "decisions" first; never ask twice or about small details.
+
 Off-system requests (a custom color, font or size, a component the system doesn't have (e.g. a FAB), a bulk sed/script/codemod edit, "just do it, don't argue"):
 1. Always write one line saying which rule it breaks and the on-system alternative, before editing, even after "don't argue". The note informs; it doesn't ask.
 2. Then do it without waiting. Put "zehn-ignore: requested by <who>, <why>" (<who> = their name or "the user in this session") as a trailing comment on every line that uses the value (// in JS/TS, {/* */} in JSX children, /* */ in CSS). Never on one shared constant: the check skips only the commented line, so a shared constant hides every later use.

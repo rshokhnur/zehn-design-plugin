@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.0 (15.10.2026)
+From the designer's round 5 (zehn/task built from Figma) and their call: "if there are choices, ask them".
+
+- **Ask at real forks:** when nothing decides it, the agent asks the developer one short question with a recommended pick, instead of guessing. The forks: an app with no accent, which frames of a big Figma link, a layout with no sibling or Figma to follow, building a missing component vs reusing the closest, and two equally good mappings in setup. Answers are saved in `zehn.project.json` (`app`, `decisions`), so nobody is asked twice. Small details are never asked.
+- **App accents per repo:** anbar, abat and new modules get their accent from the developer during setup, saved in `app`.
+- **Big Figma links:** compose-screen lists the frames and asks which to build, then reads them one at a time.
+- **Style check:** raw `<button>`/`<input>`/`<select>` inside the shared folder are allowed only in the components that wrap them, so moving markup there no longer dodges the check. Restyling a component through `className` (colors, radius, padding, height, font) is flagged; layout classes are fine.
+- **Rules:** user-picked data colors (board and label colors) may use the hue tokens; new shared components are built from the existing ones.
+
 ## 1.2.0 (15.10.2026)
 From the designer's rounds 3 and 4 (the office welcome page, and the task and analytics module pages).
 

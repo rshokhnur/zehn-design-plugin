@@ -13,6 +13,9 @@ const CASES = [
   // --- must flag ---
   ['tsx', `<div className="bg-blue-500 p-4" />`, true],
   ['tsx', `<span className="rounded-full bg-ai-gradient blur-3xl" />`, false],
+  ['tsx', `<Button variant="secondary" className="bg-violet rounded-full">Pick</Button>`, true],
+  ['tsx', `<Button variant="primary" className="ml-auto w-full sm:w-auto">Save</Button>`, false],
+  ['tsx', `<IconButton icon="close-line" aria-label="Close" className="rounded-full" />`, false],
   ['tsx', `<div className="bg-gradient-to-r from-violet-500 to-pink" />`, true],
   ['tsx', `<span className="uppercase tracking-wide">New</span>`, true],
   ['tsx', `<div className="rounded-full px-4 h-8" onClick={go}>Save</div>`, true],
@@ -267,9 +270,14 @@ let projectCases = 0;
   const fb = path.join(dir, 'fb');
   fs.mkdirSync(path.join(fb, 'src/components/zehn'), { recursive: true });
   fs.writeFileSync(path.join(fb, 'zehn.project.json'), JSON.stringify({ tokens: { sources: [] }, components: { dir: 'src/ui', map: {} }, fallback: { zehnTokens: true, zehnDir: 'src/components/zehn' } }));
-  const fz = path.join(fb, 'src/components/zehn/Thing.tsx'); fs.writeFileSync(fz, '<button className="bg-primary-bg rounded-lg p-4" style={{ color: "var(--zm-text-primary)" }} />\n');
+  const fz = path.join(fb, 'src/components/zehn/Button.tsx'); fs.writeFileSync(fz, '<button className="bg-primary-bg rounded-lg p-4" style={{ color: "var(--zm-text-primary)" }} />\n');
   projectCases++;
   if (spawnSync('node', [CHECK, fz], { encoding: 'utf8' }).status !== 0) { fail++; console.log('FAIL project: fallback zehn tokens / zehnDir not honored'); }
+  // Inside the shared folder, raw elements belong to the components that wrap them; a new shared component builds on those.
+  const sw = path.join(fb, 'src/components/zehn/SwatchPicker.tsx'); fs.writeFileSync(sw, '<input type="radio" className="bg-primary-bg" />\n<button className="rounded-lg" />\n');
+  projectCases++;
+  const swr = spawnSync('node', [CHECK, sw], { encoding: 'utf8' });
+  if (swr.status === 0 || (swr.stdout.match(/raw-primitive/g) || []).length < 1) { fail++; console.log('FAIL project: raw elements in a new shared component were not flagged\n' + swr.stdout); }
 }
 
 // Gate: outside zehn apps the hooks stay silent; inside they run.

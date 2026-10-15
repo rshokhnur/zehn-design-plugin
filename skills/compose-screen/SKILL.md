@@ -20,11 +20,12 @@ When sources disagree, follow "Who wins" at the top of the rules. When unsure, f
 
 ## Step 1: Context
 1. **Read `zehn.project.json`** at the app root: the components, tokens and example screens to use. Missing → run `setup-project` before anything else.
-2. **Which app?** (procurement, hr, tasks, docs, edge, analytics, geo, intelligence, edu, desk). It sets `data-app` and the accent. If you can't tell, ask.
+2. **Which app?** `app` in `zehn.project.json`, else the repo's `data-app`. It sets the accent. Still unclear: ask the developer (rules, "Ask the developer"). Read `decisions` there too: forks already answered.
 3. **Figma design?** Look for a figma.com link in the task, ticket or PR description.
 4. **Platform:** web (1440 desktop) or mobile (edu, desk: 402 iOS).
 
 ## Step 2a: With a Figma link
+0. **A big link** (a page, a section, or a frame with many screens): don't pull the whole thing. Call `get_metadata` on it, list its top-level frames (name and node id), and ask the developer which ones to build (one question, options = frame groups, the core flow recommended). Save the answer under `decisions`. Then read only those frames, one at a time.
 1. Load figma:figma-design-to-code as it requires, then read the exact node (`get_design_context`, `get_screenshot`). Where that skill conflicts with this one, this one wins: no downloaded icons, header art or component images (use the app's icon set and mapped components, and `HeaderPattern` where the app has no header art), and no generated styles (map every value to the project's token through `tokens.figmaMap`). Why: downloaded assets are frozen copies that don't follow dark mode, the app accent or later redesigns. Download only real photos or illustrations that exist nowhere else.
 2. Treat the generated code as a reference only. Map each element to a mapped component and each value to a project token. Never paste raw styles.
 3. Copy the page structure of the example screen mapped for this screen type (`screens`) and fill it with the frame's content. Build what the frame shows for this task; frames often show extra states or actions, so ask or list them under Suggestions before building them.
@@ -34,8 +35,9 @@ When sources disagree, follow "Who wins" at the top of the rules. When unsure, f
 1. Look at the sibling screens in this app first. Then pick the screen type, the create/edit container (rules §3) and the content width (rules §2) as defaults where the siblings don't decide.
 2. Copy the layout of the example screen mapped for that type (`screens` in `zehn.project.json`), or the closest existing screen. Match the sibling screens: their shell, header, cards or list, and widths come first. The zehn recipes are defaults; deviate when the content or the developer calls for it, with a `Layout: <what>, <why>` line under Design gaps.
 3. Use the components mapped in `zehn.project.json` first (their names, imports and props), then the zehn fallback components (`fallback.zehnDir`), then build from the catalog spec with the app's primitives. List the mapping's `gaps` for each component you use under Design gaps. Never invent a component, variant or style; if one is truly needed, build it once from their primitives in their style (catalog intro) and list it.
-4. Design every state of what was asked: empty, loading (Skeleton, Button `loading`), validation error, success toast, permission (`disabledReason`), destructive confirm. States, yes; new features, no: extra actions, filters, stats or statuses go under Suggestions (rules, project map 5).
-5. Motion: only what the mapped components already do, plus the `motion` skill patterns where something opens, closes or changes. Page navigation is instant.
+4. A real fork the siblings and Figma don't settle (container, cards or table, a missing component: build or reuse)? Ask the developer once, recommended option first, and save the answer under `decisions`.
+5. Design every state of what was asked: empty, loading (Skeleton, Button `loading`), validation error, success toast, permission (`disabledReason`), destructive confirm. States, yes; new features, no: extra actions, filters, stats or statuses go under Suggestions (rules, project map 5).
+6. Motion: only what the mapped components already do, plus the `motion` skill patterns where something opens, closes or changes. Page navigation is instant.
 
 ## Step 3: Before you finish
 The zehn style check runs after every edit and again before you finish (Bash and sed edits included). Fix every line it reports, or mark a user request per rules §8a. Don't finish while it reports issues.
@@ -80,6 +82,17 @@ Two kinds of rules live here:
 - **Hard rules (always):** the project's tokens and styling (color, radius, type, shadow, spacing, motion), its mapped components and nothing invented, primary always black, the accent list (§0), copy and formats (§8), a confirm before destructive actions (§5), accessibility (§5a). The style check enforces most of these.
 - **Layout defaults (adapt to context):** the shell (top bar or sidebar), page and detail headers, HeaderPattern, stat-card rows, cards vs list vs table, content widths, modal vs drawer, screen recipes (§2, §3). Follow the app's existing screens first, then the Figma frames for that app, then these defaults. Deviate when the content calls for it (a settings area with many sections, a dense ops tool, an embedded widget) or the developer asks: no pushback, no `zehn-ignore`, just one `Layout: <what>, <why>` line under Design gaps. Keep every real navigation item; never drop items to fit a pattern.
 
+## Ask the developer at real forks
+
+When the work forks and nothing here decides it, ask the developer in the session instead of guessing: one question with 2–4 short options and your recommended pick first (Claude Code's AskUserQuestion tool; in other agents a short question). Ask only at these forks:
+1. **An app with no accent** (a module not in §0, e.g. anbar, abat): which accent. Asked once in setup-project.
+2. **A big Figma link** (a page or section with many frames): which frames to build.
+3. **A layout fork** with no sibling screen and no Figma frame to follow (e.g. modal or drawer, table or cards).
+4. **A component the library lacks:** build it once from their pieces, or reuse the closest existing one.
+5. **Several equally good mappings** in setup-project (two Button components, two token files).
+
+Don't ask about anything the rules, the siblings or Figma already decide, or about small details: pick and list them under Design gaps. Save each answer in `zehn.project.json` under `decisions` (e.g. `"decisions": { "date-range picker": "reuse Select with presets" }`; the accent goes in `app`), so nobody is asked twice. Read `decisions` before asking. If the developer can't be asked (a headless run), take the recommended option and list it under Design gaps.
+
 ## Who wins
 
 When two sources disagree on anything (a value, a component, a layout), walk this list from the top and stop at the first one that decides:
@@ -111,7 +124,7 @@ Each app has **one accent color**. The accent tells you which app you're in; it 
 6. MobileTabBar active item
 7. the intelligence chat send button and bubbles
 
-Anything else is off-system: buttons, badges, counters, links, selection, body text, "recommended" or highlighted cards. Use Neutral or a status color there. The Switch "on" color is Cyan in every app; it's a component color, not the accent.
+Anything else is off-system: buttons, badges, counters, links, selection, body text, "recommended" or highlighted cards. Colors the user picks for their own data (board, label or calendar colors) may use the hue tokens (`violet`, `coral`, `teal`…, their `-fill`/`-stroke`); they're data, not the accent. Use Neutral or a status color there. The Switch "on" color is Cyan in every app; it's a component color, not the accent.
 
 | App (`data-app` value) | Accent |
 |---|---|
@@ -122,7 +135,7 @@ Anything else is off-system: buttons, badges, counters, links, selection, body t
 | geo | `Yellow-Green` |
 | edu | `Edu Green` (`--zm-edu-green*`) |
 
-A module not in this table (anbar, abat for now) uses the default Cyan until the designer picks its accent; list it under Design gaps. A page that shows several modules (a launcher, an app switcher) sets `data-app` per item, so each `zehn/<app>` takes its own accent.
+A module not in this table (anbar, abat, any new one) has no accent yet: ask the developer once which one to use (see "Ask the developer"), recommending Cyan unless the designer named one, and save it in `zehn.project.json` `app`. A page that shows several modules (a launcher, an app switcher) sets `data-app` per item, so each `zehn/<app>` takes its own accent.
 
 ## 1. Foundations
 
@@ -176,7 +189,7 @@ Use the app's own shell. These are the zehn defaults for a new app or a screen w
 - **Narrow screens:** no sideways scroll down to 1024px wide (or the app's minimum). Card and stat rows wrap (`flex-wrap` or a responsive grid); top-bar nav that doesn't fit moves into a `…` Menu; tables scroll inside their container, not the page.
 - **Cross-module navigation** (zehn office: moving between modules): `AppSwitcher`, a 240px sidebar list, active item neutral. A module's own pages keep their TopBar tabs.
 - **Grids of objects** (boards, dashboards, projects): `ObjectCard` in `ObjectGrid`, full width. The whole card opens the object; its `…` menu stays separately clickable.
-- **Which app:** use the `data-app` the repo already sets. A new area that isn't one of the zehn apps: ask; until answered, use the closest app and list it under Design gaps.
+- **Which app:** `app` in `zehn.project.json`, else the `data-app` the repo already sets. Neither, or a new area that isn't a zehn app: ask the developer (see "Ask the developer").
 
 ## 3. Screen types (default recipes)
 
@@ -208,7 +221,7 @@ Starting points, not requirements. Match the sibling screens first; pick the rec
 
 ## 4. Components
 
-Use the components mapped in `zehn.project.json` first, then the zehn fallback components (`fallback.zehnDir`), then build from the catalog spec with the app's primitives. Never rebuild a Button, Badge, Input, Avatar, Menu, Toast or Empty State. Button variants and their uses: see the catalog, Button.
+Use the components mapped in `zehn.project.json` first, then the zehn fallback components (`fallback.zehnDir`), then build from the catalog spec with the app's primitives. Never rebuild a Button, Badge, Input, Avatar, Menu, Toast or Empty State. A new shared component is built from the existing ones too (a swatch picker from Radio, breadcrumbs from links and Icon): raw `<button>`/`<input>` belong only in the components that wrap them. Never restyle a component through `className` (colors, radius, padding, height, font); pick a variant or size, or list the missing variant under Design gaps. Layout classes (margin, width, flex) are fine. Button variants and their uses: see the catalog, Button.
 
 - **One `primary` per surface.** A page, a modal, a drawer and an alert dialog each count separately. Web: last on the right. Mobile: the full-width bottom CTA. Approve (`color-primary`) and the destructive confirm (`destructive-primary`) replace the primary; they don't add to it.
 - **Status badges** (`Badge status=…`, always tinted with an icon; never the accent):

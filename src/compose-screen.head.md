@@ -20,11 +20,12 @@ When sources disagree, follow "Who wins" at the top of the rules. When unsure, f
 
 ## Step 1: Context
 1. **Read `zehn.project.json`** at the app root: the components, tokens and example screens to use. Missing → run `setup-project` before anything else.
-2. **Which app?** (procurement, hr, tasks, docs, edge, analytics, geo, intelligence, edu, desk). It sets `data-app` and the accent. If you can't tell, ask.
+2. **Which app?** `app` in `zehn.project.json`, else the repo's `data-app`. It sets the accent. Still unclear: ask the developer (rules, "Ask the developer"). Read `decisions` there too: forks already answered.
 3. **Figma design?** Look for a figma.com link in the task, ticket or PR description.
 4. **Platform:** web (1440 desktop) or mobile (edu, desk: 402 iOS).
 
 ## Step 2a: With a Figma link
+0. **A big link** (a page, a section, or a frame with many screens): don't pull the whole thing. Call `get_metadata` on it, list its top-level frames (name and node id), and ask the developer which ones to build (one question, options = frame groups, the core flow recommended). Save the answer under `decisions`. Then read only those frames, one at a time.
 1. Load figma:figma-design-to-code as it requires, then read the exact node (`get_design_context`, `get_screenshot`). Where that skill conflicts with this one, this one wins: no downloaded icons, header art or component images (use the app's icon set and mapped components, and `HeaderPattern` where the app has no header art), and no generated styles (map every value to the project's token through `tokens.figmaMap`). Why: downloaded assets are frozen copies that don't follow dark mode, the app accent or later redesigns. Download only real photos or illustrations that exist nowhere else.
 2. Treat the generated code as a reference only. Map each element to a mapped component and each value to a project token. Never paste raw styles.
 3. Copy the page structure of the example screen mapped for this screen type (`screens`) and fill it with the frame's content. Build what the frame shows for this task; frames often show extra states or actions, so ask or list them under Suggestions before building them.
@@ -34,8 +35,9 @@ When sources disagree, follow "Who wins" at the top of the rules. When unsure, f
 1. Look at the sibling screens in this app first. Then pick the screen type, the create/edit container (rules §3) and the content width (rules §2) as defaults where the siblings don't decide.
 2. Copy the layout of the example screen mapped for that type (`screens` in `zehn.project.json`), or the closest existing screen. Match the sibling screens: their shell, header, cards or list, and widths come first. The zehn recipes are defaults; deviate when the content or the developer calls for it, with a `Layout: <what>, <why>` line under Design gaps.
 3. Use the components mapped in `zehn.project.json` first (their names, imports and props), then the zehn fallback components (`fallback.zehnDir`), then build from the catalog spec with the app's primitives. List the mapping's `gaps` for each component you use under Design gaps. Never invent a component, variant or style; if one is truly needed, build it once from their primitives in their style (catalog intro) and list it.
-4. Design every state of what was asked: empty, loading (Skeleton, Button `loading`), validation error, success toast, permission (`disabledReason`), destructive confirm. States, yes; new features, no: extra actions, filters, stats or statuses go under Suggestions (rules, project map 5).
-5. Motion: only what the mapped components already do, plus the `motion` skill patterns where something opens, closes or changes. Page navigation is instant.
+4. A real fork the siblings and Figma don't settle (container, cards or table, a missing component: build or reuse)? Ask the developer once, recommended option first, and save the answer under `decisions`.
+5. Design every state of what was asked: empty, loading (Skeleton, Button `loading`), validation error, success toast, permission (`disabledReason`), destructive confirm. States, yes; new features, no: extra actions, filters, stats or statuses go under Suggestions (rules, project map 5).
+6. Motion: only what the mapped components already do, plus the `motion` skill patterns where something opens, closes or changes. Page navigation is instant.
 
 ## Step 3: Before you finish
 The zehn style check runs after every edit and again before you finish (Bash and sed edits included). Fix every line it reports, or mark a user request per rules §8a. Don't finish while it reports issues.
