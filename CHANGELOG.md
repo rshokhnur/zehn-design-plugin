@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.4.0 (15.10.2026)
+From the PC thread's 1.2.0 round in the team repo (verdict: go).
+
+- **Theme edits are noted:** changing a token file or the Tailwind config (the project's `tokens.sources`, `tokens.css`, `theme.*`, `tailwind.config.*`) shows a once-per-file "token change, designer sign-off needed" note, and the end-of-task check lists them.
+- **Check gaps closed:** `tracking-*` is flagged in repos with their own tokens too (unless `tokens.trackingKeys` lists it); clickable `<div>`s and restyled Buttons are caught when the tag spans several lines.
+- **setup-project:** adapts copied zehn components to the repo's own motion tokens, i18n labels and theme; re-checks the team's components against component fixes in this changelog (like the 1.2.0 TopBar active tab) and reports them for sign-off.
+- **ObjectCard:** `title` takes a node, so module cards can show the `zehn/<app>` wordmark in the app accent.
+- Tests: the design-system note shows the right folder on macOS (temp folders behind a symlink).
+
 ## 1.3.0 (15.10.2026)
 From the designer's round 5 (zehn/task built from Figma) and their call: "if there are choices, ask them".
 

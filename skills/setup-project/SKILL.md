@@ -89,6 +89,11 @@ List these as Design gaps in your message: Figma variables with no token, catalo
 - **Partial tokens** (e.g. colors but no spacing scale): ask the user before adding anything; add only the missing pieces.
 - **React + Tailwind, no component for a catalog entry:** copy just that zehn component from `components/react/` into `src/components/zehn/` (plus the files it imports: `cx.ts`, `Icon.tsx`, `hooks.ts`, `locale.tsx`, `format.ts`), trim `index.ts` to what you copied, and set `"fallback.zehnDir": "src/components/zehn"`. Copy `format.ts` for `formatDate`/`formatMoney` if the app has no formatters.
 - **Not React, or React without Tailwind** (CSS Modules, styled-components, MUI, shadcn with its own theme): never copy the zehn components; they're Tailwind and need the zehn preset. For a missing catalog component, the agent builds it later from the catalog spec with their primitives, in their styling.
+- **Adapt what you copy to the repo** (in the copies, never in the plugin):
+  - Motion: if the app has its own duration and easing tokens, replace `duration-fast|base|slow` and `ease-out|in-out|in` with theirs (`motion.durations`, `motion.easings`). If it has none, add just the `--zm-duration-*`, `--zm-ease-*` and `--zm-press-scale` lines (with the reduced-motion block) from `tokens/tokens.css` to their global CSS and the matching `transitionDuration`/`transitionTimingFunction`/`scale` keys to their Tailwind theme.
+  - Labels: with an app i18n, pass its strings through `<ZehnLocaleProvider labels={…}>` (keys in `locale.tsx`) instead of zehn's built-in en/ru/uz.
+  - Colors and radius classes the copy uses must exist in their theme; map them through `tokens.figmaMap` and list any that don't under the gaps.
+  - Keep `zehn.project.json` current: when you copy a component later, remove it from any "not copied" note.
 - zehn's React components need `<ZehnLocaleProvider locale={…}>` (locale from the app's i18n, never a literal) and, if they use toasts, `<ToastProvider>` inside it.
 
 ## 5. Install the zehn tokens (fallback only)
@@ -105,6 +110,9 @@ Copy `tokens/tokens.css` and `tokens/tailwind.preset.cjs` to `src/styles/zehn/` 
 - Native: copy the matching file from `tokens/native/` (`ZehnTokens.swift`, `zehn_tokens.dart`, `ZehnTokens.kt`) into the theme folder.
 
 The preset replaces Tailwind's colors, radius, type and shadows, so install it only when the app has no theme. Then run `node "${CLAUDE_PLUGIN_ROOT}/scripts/check-ui.js" $(git ls-files 'src/**')` and report the counts by rule.
+
+## 5a. Known fixes to re-check
+On an update, read the plugin's `CHANGELOG.md` for component fixes since the last setup (e.g. 1.2.0: the TopBar active tab lost its fill because a ghost button's transparent background won over the active one). Check the app's mapped components for the same bug and report each one as a gap for designer sign-off; don't edit them unless the user asks.
 
 ## 6. Finish
 Run the style check on one existing screen to confirm the map: `node "${CLAUDE_PLUGIN_ROOT}/scripts/check-ui.js" <screen>`. Its issues should be real drift, not missing map entries; fix the map until they are. Tell the user to commit `zehn.project.json` (and `.claude/settings.json` if you changed it).

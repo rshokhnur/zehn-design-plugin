@@ -72,7 +72,7 @@ zehn is a guardrails layer over the app's own design system. `zehn.project.json`
 3. Copy the layout of the example screen mapped for the screen type (`screens`), or the closest existing screen.
 4. Never invent a component, variant or style. If one is truly needed, build it from their existing primitives in their style and list it under Design gaps.
 5. **Build only what was asked.** No extra actions, filters, stats, pagers, statuses or chips on neighbouring screens. Ideas go under **Suggestions** in your message, not in the code. Keep the data meaning the user gave you (withdraw sets a status, it doesn't delete). Why: the designer and the team decide scope; extra UI is drift too.
-6. **Don't edit the shared components** (`components.dir` and the mapped imports) to restyle one screen. A change there changes every screen: only when the user asked for it, and list it under Design gaps as "design-system change, designer sign-off needed". The style check flags every edit there.
+6. **Don't edit the shared components** (`components.dir` and the mapped imports) **or the theme** (token files, Tailwind config) to restyle one screen. Never add a token to hold a one-off value. A change there changes every screen: only when the user asked for it, and list it under Design gaps as "design-system change, designer sign-off needed". The style check flags every edit there.
 
 zehn class names and `--zm-*` tokens in these rules describe the zehn fallback (used when `fallback.zehnTokens` is true). In an app with its own tokens, read them as "the project's token for this Figma variable". The rules themselves (widths, order, which element gets which radius, formats) apply either way.
 

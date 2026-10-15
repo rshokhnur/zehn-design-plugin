@@ -4,7 +4,8 @@ import { defaultRenderLink } from './link';
 import type { RenderLink } from './link';
 
 export interface ObjectCardProps {
-  title: string;
+  /** Text or a node, e.g. a `zehn/<app>` wordmark: <>zehn<span className="text-app-accent">/task</span></>. */
+  title: ReactNode;
   /** Where the card goes. Pass `href` (a link) or `onOpen` (a button), not both. */
   href?: string;
   onOpen?: () => void;

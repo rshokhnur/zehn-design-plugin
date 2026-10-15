@@ -13,6 +13,10 @@ const CASES = [
   // --- must flag ---
   ['tsx', `<div className="bg-blue-500 p-4" />`, true],
   ['tsx', `<span className="rounded-full bg-ai-gradient blur-3xl" />`, false],
+  ['tsx', `<div\n  className="flex"\n  onClick={go}\n>x</div>`, true],
+  ['tsx', `<div\n  role="button"\n  onClick={go}\n/>`, false],
+  ['tsx', `<Button\n  variant="secondary"\n  className="bg-violet"\n>Pick</Button>`, true],
+  ['tsx', `<Button\n  variant="secondary"\n  className="mt-4 w-full"\n>Pick</Button>`, false],
   ['tsx', `<Button variant="secondary" className="bg-violet rounded-full">Pick</Button>`, true],
   ['tsx', `<Button variant="primary" className="ml-auto w-full sm:w-auto">Save</Button>`, false],
   ['tsx', `<IconButton icon="close-line" aria-label="Close" className="rounded-full" />`, false],

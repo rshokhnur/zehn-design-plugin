@@ -196,6 +196,7 @@ function buildProject(root, j) {
     radiusPx: new Set([...RADIUS, ...nums(radiusList)]), fontPx: new Set([...FONT_SIZE, ...nums(textList)]),
     durations: Array.isArray(motion.durations) ? motion.durations.filter((n) => typeof n === 'number') : null,
     reducedGlobal: motion.reducedMotion === 'global',
+    trackingKeys: new Set(arr(t.trackingKeys)),
   };
 }
 const ZEHN_MODE = { project: null, zehnTokens: true, colors: COLOR_KEYS, spaceKeys: TW_SPACE_KEYS, dirs: [], fileVars: new Set(),
@@ -314,6 +315,7 @@ const MSG = {
   weightFn: () => (CTX.project && !sameSet(CTX.weights, ZEHN_WEIGHTS) ? `Off-scale font weight. The project's weights: ${[...CTX.weights].join(' ')}.` : MSG.weight),
   gradient: () => (CTX.project ? 'Gradients are off-system. Use a flat color token from the project.' : 'Gradients are off-system: zehn ships none. Use a flat surface token; AI surfaces are flat bg-ai-bg or the ai-* variants.'),
   pill: () => (CTX.project ? 'Pill buttons/inputs are off-system: use the project\'s button/input radius.' : 'Pill buttons/inputs are off-system: buttons and inputs use 8px corners (rounded-lg).'),
+  tokenEdit: (f) => `You changed the theme (${f}). New or changed tokens change every screen: only when the user asked for it, reuse an existing token if one is close, and list each one under Design gaps as "token change, designer sign-off needed". Never add a token just to hold a one-off value.`,
   dsEdit: (dir) => `You changed the shared design system (${dir}). That's allowed when the user asked for it or when you build a missing catalog component there; list it under Design gaps as "design-system change, designer sign-off needed". Never restyle a shared component for one screen.`,
   transitionAll: 'Name the properties (transition-colors, transition-opacity, transition-transform); transition: all animates layout and color by accident.',
   slow: (ms) => (CTX.durations
@@ -416,8 +418,9 @@ const WEB_RULES = [
     ok: (line, i, kind, m) => CTX.spaceKeys.has(m[1]) },
   // Radius, text size and weight run in every mode: the allowed keys are zehn's, or the project's (tokens.radiusKeys /
   // fontSizeKeys / fontWeights, plus keys its Tailwind config or theme sources declare).
-  { id: 'tracking', zehnScale: true, msg: 'zehn sets the -1% letter spacing in the preset; remove tracking-*.', cls: true,
-    re: new RegExp(`(?<![\\w-])${V}tracking-(?:tighter|tight|normal|wide|wider|widest)(?![\\w-])`, 'g') },
+  { id: 'tracking', msg: () => (CTX.project && !CTX.zehnTokens ? 'Letter spacing comes from the type styles; remove tracking-* (or list the key in zehn.project.json tokens.trackingKeys if the theme defines it).' : 'zehn sets the -1% letter spacing in the preset; remove tracking-*.'), cls: true,
+    re: new RegExp(`(?<![\\w-])${V}tracking-(tighter|tight|normal|wide|wider|widest)(?![\\w-])`, 'g'),
+    ok: (line, i, kind, m) => !!(CTX.project && CTX.project.trackingKeys && CTX.project.trackingKeys.has(m[1])) },
   { id: 'div-click', msg: 'Clickable things are a <button> (the project\'s Button or IconButton) or a link, never a <div>/<span> with onClick: those aren\'t keyboard-reachable.',
     re: /<(?:div|span|li|img)\b(?=[^>]*\bonClick=)(?![^>]*\brole=)[^>]*/g,
     // a scrim behind a dialog, a click-catcher that only stops propagation, a label that mirrors a real control
@@ -538,6 +541,34 @@ function restyledComponents(line, push) {
     push(m.index, `<${name} className="${hits.join(' ')}"`, 'restyled-component',
       `Don't restyle ${name} through className: visual classes fight the component's own and fork its look. Pick a variant or size; if none fits, it's a gap (or a new variant in the shared component, with sign-off). Layout classes (margin, width, flex, grid) are fine.`);
   }
+}
+
+// JSX tags split over lines: an onClick or className line whose tag opened on an earlier line.
+function openTagBefore(file, lines, i) {
+  const fl = lines[i].n > 0 ? fileLines(path.resolve(file)) : null;
+  const before = fl ? fl.slice(Math.max(0, lines[i].n - 12), lines[i].n - 1) : lines.slice(Math.max(0, i - 12), i).map((l) => l.text);
+  for (let k = before.length - 1; k >= 0; k--) {
+    const t = before[k];
+    if (/\/?>\s*$|^\s*<\/|\)\s*;?\s*$/.test(t) && !/<[A-Za-z]/.test(t)) return null; // passed the end of an earlier tag
+    const m = /<([A-Za-z][\w.]*)\b(?![^<]*>)[^<]*$/.exec(t);
+    if (m) return { name: m[1], text: before.slice(k).join(' ') };
+  }
+  return null;
+}
+function multiLineTags(lines, file, push) {
+  lines.forEach((l, i) => {
+    const t = l.text;
+    if (/zehn-ignore/.test(t) || /<[A-Za-z]/.test(t) || /^\s*(\/\/|\*)/.test(t)) return;
+    const click = /\bonClick=/.test(t);
+    const cls = /\bclassName=/.test(t);
+    if (!click && !cls) return;
+    const tag = openTagBefore(file, lines, i);
+    if (!tag) return;
+    const whole = tag.text + ' ' + t;
+    if (click && /^(div|span|li|img)$/.test(tag.name) && !/\brole=|aria-hidden|stopPropagation/.test(whole))
+      push(l.n, `<${tag.name} … onClick`, 'div-click', WEB_RULES.find((r) => r.id === 'div-click').msg);
+    if (cls && !inComponentLibrary(file)) restyledComponents(`<${tag.name} ${t.trim()}`, (idx, txt, id, msg) => push(l.n, txt, id, msg));
+  });
 }
 
 // Project mode: a new component outside the design-system folders that duplicates a mapped one. It fires only when
@@ -723,7 +754,8 @@ function designSystemDir(file) {
   const dir = existingDir(path.dirname(abs));
   if (!dir || abs.startsWith(PLUGIN_ROOT + path.sep) || pluginRepo(dir)) return null;
   const proj = findProject(dir);
-  const rootOf = (d) => path.relative(proj ? proj.root : gitRoot(dir) || dir, d).split(path.sep).join('/') || '.';
+  const real = (x) => { try { return fs.realpathSync(x); } catch { return x; } };
+  const rootOf = (d) => path.relative(real(proj ? proj.root : gitRoot(dir) || dir), real(d)).split(path.sep).join('/') || '.';
   if (proj) { const d = proj.dirs.find((x) => inside(abs, [x])); if (d) return rootOf(d); }
   const z = /^(.*[\\/]components[\\/]zehn)[\\/]/.exec(abs);
   return z ? rootOf(z[1]) : null;
@@ -846,6 +878,9 @@ function checkLines(lines, file, opts = {}) {
     }
   });
   CTX = ctx; FILE = file;
+  if (kind === 'web') multiLineTags(lines, file, (n, t, id, msg) => {
+    if (!probs.some((p) => p.line === n && p.id === id)) probs.push({ file, line: n, id, text: t, msg });
+  });
   if (kind === 'web' || kind === 'css') {
     const rm = reducedMotion(lines, file);
     if (rm) probs.push({ file, line: rm.line, id: 'reduced-motion', text: rm.text.trim(), msg: rm.msg });
@@ -916,6 +951,10 @@ function hookMode(raw) {
   const ti = input.tool_input || {};
   const rawFile = ti.file_path || ti.path || '';
   const file = rawFile && input.cwd ? path.resolve(input.cwd, rawFile) : rawFile;
+  if (tokenSource(file) && gated(file, input.cwd)) {
+    if (firstNotice(input.session_id, file)) process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PostToolUse', additionalContext: `zehn design system: ${MSG.tokenEdit(path.basename(file))}` } }));
+    process.exit(0);
+  }
   if (skipped(file)) process.exit(0);
   if (!gated(file, input.cwd)) process.exit(0); // not a zehn app: stay silent
   const lines = changedLines(input);
@@ -944,6 +983,17 @@ function hookMode(raw) {
   const ctxText = [noteText, ignores ? `You added ${ignores} zehn-ignore override(s) in ${path.basename(file)}. Your final message MUST list each one under "Design gaps" (what, who asked, why) so the designer sees it. Never override silently.` : ''].filter(Boolean).join('\n');
   if (ctxText) process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PostToolUse', additionalContext: ctxText } }));
   process.exit(0);
+}
+
+// The theme itself: the project's token sources, or zehn's token and preset files. Editing them changes every screen.
+const TOKEN_FILE = /(^|[\\/])(tokens\.(css|scss|json)|theme\.(css|scss|json|[cm]?[jt]s)|tailwind\.(config|preset)\.[cm]?[jt]s|globals?\.css)$/;
+function tokenSource(file) {
+  if (!file) return false;
+  const abs = path.resolve(file);
+  if (abs.startsWith(PLUGIN_ROOT + path.sep)) return false;
+  const proj = findProject(path.dirname(abs));
+  if (proj && proj.sources.includes(abs)) return true;
+  return TOKEN_FILE.test(abs) && !/node_modules/.test(abs);
 }
 
 // Show the design-system note once per file per session.
@@ -1024,7 +1074,10 @@ function stopMode(raw) {
     ignores += fresh.filter((l) => /zehn-ignore/.test(l.text)).length;
     problems.push(...checkLines(fresh, f, { changed: true }));
   }
-  const dsDirs = [...new Set(problems.filter((p) => p.id === 'design-system-edit').map((p) => p.text))];
+  const root2 = gitRoot(existingDir(path.resolve(cwd)));
+  const changedTokens = root2 ? (git(['diff', 'HEAD', '--name-only'], root2) || '').split('\n').concat((git(['ls-files', '--others', '--exclude-standard'], root2) || '').split('\n'))
+    .filter(Boolean).map((f) => path.join(root2, f)).filter((f) => tokenSource(f) && !(snap[f] && fs.existsSync(f) && snap[f].join('\n') === fs.readFileSync(f, 'utf8').split('\n').map((x) => x.trim()).join('\n'))) : [];
+  const dsDirs = [...new Set(problems.filter((p) => p.id === 'design-system-edit').map((p) => p.text).concat(changedTokens.map((f) => path.relative(root2, f))))];
   const errs = problems.filter((p) => p.id !== 'design-system-edit');
   const dsNote = dsDirs.length ? `\nAlso: this session changed the shared design system (${dsDirs.join(', ')}). List it under Design gaps as "design-system change, designer sign-off needed".\n` : '';
   if (!errs.length) {
