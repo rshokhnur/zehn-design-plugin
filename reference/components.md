@@ -14,7 +14,7 @@ Non-React stacks: build each component once in the shared UI folder with these p
 
 ### Button
 Figma: size large 40 · medium 32 · small 24; style (9 variants).
-React: `<Button variant size leftIcon rightIcon counter loading disabled disabledReason>`. Hover and focus are automatic.
+React: `<Button variant size leftIcon rightIcon counter loading disabled disabledReason still>`. Hover, focus and press feedback (scale 0.96) are automatic; `still` turns press feedback off for dense, high-frequency spots (table row actions, toolbars, pagers).
 - `size`: `large` · `medium` (default) · `small`. Small is radius 4, the others 8.
 - `leftIcon` / `rightIcon`: Remix name or a node. AI variants add a sparkle; `leftIcon={null}` removes it.
 - `loading`: spinner, keeps the width and the variant's color, sets `aria-busy`.
@@ -32,7 +32,7 @@ What each variant is for:
 Asked for a red or colored button? A destructive action → `destructive-secondary` + AlertDialog. Anything else is off-system (rules §8a).
 
 ### IconButton
-React: `<IconButton icon aria-label variant size loading disabled disabledReason>`. `aria-label` is required. Default `variant="ghost"`. Used for back, close, `…` menus, the bell and toolbars.
+React: `<IconButton icon aria-label variant size loading disabled disabledReason still>`. `aria-label` is required. Default `variant="ghost"`. Used for back, close, `…` menus, the bell and toolbars.
 
 ### Counter
 React: `<Counter value max size tone color>`.

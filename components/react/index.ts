@@ -1,5 +1,6 @@
 export { cx } from './cx';
-export { useControllable, mergeRefs, useDialog } from './hooks';
+export { useControllable, mergeRefs, useDialog, usePresence, motionMs, prefersReducedMotion } from './hooks';
+export type { MotionDuration, PresenceState } from './hooks';
 export * from './Icon';
 export * from './Button';
 export * from './IconButton';

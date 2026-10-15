@@ -52,7 +52,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
         }}
         className={cx(
           controlClass,
-          'w-full resize-y rounded-lg border bg-surface-base px-3 py-2 focus:shadow-focus motion-safe:transition-shadow',
+          'w-full resize-y rounded-lg border bg-surface-base px-3 py-2 focus:shadow-focus transition-colors duration-fast ease-out',
           error ? 'border-status-danger' : 'border-border-strong focus:border-focus-ring',
           disabled && 'bg-disabled-bg',
           textareaClassName,

@@ -34,7 +34,7 @@ export const Switch = forwardRef<HTMLButtonElement, SwitchProps>(function Switch
           if (!e.defaultPrevented) setOn(!on);
         }}
         className={cx(
-          'inline-flex shrink-0 items-center rounded-full p-0.5 focus-visible:outline-none focus-visible:shadow-focus motion-safe:transition-colors',
+          'inline-flex shrink-0 items-center rounded-full p-0.5 focus-visible:outline-none focus-visible:shadow-focus transition-colors duration-fast ease-out',
           medium ? 'h-5 w-9' : 'h-4 w-7',
           disabled ? 'cursor-not-allowed bg-gray-100' : on ? 'bg-cyan' : 'bg-gray-100',
         )}
@@ -43,7 +43,7 @@ export const Switch = forwardRef<HTMLButtonElement, SwitchProps>(function Switch
         <span
           aria-hidden
           className={cx(
-            'rounded-full shadow-100 motion-safe:transition-transform',
+            'rounded-full shadow-100 transition-transform duration-fast ease-out',
             medium ? 'h-4 w-4' : 'h-3 w-3',
             on ? (medium ? 'translate-x-4' : 'translate-x-3') : 'translate-x-0',
             disabled ? 'bg-gray-100' : 'bg-const-white',

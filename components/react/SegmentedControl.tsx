@@ -32,6 +32,7 @@ const sizes = {
   large: { track: 'h-10', item: 'px-4 text-sm gap-2 rounded-lg' },
 };
 
+/** Selection changes instantly (click or arrow keys): no sliding indicator, no fade. */
 export function SegmentedControl({ items, value, defaultValue, onValueChange, size = 'medium', className, ...aria }: SegmentedControlProps) {
   const [current, setCurrent] = useControllable(value, defaultValue ?? items[0]?.value ?? '', onValueChange);
   const refs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -71,7 +72,7 @@ export function SegmentedControl({ items, value, defaultValue, onValueChange, si
             onClick={() => setCurrent(it.value)}
             onKeyDown={(e) => onKeyDown(e, i)}
             className={cx(
-              'inline-flex items-center justify-center whitespace-nowrap font-semibold focus-visible:outline-none focus-visible:shadow-focus motion-safe:transition-colors',
+              'inline-flex items-center justify-center whitespace-nowrap font-semibold focus-visible:outline-none focus-visible:shadow-focus',
               sizes[size].item,
               selected ? 'bg-surface-raised text-text-primary shadow-100' : 'text-text-secondary hover:text-text-primary',
               'disabled:cursor-not-allowed disabled:text-text-disabled',

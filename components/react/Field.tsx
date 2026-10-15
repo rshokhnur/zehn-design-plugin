@@ -32,7 +32,7 @@ export function useFieldIds(id: string | undefined, p: FieldOwnProps, extra?: st
 export function fieldBoxClass(size: FieldSize, invalid: boolean, disabled?: boolean) {
   return cx(
     'flex w-full items-center gap-2 rounded-lg border bg-surface-base px-3 text-sm text-text-primary',
-    'focus-within:shadow-focus motion-safe:transition-shadow',
+    'focus-within:shadow-focus transition-colors duration-fast ease-out',
     size === 'large' ? 'h-10' : 'h-8',
     invalid ? 'border-status-danger' : 'border-border-strong focus-within:border-focus-ring',
     disabled && 'cursor-not-allowed bg-disabled-bg text-disabled-fg',

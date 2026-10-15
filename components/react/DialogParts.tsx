@@ -15,6 +15,13 @@ export const toneClasses: Record<DialogTone, string> = {
   ai: 'bg-ai-bg text-ai',
 };
 
+/** Centered dialogs (Modal, AlertDialog). Enter: base + ease-out. Exit: fast + ease-in. Scrim and panel share timing. */
+const dialogTiming = (shown: boolean) => (shown ? 'duration-base ease-out' : 'duration-fast ease-in');
+export const overlayMotion = (shown: boolean) => cx('transition-opacity', dialogTiming(shown), shown ? 'opacity-100' : 'opacity-0');
+/** Fade + scale from 0.95, no slide. */
+export const dialogMotion = (shown: boolean) =>
+  cx('transition', dialogTiming(shown), shown ? 'scale-100 opacity-100' : 'scale-95 opacity-0');
+
 export interface DialogHeaderProps {
   titleId: string;
   subtitleId: string;

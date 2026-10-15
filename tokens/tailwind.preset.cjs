@@ -298,10 +298,27 @@ module.exports = {
       "focus": "var(--zm-shadow-focus)",
       "none": "none"
     },
+    "transitionDuration": {
+      "DEFAULT": "var(--zm-duration-fast)",
+      "0": "0ms",
+      "fast": "var(--zm-duration-fast)",
+      "base": "var(--zm-duration-base)",
+      "slow": "var(--zm-duration-slow)"
+    },
+    "transitionTimingFunction": {
+      "DEFAULT": "var(--zm-ease-out)",
+      "linear": "linear",
+      "out": "var(--zm-ease-out)",
+      "in-out": "var(--zm-ease-in-out)",
+      "in": "var(--zm-ease-in)"
+    },
     "extend": {
       "spacing": {
         "18": "72px",
         "128": "512px"
+      },
+      "scale": {
+        "press": "var(--zm-press-scale)"
       },
       "maxWidth": {
         "topbar-height": "56px",

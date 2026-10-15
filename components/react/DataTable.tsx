@@ -107,7 +107,7 @@ export function DataTable<T>({ columns, rows, getRowId, caption, dense, rowActio
                         <Menu
                           items={rowActions(row)}
                           trigger={
-                            <IconButton icon="more-2" size="small" aria-label={labels.actionsFor(getRowLabel ? getRowLabel(row) : getRowId(row))} />
+                            <IconButton still icon="more-2" size="small" aria-label={labels.actionsFor(getRowLabel ? getRowLabel(row) : getRowId(row))} />
                           }
                         />
                       </td>

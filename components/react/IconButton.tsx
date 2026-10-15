@@ -2,7 +2,7 @@ import { forwardRef } from 'react';
 import type { ButtonHTMLAttributes, MouseEvent } from 'react';
 import { cx } from './cx';
 import { Icon, Spinner } from './Icon';
-import { baseButtonClass, disabledButtonClass, variantClasses, withDisabledReason } from './Button';
+import { baseButtonClass, buttonColorMotion, buttonPressMotion, disabledButtonClass, variantClasses, withDisabledReason } from './Button';
 import type { ButtonSize, ButtonVariant } from './Button';
 
 export interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'aria-label'> {
@@ -15,6 +15,8 @@ export interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonEle
   loading?: boolean;
   /** Use instead of `disabled` to say why the action is unavailable: stays focusable and shows this in a Tooltip. */
   disabledReason?: string;
+  /** No press scale. For dense, high-frequency UI: table row actions, toolbars. Hover colors still fade. */
+  still?: boolean;
 }
 
 const sizes: Record<ButtonSize, string> = {
@@ -24,10 +26,11 @@ const sizes: Record<ButtonSize, string> = {
 };
 
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(function IconButton(
-  { icon, variant = 'ghost', size = 'medium', loading = false, disabled, disabledReason, className, type = 'button', onClick, ...rest },
+  { icon, variant = 'ghost', size = 'medium', loading = false, disabled, disabledReason, still = false, className, type = 'button', onClick, ...rest },
   ref,
 ) {
   const reason = loading ? undefined : disabledReason;
+  const press = !still && !disabled && !loading && !reason;
   return withDisabledReason(
     <button
       ref={ref}
@@ -40,6 +43,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
         baseButtonClass,
         sizes[size],
         variantClasses[variant],
+        press ? buttonPressMotion : buttonColorMotion,
         loading ? 'cursor-wait' : disabledButtonClass,
         variant === 'ghost' && 'disabled:bg-transparent aria-disabled:bg-transparent',
         className,

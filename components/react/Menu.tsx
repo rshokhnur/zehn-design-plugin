@@ -2,7 +2,7 @@ import { cloneElement, Fragment, useEffect, useId, useRef, useState } from 'reac
 import type { KeyboardEvent, MouseEvent as ReactMouseEvent, ReactElement, ReactNode, Ref } from 'react';
 import { cx } from './cx';
 import { Icon } from './Icon';
-import { mergeRefs } from './hooks';
+import { mergeRefs, usePresence } from './hooks';
 
 export interface MenuItem {
   label: string;
@@ -27,8 +27,14 @@ export interface MenuProps {
   className?: string;
 }
 
+/**
+ * Dropdown menu. Motion: fades and scales 0.95 → 1 from the trigger's corner (fast, ease-out), exits with ease-in.
+ * Moving the highlight with the keyboard or pointer is instant.
+ */
 export function Menu({ trigger, items, footnote, align = 'end', className }: MenuProps) {
   const [open, setOpen] = useState(false);
+  const { mounted, state } = usePresence(open, 'fast');
+  const visible = open && mounted;
   const menuId = useId();
   const triggerRef = useRef<HTMLElement>(null);
   const rootRef = useRef<HTMLSpanElement>(null);
@@ -47,7 +53,7 @@ export function Menu({ trigger, items, footnote, align = 'end', className }: Men
   };
 
   useEffect(() => {
-    if (!open) return;
+    if (!visible) return;
     focusAt(pendingFocus.current === 'first' ? enabled[0] : enabled[enabled.length - 1]);
     const onDown = (e: MouseEvent) => {
       if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
@@ -55,7 +61,7 @@ export function Menu({ trigger, items, footnote, align = 'end', className }: Men
     document.addEventListener('mousedown', onDown);
     return () => document.removeEventListener('mousedown', onDown);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [visible]);
 
   const openWith = (where: 'first' | 'last') => {
     pendingFocus.current = where;
@@ -132,15 +138,19 @@ export function Menu({ trigger, items, footnote, align = 'end', className }: Men
   return (
     <span ref={rootRef} className={cx('relative inline-flex', className)}>
       {triggerEl}
-      {open && (
+      {mounted && (
         <div
           id={menuId}
           role="menu"
           aria-orientation="vertical"
+          data-state={state}
           onKeyDown={onMenuKeyDown}
           className={cx(
             'absolute top-full z-50 mt-1 flex w-56 flex-col rounded-lg border border-border-default bg-surface-overlay p-1 shadow-300',
-            align === 'end' ? 'right-0' : 'left-0',
+            align === 'end' ? 'right-0 origin-top-right' : 'left-0 origin-top-left',
+            'transition duration-fast',
+            state === 'open' ? 'scale-100 opacity-100 ease-out' : 'scale-95 opacity-0 ease-in',
+            !open && 'pointer-events-none',
           )}
         >
           {regular.map((it, i) => renderItem(it, i))}

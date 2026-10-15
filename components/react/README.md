@@ -19,7 +19,7 @@ Icons are Remix names without prefix/suffix: `icon="close"` renders `ri-close-li
 | Feedback | `ToastProvider` / `useToast`, `Modal`, `Drawer`, `AlertDialog` |
 | Layout | `TopBar`, `PageHeader`, `DetailHeader`, `StatCard`, `PanelCard`, `DataTable`, `Toolbar` + `Pager`, `InfoChip`, `ActivityFeed` + `ActivityItem`, `RoleBanner` |
 | i18n | `ZehnLocaleProvider`, `useZehnLabels`, `useZehnLocale`, `formatDate`, `formatDateTime`, `formatMoney`, `formatNumber`, `formatDuration` |
-| Helpers | `cx`, `Icon`, `buttonClass`, `useControllable`, `useDialog` |
+| Helpers | `cx`, `Icon`, `buttonClass`, `useControllable`, `useDialog`, `usePresence`, `motionMs` |
 
 ## Usage
 
@@ -90,4 +90,27 @@ formatDuration(ms, locale);       // 14d 3h 22m
 - `Modal`, `Drawer` and `AlertDialog` render in place (no portal) as `fixed` overlays. Render them at page level, never inside a card, table or an element with `transform`, `filter` or `overflow-hidden`, or the overlay is clipped and mispositioned. They trap focus, close on Escape and return focus to the opener. `AlertDialog` focuses Cancel and ignores scrim clicks.
 - `disabledReason` on `Button`/`IconButton` keeps the button focusable (`aria-disabled`), ignores clicks and shows the reason in a `Tooltip`. Use it instead of `disabled` when the user should learn why.
 - `RoleBanner tone`: `accent` (the viewer must act), `info`, `warning` (view-only access). `Counter` has no accent color.
-- `ProgressBar` sets its fill width with an inline `style` percentage, because the width is data.
+- `ProgressBar` positions its fill with an inline `style` transform percentage, because the value is data.
+
+## Motion
+
+Only `transform` and `opacity` animate (plus color on hover). Durations and easings come from the motion tokens: `duration-fast` (150ms), `duration-base` (200ms), `duration-slow` (300ms), `ease-out` for enters, `ease-in` for exits, `ease-in-out` for on-screen moves, `scale-press` (0.96).
+
+| Component | Motion |
+|---|---|
+| `Modal`, `AlertDialog` | Scrim fades, panel fades and scales 0.95 → 1. Enter base + ease-out, exit fast + ease-in. No slide. |
+| `Drawer` | Slides in from the right, slow + ease-out; out base + ease-in. Scrim fades in sync. Reopening mid-exit reverses from where it is. |
+| `Menu` | Fades and scales 0.95 → 1 from the trigger's corner, fast. The keyboard highlight does not animate. |
+| `Tooltip` | Fades and scales 0.95 → 1, fast, after its delay. While one is open, or closed under 300ms ago, the next opens at once with no animation. |
+| Toasts | Rise 16px and fade in, base + ease-out. Dismissed: fade and drop 8px, fast + ease-in. |
+| `Button`, `IconButton` | Hover colors fade (fast). Press scales to 0.96 while held, only when enabled. |
+| `Switch` | Thumb slides, fast + ease-out. |
+| `Checkbox`, `Radio`, inputs | Colors only. |
+| `SegmentedControl` | Selection changes instantly. |
+| `ProgressBar` | Fill moves with a transform, base + ease-out. |
+| `Skeleton`, spinners | Pulse and spin; both stop under reduced motion. |
+
+- `still` on `Button` / `IconButton` drops the press scale. Use it in dense, high-frequency UI: table row actions, toolbars, pagers. `DataTable` row actions and the `Pager` already use it.
+- Reduced motion: the duration tokens become 0ms and the press scale 1, so everything changes instantly. Exits unmount at once (the wait is a timeout read from the token, not `transitionend`).
+- A `Modal`, `Drawer` or `AlertDialog` that is open on its first render shows without animating. Toasts always animate in.
+- `usePresence(open, exit, { appear })` is the shared hook for exit animations: it returns `{ mounted, state }`, mounts with `state: 'closed'`, flips to `'open'` two frames later, and on close keeps the element mounted for `exit` (`'fast'`, `'base'`, `'slow'` or ms). Style from `state` with plain classes (no `data-[…]` variants). Pass `open && mounted` to `useDialog` so focus moves in once the panel exists.

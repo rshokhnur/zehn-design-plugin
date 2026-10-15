@@ -17,9 +17,13 @@ description: Review UI code (the current diff, a PR or branch, or given files) a
    - Accent anywhere outside the rules §0 list, including `Counter`/`Badge` accents and "recommended option" cards, even if Figma shows it. Primary button not black.
    - Badge `status` that doesn't match the meaning (rules §4).
    - Missing states: empty, loading, error, destructive confirm, permission reason (`disabledReason`).
+   - Scope: features nobody asked for (extra actions, filters, stats, statuses on neighbouring screens), changed data meaning (a "withdraw" that deletes), edits to shared components for one screen. Report them under Needs a decision.
+   - Drift from sibling screens: a pattern (HeaderPattern, stat cards) on the new page that its neighbours lack, or the reverse.
+   - Motion: load the `motion` skill and run its review checklist (frequency, transform/opacity only, easing, duration, interruptible, origin, reduced motion).
    - Copy: Title Case, dates or money not built with the `format*` helpers and the locale, hard-coded English in a ru/uz app, typos, placeholder or joke data.
    - Dark mode breakage.
-   - Accessibility (rules §5a): focus trap and return, keyboard menus, `aria-label` on icon buttons, labelled inputs, `motion-safe:` animations, Tooltips on non-focusable children.
-   - `zehn-ignore` without "requested by <who>, <why>", or one ignored constant reused in many places.
+   - Accessibility (rules §5a): focus trap and return, keyboard menus, `aria-label` on icon buttons, labelled inputs, reduced-motion paths, Tooltips on non-focusable children, `<div onClick>`, `aria-current="page"` (not `"true"`) on the current nav item, links that reload the page instead of using the router.
+   - Craft (rules §1a, §8): `tabular-nums` in number columns, `...` instead of `…`, `opacity-50` disabling, "Submit" / "Invalid input" copy.
+   - `zehn-ignore` without "requested by <who>, <why>" (a vague "developer" doesn't count), or one ignored constant reused in many places.
    If another UI review or accessibility skill is installed, you may run it as a second pass; where it disagrees with zehn on visuals (tap size, quotes, colors), zehn wins.
-4. **Fix what you can.** Report the rest with `file:line` under **Fixed**, **Needs a decision** and **Design gaps**.
+4. **Fix what you can.** Report the rest with `file:line` under **Fixed**, **Needs a decision** and **Design gaps**. Present fixes as a table: `| Before | After | Why |`.

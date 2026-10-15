@@ -29,7 +29,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
           className={cx(
             'peer h-4 w-4 cursor-pointer disabled:cursor-not-allowed appearance-none rounded border border-border-strong bg-surface-base',
             'checked:border-primary-bg checked:bg-primary-bg indeterminate:border-primary-bg indeterminate:bg-primary-bg',
-            'focus-visible:outline-none focus-visible:shadow-focus motion-safe:transition-colors',
+            'focus-visible:outline-none focus-visible:shadow-focus transition-colors duration-fast ease-out',
             'disabled:border-border-default disabled:bg-disabled-bg disabled:checked:bg-disabled-fg disabled:checked:border-disabled-fg',
             'disabled:indeterminate:bg-disabled-fg disabled:indeterminate:border-disabled-fg',
           )}

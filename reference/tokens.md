@@ -6,7 +6,7 @@ All values come from Figma variables. Never hardcode a value that exists here. B
 A fallback app gets copies of the token files through setup-project (`src/styles/zehn/`). The originals are in `${CLAUDE_PLUGIN_ROOT}/tokens/`.
 
 ## Setup in an app (once)
-- setup-project wires `tokens.css` and the Tailwind preset (fallback only). The preset **replaces** colors, radius, font sizes and weights, and shadows; it **keeps** Tailwind's spacing keys.
+- setup-project wires `tokens.css` and the Tailwind preset (fallback only). The preset **replaces** colors, radius, font sizes and weights, shadows, transition durations and easings; it **keeps** Tailwind's spacing keys.
 - On `<html>`: `data-app` = procurement | intelligence | desk (cyan) · hr | tasks | analytics | edge (orange) · docs (blue) · geo (yellow-green) · edu (edu-green). Without it the accent is cyan.
 - `data-theme="light"|"dark"` forces a theme. Without it the OS setting decides, so a light-only app must set `data-theme="light"`.
 
@@ -73,6 +73,18 @@ Classes: `rounded-none` 0 · `rounded-sm` 2 · `rounded` 4 · `rounded-lg` 8 · 
 
 ## Shadows
 `shadow-100`, `shadow-200`, `shadow-300`, `shadow-mobile`, `shadow-focus`. Which element gets which: rules §1. Tailwind's `shadow-sm/md/lg` don't exist.
+
+## Motion
+| Token | Tailwind | Value | Use |
+|---|---|---|---|
+| `--zm-duration-fast` | `duration-fast` (and plain `duration`) | 150ms | hover, press, color, tooltip, menu, all exits of small things |
+| `--zm-duration-base` | `duration-base` | 200ms | modal, alert dialog, toast, list item change; drawer exit |
+| `--zm-duration-slow` | `duration-slow` | 300ms | drawer, side or chat panel enter |
+| `--zm-ease-out` | `ease-out` (and plain `ease`) | `cubic-bezier(0.32, 0.72, 0, 1)` | enter, open, close |
+| `--zm-ease-in-out` | `ease-in-out` | `cubic-bezier(0.645, 0.045, 0.355, 1)` | moving or resizing something on screen |
+| `--zm-ease-in` | `ease-in` | `cubic-bezier(0.55, 0.055, 0.675, 0.19)` | exits only |
+| `--zm-press-scale` | `scale-press` | 0.96 | `active:scale-press` on buttons |
+Under `prefers-reduced-motion: reduce` the durations become 0ms and the press scale 1, so anything built on these stops moving. Tailwind's `duration-200`, `duration-500` don't exist. Rules: the `motion` skill.
 
 ## Layout constants (CSS var `--zm-<name>`, Tailwind `w-`/`h-`/`max-w-<name>`)
 | Name | px | Use |

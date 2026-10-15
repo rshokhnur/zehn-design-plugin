@@ -14,6 +14,8 @@ The references below this workflow:
 - **REFERENCE: zehn component catalog**: what ships, the real props, and what to build
 - **REFERENCE: zehn tokens cheat sheet**: which token or class to use for what
 
+Animation work: load the `motion` skill too.
+
 When sources disagree, follow "Who wins" at the top of the rules. When unsure, follow Figma.
 
 ## Step 1: Context
@@ -25,30 +27,32 @@ When sources disagree, follow "Who wins" at the top of the rules. When unsure, f
 ## Step 2a: With a Figma link
 1. Load figma:figma-design-to-code as it requires, then read the exact node (`get_design_context`, `get_screenshot`). Where that skill conflicts with this one, this one wins: no downloaded icons, header art or component images (use the app's icon set and mapped components, and `HeaderPattern` where the app has no header art), and no generated styles (map every value to the project's token through `tokens.figmaMap`). Why: downloaded assets are frozen copies that don't follow dark mode, the app accent or later redesigns. Download only real photos or illustrations that exist nowhere else.
 2. Treat the generated code as a reference only. Map each element to a mapped component and each value to a project token. Never paste raw styles.
-3. Copy the page structure of the example screen mapped for this screen type (`screens`) and fill it with the frame's content.
+3. Copy the page structure of the example screen mapped for this screen type (`screens`) and fill it with the frame's content. Build what the frame shows for this task; frames often show extra states or actions, so ask or list them under Suggestions before building them.
 4. A value in the frame differs from the rules or a mapped component → apply "Who wins" and add the Design gaps line.
 
 ## Step 2b: No design
 1. Pick the screen type and the create/edit container (rules §3) and the content width (rules §2).
-2. Copy the layout of the example screen mapped for that type (`screens` in `zehn.project.json`), or the closest existing screen.
+2. Copy the layout of the example screen mapped for that type (`screens` in `zehn.project.json`), or the closest existing screen. Match the sibling screens: if they lack a catalog pattern (HeaderPattern, stat cards), leave it out and list it under Design gaps (rules, Who wins 4).
 3. Use the components mapped in `zehn.project.json` first (their names, imports and props), then the zehn fallback components (`fallback.zehnDir`), then build from the catalog spec with the app's primitives. List the mapping's `gaps` for each component you use under Design gaps. Never invent a component, variant or style; if one is truly needed, build it once from their primitives in their style (catalog intro) and list it.
-4. Design every state: empty, loading (Skeleton, Button `loading`), validation error, success toast, permission (`disabledReason`), destructive confirm.
+4. Design every state of what was asked: empty, loading (Skeleton, Button `loading`), validation error, success toast, permission (`disabledReason`), destructive confirm. States, yes; new features, no: extra actions, filters, stats or statuses go under Suggestions (rules, project map 5).
+5. Motion: only what the mapped components already do, plus the `motion` skill patterns where something opens, closes or changes. Page navigation is instant.
 
 ## Step 3: Before you finish
 The zehn style check runs after every edit and again before you finish (Bash and sed edits included). Fix every line it reports, or mark a user request per rules §8a. Don't finish while it reports issues.
 - [ ] Only the project's tokens; no hex, unlisted Tailwind colors or arbitrary `[...]` values.
-- [ ] Only mapped (or fallback) components; no new component, variant or style. The layout matches the mapped example screen.
+- [ ] Only mapped (or fallback) components; no new component, variant or style. The layout matches the mapped example screen and its siblings.
+- [ ] Only what was asked; shared components untouched (or listed as a design-system change). Ideas under Suggestions.
 - [ ] Shell: 56px top bar with ghost tabs; list and overview pages have PageHeader + HeaderPattern; detail pages have DetailHeader; width per rules §2.
 - [ ] One primary per surface (rules §4). Accent only in the rules §0 list.
 - [ ] Badges use `status` by meaning. Destructive actions open an AlertDialog.
 - [ ] Copy and formats per rules §8, through the app's formatters (or zehn's `format*`) with the locale.
-- [ ] Works in dark mode.
+- [ ] Works in dark mode. Motion follows the `motion` skill and has a reduced-motion path.
 
 ## Off-system requests
 Follow rules §8a exactly, including for sed, scripts and codemods.
 
 ## Step 4: Design gaps
-Always end with **Design gaps**: every decision the rules didn't cover, every place a lower source lost (`<element>: Figma <value>, used <value> (why)`), every component you built from the catalog, and every `zehn-ignore` (what, who asked, why). Write "Design gaps: none" if there are none.
+Always end with **Design gaps** (and **Suggestions** if you had ideas beyond the ask): every decision the rules didn't cover, every place a lower source lost (`<element>: Figma <value>, used <value> (why)`), every component you built from the catalog, and every `zehn-ignore` (what, who asked, why). Write "Design gaps: none" if there are none.
 
 
 ---
@@ -65,6 +69,8 @@ zehn is a guardrails layer over the app's own design system. `zehn.project.json`
 2. Use its mapped components (their names, imports and props) and its tokens (`tokens.sources`, `tailwindColors`; Figma variables through `tokens.figmaMap`).
 3. Copy the layout of the example screen mapped for the screen type (`screens`), or the closest existing screen.
 4. Never invent a component, variant or style. If one is truly needed, build it from their existing primitives in their style and list it under Design gaps.
+5. **Build only what was asked.** No extra actions, filters, stats, pagers, statuses or chips on neighbouring screens. Ideas go under **Suggestions** in your message, not in the code. Keep the data meaning the user gave you (withdraw sets a status, it doesn't delete). Why: the designer and the team decide scope; extra UI is drift too.
+6. **Don't edit the shared components** (`components.dir` and the mapped imports) to restyle one screen. A change there changes every screen: only when the user asked for it, and list it under Design gaps as "design-system change, designer sign-off needed". The style check flags every edit there.
 
 zehn class names and `--zm-*` tokens in these rules describe the zehn fallback (used when `fallback.zehnTokens` is true). In an app with its own tokens, read them as "the project's token for this Figma variable". The rules themselves (widths, order, which element gets which radius, formats) apply either way.
 
@@ -75,12 +81,13 @@ When two sources disagree on anything (a value, a component, a layout), walk thi
 1. **An explicit request from the user in this session.** Only through the off-system protocol (§8a): one-line note, then `zehn-ignore` on each line, then Design gaps.
 2. **The designer's hard decisions in these rules:** the project's tokens only; primary always black; accent only in its allowed list (§0); ghost-tab nav (§2); content widths (§2); modal vs drawer (§3); sentence case, date and money formats (§8); Alert Dialog before destructive actions (§5). Why: these were decided on purpose and beat old Figma frames.
 3. **Figma:** first the Figma component (page `UI Elements`) and the project's mapped component that mirrors it (`zehn.project.json`), then the Figma frame for the screen.
-4. **The component catalog and the remaining rules**, for anything Figma doesn't show.
-5. **Your own judgement.** List it under Design gaps.
+4. **The app's existing sibling screens** (the mapped example screen and the screens next to the one you're building). If they lack a catalog pattern (HeaderPattern, a stat-card row, a page header layout), match the siblings and list the missing pattern under Design gaps, so the designer can roll it out everywhere at once. Why: one new page that looks different from its neighbours is worse than all of them missing a pattern.
+5. **The component catalog and the remaining rules**, for anything Figma or the siblings don't show.
+6. **Your own judgement.** List it under Design gaps.
 
 When unsure, follow Figma.
 
-Every time a lower level lost to a higher one, add a Design gaps line: `<element>: Figma <value>, used <value> (why)`.
+Every time a lower level lost to a higher one, add a Design gaps line: `<element>: Figma <value>, used <value> (why)`. When you swap in something simpler than what was asked (native date inputs for a date-range picker, a checkbox list for a multi-select), that's a gap too. When you commit or open a PR, put the Design gaps list in its message, so the designer can see it in the repo.
 
 ---
 
@@ -128,6 +135,17 @@ Anything else is off-system: buttons, badges, counters, links, selection, body t
 
 - **Shadows:** web cards use a 1px `border-border-default` and no shadow. `shadow-100`: raised controls (segmented thumb, switch thumb). `shadow-200`: tooltips, toasts. `shadow-300`: menus, modals, drawers, alert dialogs. `shadow-focus`: the focus ring.
 - **Primary action:** always `primary` (black in light, white in dark), in **every app**, including docs, geo and edu.
+- **Never pill buttons or inputs, never gradients.** Buttons and inputs use the radius table above. The AI gradient lives only in the AI components.
+
+## 1a. Craft details
+Small things the components can't do for you:
+- **Numbers:** money, counts, IDs and dates in tables and stat cards use `tabular-nums`; number columns align right, with their header.
+- **Text:** long prose (descriptions, comments, help) stops at about 65 characters a line (`max-w-prose`). Headings that wrap get `text-balance`. Type the ellipsis `…`, never `...`; truncate with `truncate` plus a Tooltip with the full value. No italics or underlines for emphasis (underline means a link); use `font-semibold`.
+- **Spacing:** space siblings with `gap` (or `space-y-*`) on the parent, not margins on each child. A rounded element inside a rounded one: inner radius = outer radius − padding (or 0).
+- **Disabled:** the disabled tokens (`bg-disabled-bg text-disabled-fg`), never `opacity-50` on a control.
+- **Focus:** never remove the focus ring without a replacement (`outline-none` only together with `focus-visible:shadow-focus` or the app's ring).
+- **Icons:** one icon set per app. One icon, one meaning (a chevron that expands doesn't also navigate). 8px between an icon and its label (the components do this).
+- **Clickable things** are `<button>` or `<a>`, never `<div onClick>`. Don't wrap a whole card in one `<a>`: make the title the link (and stretch it over the card if needed).
 
 ## 2. Desktop shell (all web apps)
 
@@ -201,7 +219,10 @@ Use the components mapped in `zehn.project.json` first, then the zehn fallback c
 - The label goes above the field. Mark required fields with a red `*` (`required`) and nothing else. Never write "(optional)".
 - Group fields with section headings (16px icon + label) and dividers.
 - Helper text (`bottomHint`) and InfoChips go under the field. Placeholders are realistic examples ("e.g. Macbook Pro M5 for new design hire").
-- Validation: `error="<message>"` on the field, shown on blur and on submit. Focus the first error.
+- Validation: `error="<message>"` on the field, shown on blur and on submit. Focus the first error. Errors sit next to their field, never only in a list at the top. An error shows a red border, an icon and text, never color alone.
+- Search inputs filter as you type, debounced about 300ms.
+- Copy-to-clipboard swaps its icon to a check for about 1.5s (motion skill, icon swap).
+- Act on click (`onClick`), never on `mousedown`. Code inputs don't jump to the next box on their own unless the OTP component does it.
 - Loading: `loading` on the Button; `Skeleton` rows for tables and cards.
 - Success: a success Toast. Failure: an error Toast with `onRetry`.
 - **Alert Dialog before every destructive action:** delete, terminate, withdraw, reject, stop, end session, log out of other devices. The title names the action and the object ("Withdraw request #REQ-3?"); one line says the consequence; buttons are Cancel + `destructive-primary` with the verb.
@@ -215,7 +236,9 @@ Use the components mapped in `zehn.project.json` first, then the zehn fallback c
 - Toasts pause while hovered or focused. Errors use `role="alert"`.
 - Icon-only buttons need an `aria-label`. Inputs wire their label and hints (`aria-describedby`, `aria-invalid`).
 - Loading keeps the button's own color and sets `aria-busy`.
-- Animations go behind `motion-safe:`.
+- Every animation has a reduced-motion path (§9). zehn motion tokens drop to 0ms on their own.
+- The shell has a "Skip to content" link that shows on focus. DOM order matches the visual order (no `order-*` reshuffles).
+- Tooltips hold text only; anything clickable goes in a Popover or Menu.
 - zehn sizes stay as designed on web (32px medium buttons, not 44px). Mobile tap targets are at least 44px.
 
 ## 6. Mobile (edu, desk)
@@ -223,7 +246,7 @@ Use the components mapped in `zehn.project.json` first, then the zehn fallback c
 - 402px iOS frames. 16px side margins. Cards radius 16 (`rounded-2xl`). The Status Bar and Home Indicator are Figma frames only; the OS draws them, so never build them.
 - Tab screens: large title `text-3xl font-semibold`; use `text-2xl` only if the title wraps at 3xl. Pushed screens: a 42px round back button + `text-xl font-semibold` title.
 - Tab bar: MobileTabBar (catalog), a floating 386×64 pill.
-- Primary CTA: full-width, fixed to the bottom above the Home Indicator, black, 16px side margins. zehn has no FAB: a FAB request is off-system (§8a). Offer the bottom CTA or a `+` IconButton in the title row.
+- Primary CTA: full-width, fixed to the bottom above the Home Indicator (pad with `env(safe-area-inset-bottom)`), black, 16px side margins. zehn has no FAB: a FAB request is off-system (§8a). Offer the bottom CTA or a `+` IconButton in the title row.
 - Bottom sheets: ✕ to cancel, ✓ to save.
 - Empty cards are dashed, with a reload button. Full-screen No internet / 500 states have Retry.
 - Dark mode is required.
@@ -236,7 +259,9 @@ Use the components mapped in `zehn.project.json` first, then the zehn fallback c
 ## 8. Copy and formatting
 
 - **Sentence case** everywhere: buttons, titles, tabs, menus ("Create board", "Submit for approval").
-- **Tone:** short, friendly, second person ("Your requests", "Tell us what you need.").
+- **Tone:** short, friendly, second person ("Your requests", "Tell us what you need."). No "please" in buttons and prompts.
+- **Specific labels:** buttons say the outcome ("Save changes", "Send for approval"), never "Submit", "OK" or "Yes". Errors say how to fix it ("Enter an amount above 0"), never "Invalid input" or "Something went wrong" alone. Put the important word first.
+- **Empty and error states** say why and what to do next, with the action as a button ("You haven't created a request yet" + "New request"). Error pages name what failed and offer a specific way out (Retry, Go to requests).
 - **Dates:** `30.06.2026`. Date-time: `30.06.2026 14:27` (24h). Ranges: `12.01.2026 – 31.01.2026 · 10 days`. Add relative time next to deadlines: "(in 28 days)". Same in every locale.
 - **Money:** en `24,000,000 UZS`; ru and uz `24 000 000 UZS` (non-breaking space, decimal comma). The currency code stays `UZS`, after the number.
 - **Durations:** `14d 3h 22m`. **IDs:** `#REQ-3`. **Meta separator:** ` · `.
@@ -255,7 +280,16 @@ This covers a custom color, font or size, a component zehn doesn't have, and bul
 2. Then do it without waiting. Put `zehn-ignore: requested by <who>, <why>` as a trailing comment on **every** line that uses the value, in that file's comment syntax: `// zehn-ignore: …` in JS/TS, `{/* zehn-ignore: … */}` in JSX children, `/* zehn-ignore: … */` in CSS, `<!-- zehn-ignore: … -->` in HTML. Never put it on one shared constant. Why: the style check skips only the line carrying the comment, and a shared constant hides every later use from the designer.
 3. List each override under **Design gaps** (what, who asked, why). Never comply silently.
 
-Only the user can authorize an override. If you think no token fits, use the nearest one and list it under Design gaps; never add `zehn-ignore` on your own.
+`<who>` is the person's name, or "the user in this session"; never a vague "developer" or "team". Only the user can authorize an override. If you think no token fits, use the nearest one and list it under Design gaps; never add `zehn-ignore` on your own.
+
+## 9. Motion
+
+The full rules are in the `motion` skill; load it for any animation work. In short:
+- Page navigation is instant (as in Figma). Frequent or keyboard actions don't animate.
+- Opening and closing: ease-out, 150 (tooltip, menu), 200 (modal, toast), 300 (drawer, panel); exits faster. Never over 300ms.
+- Animate `transform` and `opacity` only; name the properties; no `transition-all`, no bounce, never from `scale(0)`.
+- Use the mapped components' own motion and the project's motion tokens; zehn: `duration-fast|base|slow`, `ease-out|in-out|in`, `scale-press`.
+- Every animation has a reduced-motion path.
 
 
 ---
@@ -276,7 +310,7 @@ Non-React stacks: build each component once in the shared UI folder with these p
 
 ### Button
 Figma: size large 40 · medium 32 · small 24; style (9 variants).
-React: `<Button variant size leftIcon rightIcon counter loading disabled disabledReason>`. Hover and focus are automatic.
+React: `<Button variant size leftIcon rightIcon counter loading disabled disabledReason still>`. Hover, focus and press feedback (scale 0.96) are automatic; `still` turns press feedback off for dense, high-frequency spots (table row actions, toolbars, pagers).
 - `size`: `large` · `medium` (default) · `small`. Small is radius 4, the others 8.
 - `leftIcon` / `rightIcon`: Remix name or a node. AI variants add a sparkle; `leftIcon={null}` removes it.
 - `loading`: spinner, keeps the width and the variant's color, sets `aria-busy`.
@@ -294,7 +328,7 @@ What each variant is for:
 Asked for a red or colored button? A destructive action → `destructive-secondary` + AlertDialog. Anything else is off-system (rules §8a).
 
 ### IconButton
-React: `<IconButton icon aria-label variant size loading disabled disabledReason>`. `aria-label` is required. Default `variant="ghost"`. Used for back, close, `…` menus, the bell and toolbars.
+React: `<IconButton icon aria-label variant size loading disabled disabledReason still>`. `aria-label` is required. Default `variant="ghost"`. Used for back, close, `…` menus, the bell and toolbars.
 
 ### Counter
 React: `<Counter value max size tone color>`.
@@ -434,7 +468,7 @@ All values come from Figma variables. Never hardcode a value that exists here. B
 A fallback app gets copies of the token files through setup-project (`src/styles/zehn/`). The originals are in `${CLAUDE_PLUGIN_ROOT}/tokens/`.
 
 ## Setup in an app (once)
-- setup-project wires `tokens.css` and the Tailwind preset (fallback only). The preset **replaces** colors, radius, font sizes and weights, and shadows; it **keeps** Tailwind's spacing keys.
+- setup-project wires `tokens.css` and the Tailwind preset (fallback only). The preset **replaces** colors, radius, font sizes and weights, shadows, transition durations and easings; it **keeps** Tailwind's spacing keys.
 - On `<html>`: `data-app` = procurement | intelligence | desk (cyan) · hr | tasks | analytics | edge (orange) · docs (blue) · geo (yellow-green) · edu (edu-green). Without it the accent is cyan.
 - `data-theme="light"|"dark"` forces a theme. Without it the OS setting decides, so a light-only app must set `data-theme="light"`.
 
@@ -501,6 +535,18 @@ Classes: `rounded-none` 0 · `rounded-sm` 2 · `rounded` 4 · `rounded-lg` 8 · 
 
 ## Shadows
 `shadow-100`, `shadow-200`, `shadow-300`, `shadow-mobile`, `shadow-focus`. Which element gets which: rules §1. Tailwind's `shadow-sm/md/lg` don't exist.
+
+## Motion
+| Token | Tailwind | Value | Use |
+|---|---|---|---|
+| `--zm-duration-fast` | `duration-fast` (and plain `duration`) | 150ms | hover, press, color, tooltip, menu, all exits of small things |
+| `--zm-duration-base` | `duration-base` | 200ms | modal, alert dialog, toast, list item change; drawer exit |
+| `--zm-duration-slow` | `duration-slow` | 300ms | drawer, side or chat panel enter |
+| `--zm-ease-out` | `ease-out` (and plain `ease`) | `cubic-bezier(0.32, 0.72, 0, 1)` | enter, open, close |
+| `--zm-ease-in-out` | `ease-in-out` | `cubic-bezier(0.645, 0.045, 0.355, 1)` | moving or resizing something on screen |
+| `--zm-ease-in` | `ease-in` | `cubic-bezier(0.55, 0.055, 0.675, 0.19)` | exits only |
+| `--zm-press-scale` | `scale-press` | 0.96 | `active:scale-press` on buttons |
+Under `prefers-reduced-motion: reduce` the durations become 0ms and the press scale 1, so anything built on these stops moving. Tailwind's `duration-200`, `duration-500` don't exist. Rules: the `motion` skill.
 
 ## Layout constants (CSS var `--zm-<name>`, Tailwind `w-`/`h-`/`max-w-<name>`)
 | Name | px | Use |

@@ -32,11 +32,11 @@ export function Pager({ page, pageCount, onPageChange, className }: PagerProps) 
   const labels = useZehnLabels();
   return (
     <nav aria-label={labels.pagination} className={cx('flex items-center gap-1 text-sm text-text-secondary', className)}>
-      <IconButton icon="arrow-left-s" size="small" aria-label={labels.previousPage} disabled={page <= 1} onClick={() => onPageChange(page - 1)} />
+      <IconButton still icon="arrow-left-s" size="small" aria-label={labels.previousPage} disabled={page <= 1} onClick={() => onPageChange(page - 1)} />
       <span className="px-1 tabular-nums" aria-current="page">
         <span className="font-semibold text-text-primary">{page}</span> / {pageCount}
       </span>
-      <IconButton icon="arrow-right-s" size="small" aria-label={labels.nextPage} disabled={page >= pageCount} onClick={() => onPageChange(page + 1)} />
+      <IconButton still icon="arrow-right-s" size="small" aria-label={labels.nextPage} disabled={page >= pageCount} onClick={() => onPageChange(page + 1)} />
     </nav>
   );
 }

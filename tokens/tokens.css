@@ -247,6 +247,16 @@
   --zm-chart-card: 334px;
   --zm-chart-plot: 208px;
   --zm-toast: 432px;
+  --zm-duration-fast: 150ms;
+  --zm-duration-base: 200ms;
+  --zm-duration-slow: 300ms;
+  --zm-ease-out: cubic-bezier(0.32, 0.72, 0, 1);
+  --zm-ease-in-out: cubic-bezier(0.645, 0.045, 0.355, 1);
+  --zm-ease-in: cubic-bezier(0.55, 0.055, 0.675, 0.19);
+  --zm-press-scale: 0.96;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root { --zm-duration-fast: 0ms; --zm-duration-base: 0ms; --zm-duration-slow: 0ms; --zm-press-scale: 1; }
 }
 [data-theme="dark"] {
   color-scheme: dark;

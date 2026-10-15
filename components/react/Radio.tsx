@@ -21,7 +21,7 @@ export const Radio = forwardRef<HTMLInputElement, RadioProps>(function Radio(
         className={cx(
           'mt-0.5 h-4 w-4 shrink-0 cursor-pointer disabled:cursor-not-allowed appearance-none rounded-full border border-border-strong bg-surface-base',
           'checked:border-4 checked:border-primary-bg',
-          'focus-visible:outline-none focus-visible:shadow-focus motion-safe:transition-all',
+          'focus-visible:outline-none focus-visible:shadow-focus transition-colors duration-fast ease-out',
           'disabled:border-border-default disabled:bg-disabled-bg disabled:checked:border-disabled-fg',
         )}
         {...rest}

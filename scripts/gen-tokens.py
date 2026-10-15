@@ -100,6 +100,14 @@ def resolve(name, mode):
     return v
 
 
+# Motion (no Figma variables yet; prototypes use instant navigation and 300ms ease-out Smart Animate).
+# Durations collapse to 0ms under prefers-reduced-motion, so everything built on them stops moving.
+DURATION = {"fast": 150, "base": 200, "slow": 300}
+EASE = {"out": "cubic-bezier(0.32, 0.72, 0, 1)",       # enters, open/close
+        "in-out": "cubic-bezier(0.645, 0.045, 0.355, 1)",  # on-screen moves and resizes
+        "in": "cubic-bezier(0.55, 0.055, 0.675, 0.19)"}     # exits only
+PRESS_SCALE = "0.96"
+
 # ---------- tokens.css ----------
 light, dark = [], []
 for name, (l, dk) in d["colors"].items():
@@ -132,7 +140,13 @@ for n, size, lh in d["text"]:
     L.append(f"  --zm-text-{n}: {size}px;\n  --zm-leading-{n}: {lh}px;")
 for k, v in LAYOUT.items():
     L.append(f"  --zm-{k}: {v}px;")
+for k, v in DURATION.items():
+    L.append(f"  --zm-duration-{k}: {v}ms;")
+for k, v in EASE.items():
+    L.append(f"  --zm-ease-{k}: {v};")
+L.append(f"  --zm-press-scale: {PRESS_SCALE};")
 L.append("}")
+L.append("@media (prefers-reduced-motion: reduce) {\n  :root {" + "".join(f" --zm-duration-{k}: 0ms;" for k in DURATION) + " --zm-press-scale: 1; }\n}")
 L.append("[data-theme=\"dark\"] {\n  color-scheme: dark;")
 L += dark
 L.append("}")
@@ -163,9 +177,13 @@ preset = {
         "fontSize": {n: [f"{s}px", {"lineHeight": f"{lh}px", "letterSpacing": "-0.01em"}] for n, s, lh in d["text"]}
                     | {"header-icon": ["32px", {"lineHeight": "32px"}]},  # 32px Remix glyph in page headers only
         "boxShadow": {k: f"var(--zm-shadow-{k})" for k in d["shadows"]} | {"none": "none"},
+        # REPLACED: only zehn durations and easings (duration-500, ease-in on enters are off-system).
+        "transitionDuration": {"DEFAULT": "var(--zm-duration-fast)", "0": "0ms"} | {k: f"var(--zm-duration-{k})" for k in DURATION},
+        "transitionTimingFunction": {"DEFAULT": "var(--zm-ease-out)", "linear": "linear"} | {k: f"var(--zm-ease-{k})" for k in EASE},
         # EXTENDED: Tailwind's standard spacing keys stay valid (p-4 = 16px), so existing code keeps working.
         "extend": {
             "spacing": {"18": "72px", "128": "512px"},
+            "scale": {"press": "var(--zm-press-scale)"},
             "maxWidth": sizes, "width": sizes, "height": sizes, "minHeight": sizes, "minWidth": sizes,
         },
     }
@@ -185,7 +203,8 @@ tok = {"color": {}, "semantic": {s: {"light": "{" + lt + "}", "dark": "{" + (dt 
        "spacing": d["spacing"], "radius": d["radius"], "layout": LAYOUT,
        "typography": {n: {"fontFamily": "Inter", "fontSize": s, "lineHeight": lh, "letterSpacing": "-1%",
                           "weights": [400, 600]} for n, s, lh in d["text"]},
-       "shadow": d["shadows"], "appAccent": APPS}
+       "shadow": d["shadows"], "appAccent": APPS,
+       "motion": {"duration": DURATION, "easing": EASE, "pressScale": float(PRESS_SCALE)}}
 for s, lv, dv in RAW_SEM:
     tok["semantic"][s] = {"light": lv, "dark": dv}
 for name, (l, dk) in d["colors"].items():

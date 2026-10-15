@@ -1,6 +1,8 @@
 import { useId, useRef } from 'react';
 import type { ReactNode } from 'react';
-import { useDialog } from './hooks';
+import { cx } from './cx';
+import { useDialog, usePresence } from './hooks';
+import { dialogMotion, overlayMotion } from './DialogParts';
 import { Icon } from './Icon';
 import { Button } from './Button';
 import { useZehnLabels } from './locale';
@@ -22,17 +24,19 @@ export interface AlertDialogProps {
   loading?: boolean;
 }
 
-/** Confirm before every destructive action. Initial focus is on Cancel; the scrim does not close it. */
+/** Confirm before every destructive action. Initial focus is on Cancel; the scrim does not close it. Same motion as Modal. */
 export function AlertDialog({ open, onClose, onConfirm, title, subtitle, confirmLabel, cancelLabel, icon = 'delete-bin', loading }: AlertDialogProps) {
   const labels = useZehnLabels();
   const cancelRef = useRef<HTMLButtonElement>(null);
-  const { panelRef, onKeyDown } = useDialog(open, loading ? () => {} : onClose, cancelRef);
+  const { mounted, state } = usePresence(open, 'fast');
+  const { panelRef, onKeyDown } = useDialog(open && mounted, loading ? () => {} : onClose, cancelRef);
   const titleId = useId();
   const subtitleId = useId();
-  if (!open) return null;
+  if (!mounted) return null;
+  const shown = state === 'open';
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
-      <div aria-hidden className="absolute inset-0 bg-scrim" />
+    <div data-state={state} className={cx('fixed inset-0 z-50 flex items-center justify-center p-6', !open && 'pointer-events-none')}>
+      <div aria-hidden className={cx('absolute inset-0 bg-scrim', overlayMotion(shown))} />
       <div
         ref={panelRef}
         role="alertdialog"
@@ -41,7 +45,7 @@ export function AlertDialog({ open, onClose, onConfirm, title, subtitle, confirm
         aria-describedby={subtitle ? subtitleId : undefined}
         tabIndex={-1}
         onKeyDown={onKeyDown}
-        className="relative flex w-alert-dialog max-w-full flex-col gap-6 rounded-xl bg-surface-raised p-6 shadow-300 outline-none"
+        className={cx('relative flex w-alert-dialog max-w-full flex-col gap-6 rounded-xl bg-surface-raised p-6 shadow-300 outline-none', dialogMotion(shown))}
       >
         <div className="flex gap-4">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-status-danger-bg text-xl text-status-danger">

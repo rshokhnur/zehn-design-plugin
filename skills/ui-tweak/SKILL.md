@@ -1,6 +1,6 @@
 ---
 name: ui-tweak
-description: An edit to an existing zehn screen that keeps its layout - add, fix or restyle a button, column, field, badge, tooltip, copy, spacing or color. Uses the app's own components and tokens via zehn.project.json. For a new screen, page, flow, modal or drawer, or a layout change, use compose-screen. To review a PR or migrate an old page, use ui-review.
+description: An edit to an existing zehn screen that keeps its layout - add, fix or restyle a button, column, field, badge, tooltip, copy, spacing, color or a small transition. Uses the app's own components and tokens via zehn.project.json. For a new screen, page, flow, modal or drawer, or a layout change, use compose-screen. To review a PR or migrate an old page, use ui-review.
 ---
 
 # Small UI change, the zehn way
@@ -22,6 +22,8 @@ Use this for edits that keep the screen's layout. Adding a screen, modal, drawer
 5. **Copy.** Sentence case, short, second person. Format dates and money with the app's formatters, or zehn's `formatDate`, `formatDateTime`, `formatMoney`, `formatNumber`, `formatDuration` with `useZehnLocale()` (they default to English). New strings go through the app's i18n with en/ru/uz entries; if there is none, write English and list it under Design gaps. Uzbek: o‘/g‘ use `‘` (U+2018), never ASCII `'`.
 6. **States.** Anything destructive opens an `AlertDialog`. A disabled action says why: `disabledReason="…"` on the zehn Button or IconButton (it stays focusable and shows a Tooltip; plain `disabled` can't). With a mapped Button, keep it focusable with `aria-disabled` and wrap it in their Tooltip. A Tooltip's child must be focusable. New async actions get `loading` plus a success or error Toast.
 7. **Dark mode** must still work.
-8. **Off-system requests** (bulk sed or script edits too): follow the off-system steps in the session rules exactly. One line first, even after "don't argue"; then `zehn-ignore: requested by <who>, <why>` on every line; then Design gaps.
+8. **Only what was asked.** No extra actions, statuses or chips, here or on neighbouring screens; ideas go under Suggestions. Don't restyle a shared component for one screen (the style check flags edits there).
+9. **Motion:** hover and press only `duration-fast` with named properties (`transition-colors`, `transition-transform`), never `transition-all` or over 300ms. Anything that opens, closes or moves: load the `motion` skill.
+10. **Off-system requests** (bulk sed or script edits too): follow the off-system steps in the session rules exactly. One line first, even after "don't argue"; then `zehn-ignore: requested by <who>, <why>` on every line; then Design gaps.
 
 End with **Design gaps** (or "Design gaps: none"): overrides, anything the rules don't cover, and every place Figma or the catalog lost.

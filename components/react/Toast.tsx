@@ -4,6 +4,8 @@ import { Icon, Spinner } from './Icon';
 import { Button } from './Button';
 import { IconButton } from './IconButton';
 import { useZehnLabels } from './locale';
+import { cx } from './cx';
+import { motionMs, usePresence } from './hooks';
 
 export type ToastType = 'default' | 'info' | 'loading' | 'success' | 'warning' | 'error';
 
@@ -21,6 +23,8 @@ export interface ToastOptions {
 
 interface ToastItem extends ToastOptions {
   id: number;
+  /** Dismissed, playing its exit before removal. */
+  leaving?: boolean;
 }
 
 interface ToastApi {
@@ -60,13 +64,14 @@ function ToastView({ item, onDismiss }: { item: ToastItem; onDismiss: () => void
   const started = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout>>();
   const [paused, setPaused] = useState(false);
+  const { state } = usePresence(!item.leaving, 'fast', { appear: true });
 
   useEffect(() => {
     remaining.current = defaultDuration(item);
   }, [item]);
 
   useEffect(() => {
-    if (paused || !Number.isFinite(remaining.current)) return;
+    if (paused || item.leaving || !Number.isFinite(remaining.current)) return;
     started.current = Date.now();
     timer.current = setTimeout(onDismiss, remaining.current);
     return () => {
@@ -85,7 +90,15 @@ function ToastView({ item, onDismiss }: { item: ToastItem; onDismiss: () => void
       onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}
       onBlur={() => setPaused(false)}
-      className="pointer-events-auto flex w-toast max-w-full items-start gap-3 rounded border border-border-default bg-surface-base px-4 py-3 shadow-200"
+      data-state={state}
+      className={cx(
+        'flex w-toast max-w-full items-start gap-3 rounded border border-border-default bg-surface-base px-4 py-3 shadow-200',
+        'transition',
+        state === 'open'
+          ? 'translate-y-0 opacity-100 duration-base ease-out'
+          : cx('opacity-0 duration-fast ease-in', item.leaving ? 'translate-y-2' : 'translate-y-4'),
+        item.leaving ? 'pointer-events-none' : 'pointer-events-auto',
+      )}
     >
       {icons[type] && <span className="flex h-6 shrink-0 items-center">{icons[type]}</span>}
       <div className="flex min-w-0 flex-1 flex-col gap-0.5 py-0.5">
@@ -110,13 +123,19 @@ function ToastView({ item, onDismiss }: { item: ToastItem; onDismiss: () => void
   );
 }
 
-/** Wrap the app once (inside ZehnLocaleProvider if you use one). Toasts stack bottom-right, 432px wide. */
+/**
+ * Wrap the app once (inside ZehnLocaleProvider if you use one). Toasts stack bottom-right, 432px wide.
+ * Motion: a toast rises 16px and fades in (base, ease-out); on dismiss it fades and drops 8px (fast, ease-in), then is removed.
+ */
 export function ToastProvider({ children }: { children: ReactNode }) {
   const labels = useZehnLabels();
   const [items, setItems] = useState<ToastItem[]>([]);
   const nextId = useRef(1);
 
-  const dismiss = useCallback((id: number) => setItems((all) => all.filter((t) => t.id !== id)), []);
+  const dismiss = useCallback((id: number) => {
+    setItems((all) => all.map((t) => (t.id === id ? { ...t, leaving: true } : t)));
+    setTimeout(() => setItems((all) => all.filter((t) => t.id !== id)), motionMs('fast'));
+  }, []);
   const toast = useCallback((opts: ToastOptions) => {
     const id = nextId.current++;
     setItems((all) => [...all, { ...opts, id }]);

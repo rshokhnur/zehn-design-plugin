@@ -6,6 +6,8 @@
 //     since then (this also catches edits made through Bash or scripts).
 //   CLI mode: node check-ui.js <file...>  checks whole files (used by the ui-review skill).
 // Exit 2 + stderr in hook modes makes Claude Code show the violations to the agent so it fixes them.
+// Gate: hook, --stop and --session-start do nothing outside zehn apps (no zehn.project.json, no --zm- tokens,
+//   no project-level zehn-design plugin). CLI mode still runs and prints a one-line note.
 'use strict';
 const fs = require('fs');
 const os = require('os');
@@ -34,8 +36,8 @@ const KNOWN_VARS = (() => {
   } catch { return null; }
 })();
 // Nearest known --zm-* name (edit distance), for the unknown-token message.
-function closestVar(name) {
-  if (!KNOWN_VARS) return null;
+function closestVar(name, known = KNOWN_VARS) {
+  if (!known || !known.size) return null;
   const dist = (a, b) => {
     const d = Array.from({ length: b.length + 1 }, (_, i) => i);
     for (let i = 1; i <= a.length; i++) {
@@ -45,13 +47,31 @@ function closestVar(name) {
     return d[b.length];
   };
   let best = null, bestD = Infinity;
-  for (const v of KNOWN_VARS) { const x = dist(name, v); if (x < bestD) { bestD = x; best = v; } }
+  for (const v of known) { const x = dist(name, v); if (x < bestD) { bestD = x; best = v; } }
   return bestD <= Math.max(3, Math.floor(name.length / 4)) ? best : null;
 }
+const PRESET = (() => { try { return require('../tokens/tailwind.preset.cjs'); } catch { return null; } })();
 // Color keys in the preset (so we can tell a real color class from one that renders nothing).
-const COLOR_KEYS = (() => {
-  try { return new Set(Object.keys(require('../tokens/tailwind.preset.cjs').theme.colors)); } catch { return null; }
+const COLOR_KEYS = (() => { try { return new Set(Object.keys(PRESET.theme.colors)); } catch { return null; } })();
+const themeKeys = (k, dflt) => { try { return new Set(Object.keys(PRESET.theme[k]).map((x) => (x === 'DEFAULT' ? '' : x))); } catch { return new Set(dflt); } };
+const ZEHN_RADIUS_KEYS = themeKeys('borderRadius', ['none', 'sm', '', 'lg', 'xl', '2xl', '3xl', '4xl', 'full']);
+const ZEHN_TEXT_KEYS = themeKeys('fontSize', ['xxs', 'xs', 'sm', 'base', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl', '6xl', '7xl']);
+const WEIGHT_NUM = { thin: 100, hairline: 100, extralight: 200, light: 300, lighter: 300, normal: 400, regular: 400, medium: 500, semibold: 600, bold: 700, bolder: 700, extrabold: 800, black: 900 };
+const ZEHN_WEIGHTS = new Set([400, 600]);
+// px values a raw width/height may use: the spacing scale plus the preset's layout keys (modal 520, drawer 640…).
+const LAYOUT_PX = (() => {
+  const s = new Set(SPACE);
+  try {
+    const e = PRESET.theme.extend;
+    for (const k of ['spacing', 'width', 'height', 'maxWidth', 'minWidth', 'minHeight']) for (const v of Object.values(e[k] || {})) { const m = /^(\d+(?:\.\d+)?)px$/.exec(String(v)); if (m) s.add(+m[1]); }
+  } catch {}
+  return s;
 })();
+const PLUGIN_ROOT = path.resolve(__dirname, '..');
+const memo = (fn) => { const c = new Map(); return (k) => { if (!c.has(k)) c.set(k, fn(k)); return c.get(k); }; };
+const readSmall = (f) => { try { const st = fs.statSync(f); return st.isFile() && st.size < 2e6 ? fs.readFileSync(f, 'utf8') : null; } catch { return null; } };
+const fileText = memo(readSmall); // the checked file as it is on disk now (after the edit)
+const fileLines = memo((f) => { const t = fileText(f); return t === null ? null : t.split('\n'); });
 
 // ---------- project mode (zehn.project.json) ----------
 // When the app has a zehn.project.json (found by walking up from the checked file), the check enforces the app's own
@@ -80,54 +100,178 @@ function flattenColors(obj, prefix, out) {
     else if (key) out.add(key);
   }
 }
+// Keys of `prop: { … }` blocks in a Tailwind config (text scan, no eval): borderRadius, fontSize, fontWeight.
+function configKeys(text, prop) {
+  const keys = new Map(); // key → first numeric value (for fontWeight)
+  const re = new RegExp(`\\b${prop}\\s*:\\s*\\{`, 'g');
+  let m;
+  while ((m = re.exec(text))) {
+    let d = 1, i = re.lastIndex;
+    while (i < text.length && d) { const c = text[i]; if ('{[('.includes(c)) d++; else if ('}])'.includes(c)) d--; i++; }
+    let body = text.slice(re.lastIndex, i - 1);
+    const nested = /[{[(][^{}[\]()]*[}\])]/g;
+    while (nested.test(body)) body = body.replace(nested, '0');
+    for (const k of body.matchAll(/(?:^|,)\s*['"]?([\w.-]+)['"]?\s*:\s*['"]?(\d{3})?/g)) keys.set(k[1] === 'DEFAULT' ? '' : k[1], k[2] ? +k[2] : null);
+  }
+  return keys;
+}
+const weightOf = (v) => (/^\d{3}$/.test(String(v)) ? +v : WEIGHT_NUM[String(v)]);
 function buildProject(root, j) {
   if (!j || typeof j !== 'object') return null;
   const t = j.tokens || {};
   const fb = j.fallback || {};
   const comps = j.components || {};
+  const motion = j.motion || {};
   const sources = arr(t.sources).map((s) => path.resolve(root, s));
   const vars = new Set();
   const colors = new Set(['transparent', 'current', 'inherit', 'black', 'white', ...arr(t.tailwindColors)]);
+  const declared = { radius: new Set(), text: new Set(), weight: new Set() };
+  let cssRead = 0;
+  const addConfig = (text) => {
+    for (const k of configKeys(text, 'borderRadius').keys()) declared.radius.add(k);
+    for (const k of configKeys(text, 'fontSize').keys()) declared.text.add(k);
+    for (const [k, v] of configKeys(text, 'fontWeight')) { const n = v || weightOf(k); if (n) declared.weight.add(n); }
+  };
   for (const src of sources) {
-    let text;
-    try { text = fs.readFileSync(src, 'utf8'); } catch { continue; }
+    const text = readSmall(src);
+    if (text === null) continue;
     if (/\.json$/i.test(src)) {
-      try { const c = JSON.parse(text); const th = c.theme || c; flattenColors(th.colors, '', colors); flattenColors(th.extend && th.extend.colors, '', colors); } catch {}
+      try { const c = JSON.parse(text); const th = c.theme || c; flattenColors(th.colors, '', colors); flattenColors(th.extend && th.extend.colors, '', colors); addConfig(text.replace(/"(\w+)"\s*:/g, '$1:')); } catch {}
       continue;
     }
+    if (/\.[cm]?[jt]s$/i.test(src)) { addConfig(text); continue; }
+    cssRead++;
     for (const m of text.matchAll(/(--[A-Za-z0-9_-]+)\s*:/g)) {
       vars.add(m[1]);
       const c = /^--color-(.+)$/.exec(m[1]); // Tailwind v4 @theme: --color-primary → bg-primary
       if (c) colors.add(c[1]);
+      const r = /^--radius(?:-(.+))?$/.exec(m[1]); if (r) declared.radius.add(r[1] || '');
+      const tx = /^--text-([a-z0-9]+)$/.exec(m[1]); if (tx) declared.text.add(tx[1]);
+      const w = /^--font-weight-(.+)$/.exec(m[1]); if (w && weightOf(w[1])) declared.weight.add(weightOf(w[1]));
     }
+  }
+  for (const cfg of ['tailwind.config.js', 'tailwind.config.cjs', 'tailwind.config.mjs', 'tailwind.config.ts']) {
+    const text = readSmall(path.join(root, cfg));
+    if (text) addConfig(text);
   }
   const zehnTokens = fb.zehnTokens === true;
   if (zehnTokens) {
     for (const v of KNOWN_VARS || []) vars.add(v);
     for (const c of COLOR_KEYS || []) colors.add(c);
   }
-  const dirs = [comps.dir, fb.zehnDir].filter((d) => typeof d === 'string' && d.trim()).map((d) => path.resolve(root, d));
+  // Allowed scales: zehn.project.json tokens.* when given, else zehn's; plus keys the app's Tailwind config / theme declares.
+  const list = (x) => (Array.isArray(x) ? x.filter((v) => (typeof v === 'string' && v) || typeof v === 'number').map(String) : []);
+  const radiusList = list(t.radiusKeys).map((k) => (k === 'DEFAULT' ? '' : k));
+  const textList = list(t.fontSizeKeys);
+  const weightList = list(t.fontWeights).map(weightOf).filter(Boolean);
+  const radiusKeys = new Set([...(radiusList.length ? radiusList : ZEHN_RADIUS_KEYS), ...declared.radius]);
+  const textKeys = new Set([...(textList.length ? textList : ZEHN_TEXT_KEYS), ...declared.text]);
+  const weights = new Set([...(weightList.length ? weightList : ZEHN_WEIGHTS), ...declared.weight]);
+  const nums = (l) => l.filter((k) => /^\d+(\.\d+)?$/.test(k)).map(Number);
+  // Mapped component imports (@/components/ui/button) → their folders count as the design system too.
   const map = comps.map && typeof comps.map === 'object' ? comps.map : {};
+  const importDirs = [];
+  for (const e of Object.values(map)) {
+    const imp = e && e.import;
+    if (typeof imp !== 'string') continue;
+    let p;
+    if (/^[@~]\//.test(imp)) { const rest = imp.slice(2); p = [path.join(root, 'src', rest), path.join(root, rest)].find((c) => fs.existsSync(c) || fs.existsSync(path.dirname(c))) || path.join(root, 'src', rest); }
+    else if (/^\.{1,2}\//.test(imp)) p = path.resolve(root, imp);
+    else continue; // a package: not editable here
+    let d;
+    try { d = fs.statSync(p).isDirectory() ? p : path.dirname(p); } catch { d = path.dirname(p); }
+    if (![root, path.join(root, 'src'), path.join(root, 'app')].includes(d) && !importDirs.includes(d)) importDirs.push(d);
+  }
+  const own = [comps.dir, fb.zehnDir].filter((d) => typeof d === 'string' && d.trim()).map((d) => path.resolve(root, d));
+  const dirs = [...new Set([...own, ...importDirs])];
+  // cssVarPrefixes: a prefix the sources already declare (--hr-) is theirs → only declared names count. A foreign prefix
+  // (--radix-, set at runtime by a library) is allowed as a whole. With no readable CSS sources every prefix is allowed.
+  const prefixes = arr(t.cssVarPrefixes);
+  const openPrefixes = cssRead ? prefixes.filter((x) => ![...vars].some((v) => v.startsWith(x))) : prefixes;
   return {
-    root, sources, vars, colors, zehnTokens, dirs, map,
-    prefixes: arr(t.cssVarPrefixes),
+    root, sources, vars, colors, zehnTokens, dirs, map, prefixes: openPrefixes,
     spaceKeys: arr(t.spacingKeys).length ? new Set(arr(t.spacingKeys)) : TW_SPACE_KEYS,
+    radiusKeys, textKeys, weights, customWeights: weightList.length > 0,
+    radiusPx: new Set([...RADIUS, ...nums(radiusList)]), fontPx: new Set([...FONT_SIZE, ...nums(textList)]),
+    durations: Array.isArray(motion.durations) ? motion.durations.filter((n) => typeof n === 'number') : null,
+    reducedGlobal: motion.reducedMotion === 'global',
   };
 }
-const ZEHN_MODE = { project: null, zehnTokens: true, colors: COLOR_KEYS, spaceKeys: TW_SPACE_KEYS, dirs: [], fileVars: new Set() };
+const ZEHN_MODE = { project: null, zehnTokens: true, colors: COLOR_KEYS, spaceKeys: TW_SPACE_KEYS, dirs: [], fileVars: new Set(),
+  radiusKeys: ZEHN_RADIUS_KEYS, textKeys: ZEHN_TEXT_KEYS, weights: ZEHN_WEIGHTS, radiusPx: RADIUS, fontPx: FONT_SIZE, durations: null, reducedGlobal: false };
 let CTX = ZEHN_MODE; // the context of the file being checked
+let FILE = ''; // the file being checked
 function contextFor(file) {
   const proj = file ? findProject(path.dirname(path.resolve(file))) : null;
   if (!proj) return ZEHN_MODE;
-  let fileVars = new Set();
-  try { fileVars = new Set([...fs.readFileSync(file, 'utf8').matchAll(/(--[A-Za-z0-9_-]+)\s*:/g)].map((m) => m[1])); } catch {}
-  return { project: proj, zehnTokens: proj.zehnTokens, colors: proj.colors.size > 5 ? proj.colors : null, spaceKeys: proj.spaceKeys, dirs: proj.dirs, fileVars };
+  const text = fileText(path.resolve(file)) || '';
+  const fileVars = new Set([...text.matchAll(/(--[A-Za-z0-9_-]+)\s*:/g)].map((m) => m[1]));
+  return { project: proj, zehnTokens: proj.zehnTokens, colors: proj.colors.size > 5 ? proj.colors : null, spaceKeys: proj.spaceKeys, dirs: proj.dirs, fileVars,
+    radiusKeys: proj.radiusKeys, textKeys: proj.textKeys, weights: proj.weights, radiusPx: proj.radiusPx, fontPx: proj.fontPx,
+    durations: proj.durations, reducedGlobal: proj.reducedGlobal };
 }
 function knownProjectVar(name) {
   const p = CTX.project;
   return p.vars.has(name) || CTX.fileVars.has(name) || p.prefixes.some((x) => name.startsWith(x));
 }
 const inside = (abs, dirs) => dirs.some((d) => abs === d || abs.startsWith(d + path.sep));
+
+// ---------- gate: is this a zehn app at all? ----------
+function existingDir(p) {
+  let d = p;
+  while (d && !fs.existsSync(d)) { const up = path.dirname(d); if (up === d) return null; d = up; }
+  return d;
+}
+const gitRoot = memo((dir) => {
+  if (!dir) return null;
+  try { return execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: dir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 3000 }).trim() || null; } catch { return null; }
+});
+const LIKELY_TOKEN_FILES = ['tokens.css', 'tokens/tokens.css', 'src/tokens.css', 'src/styles/tokens.css', 'styles/tokens.css', 'src/index.css', 'src/styles/globals.css',
+  'src/app/globals.css', 'app/globals.css', 'styles/globals.css', 'src/styles.css', 'tailwind.preset.cjs', 'tailwind.config.js', 'tailwind.config.cjs', 'tailwind.config.mjs', 'tailwind.config.ts'];
+const GATE_CACHE = path.join(os.tmpdir(), 'zehn-design-gate.json');
+const GATE_TTL = 5 * 60e3;
+// A repo root is zehn when it has a zehn.project.json, enables zehn-design in its own .claude settings, depends on a zehn
+// package, uses --zm- tokens in a likely token/Tailwind file, or (git grep, cached on disk) in any tracked stylesheet.
+const zehnRoot = memo((root) => {
+  if (!root) return false;
+  if (fs.existsSync(path.join(root, PROJECT_FILE))) return true;
+  for (const s of ['.claude/settings.json', '.claude/settings.local.json']) {
+    const t = readSmall(path.join(root, s));
+    if (t && /"zehn-design@zehn"\s*:\s*true/.test(t)) return true;
+  }
+  const plugin = readSmall(path.join(root, '.claude-plugin/plugin.json'));
+  if (plugin && /"name"\s*:\s*"zehn-design"/.test(plugin)) return true;
+  const pkg = readSmall(path.join(root, 'package.json'));
+  if (pkg) {
+    try { const j = JSON.parse(pkg); if (Object.keys({ ...j.dependencies, ...j.devDependencies, ...j.peerDependencies }).some((d) => /zehn/i.test(d))) return true; } catch {}
+  }
+  for (const f of LIKELY_TOKEN_FILES) {
+    const t = readSmall(path.join(root, f));
+    if (t && (/--zm-/.test(t) || (/^tailwind/.test(f) && /zehn/i.test(t)))) return true;
+  }
+  if (gitRoot(root) !== root) return false;
+  let cache = {};
+  try { cache = JSON.parse(fs.readFileSync(GATE_CACHE, 'utf8')); } catch {}
+  const hit = cache[root];
+  if (hit && Date.now() - hit.t < GATE_TTL) return hit.v;
+  let v = false;
+  try {
+    execFileSync('git', ['grep', '-q', '-I', '-e', '--zm-', '--', '*.css', '*.scss', '*.sass', '*.less', '*tailwind.preset.cjs'],
+      { cwd: root, stdio: 'ignore', timeout: 2000 });
+    v = true;
+  } catch {}
+  cache[root] = { v, t: Date.now() };
+  try { fs.writeFileSync(GATE_CACHE, JSON.stringify(cache)); } catch {}
+  return v;
+});
+function gated(file, cwd) {
+  const base = path.resolve(cwd || process.cwd());
+  const dir = existingDir(path.dirname(path.resolve(base, file)));
+  if (dir && findProject(dir)) return true;
+  const root = (dir && gitRoot(dir)) || gitRoot(existingDir(base)) || base;
+  return zehnRoot(root) || !!findProject(base);
+}
+
 // Files the check never looks at: generated/vendor files, and the project's own token sources.
 function skipped(file) {
   if (!UI_EXT.test(file) || SKIP.test(file)) return true;
@@ -158,17 +302,44 @@ const MSG = {
   arbType: 'Arbitrary font size/weight/radius/tracking. Use text-xs…text-2xl, font-normal/font-semibold, rounded/rounded-lg/xl/2xl/full.',
   arbSize: 'Arbitrary size/z-index. Use a standard Tailwind size key or a zehn layout key: max-w-column-narrow, max-w-column-detail, w-modal, w-drawer, h-topbar-height, h-row…',
   offSpace: () => (CTX.project && CTX.spaceKeys !== TW_SPACE_KEYS ? `Off-scale spacing class. The project's spacing keys (zehn.project.json): ${[...CTX.spaceKeys].join(' ')}.` : `Off-scale spacing class. ${SPACE_HINT}.`),
-  radius: 'Off-scale or unknown radius. Pick by element: rounded (4) cards, panels, tables, banners, toasts, badges, small buttons · rounded-lg (8) buttons, inputs, menus · rounded-xl (12) modals · rounded-2xl (16) mobile cards · rounded-full avatars, counters, switches.',
+  radius: () => (CTX.project && CTX.radiusKeys !== ZEHN_RADIUS_KEYS && !sameSet(CTX.radiusKeys, ZEHN_RADIUS_KEYS)
+    ? `Off-scale radius class. The project's radius keys: ${[...CTX.radiusKeys].map((k) => (k ? `rounded-${k}` : 'rounded')).join(' ')}.`
+    : 'Off-scale or unknown radius. Pick by element: rounded (4) cards, panels, tables, banners, toasts, badges, small buttons · rounded-lg (8) buttons, inputs, menus · rounded-xl (12) modals · rounded-2xl (16) mobile cards · rounded-full avatars, counters, switches.'),
   shadow: 'Default Tailwind shadow renders nothing under the zehn preset. Web cards: a 1px border-border-default, no shadow. shadow-100 raised controls · shadow-200 tooltips, toasts · shadow-300 menus, modals, drawers · shadow-focus.',
-  textSize: 'No such text size. App UI: text-xs 12 meta · text-sm 14 body · text-base 16 · text-lg 18 · text-2xl 24 H1. text-3xl…7xl are for mobile large titles and marketing pages only.',
+  textSize: () => (CTX.project && !sameSet(CTX.textKeys, ZEHN_TEXT_KEYS)
+    ? `Off-scale text size. The project's sizes: ${[...CTX.textKeys].map((k) => `text-${k}`).join(' ')}.`
+    : 'No such text size. App UI: text-xs 12 meta · text-sm 14 body · text-base 16 · text-lg 18 · text-2xl 24 H1. text-3xl…7xl are for mobile large titles and marketing pages only.'),
   weight: 'Only 400 and 600 exist: 300/500 → font-normal, 700/bold → font-semibold.',
+  weightFn: () => (CTX.project && !sameSet(CTX.weights, ZEHN_WEIGHTS) ? `Off-scale font weight. The project's weights: ${[...CTX.weights].join(' ')}.` : MSG.weight),
+  gradient: () => (CTX.project ? 'Gradients are off-system. Use a flat color token from the project.' : 'Gradients are off-system: zehn ships none. Use a flat surface token; AI surfaces are flat bg-ai-bg or the ai-* variants.'),
+  pill: () => (CTX.project ? 'Pill buttons/inputs are off-system: use the project\'s button/input radius.' : 'Pill buttons/inputs are off-system: buttons and inputs use 8px corners (rounded-lg).'),
+  dsEdit: (dir) => `Changing the shared design system (${dir}): designer sign-off needed. List this change under Design gaps.`,
+  transitionAll: 'Name the properties (transition-colors, transition-opacity, transition-transform); transition: all animates layout and color by accident.',
+  slow: (ms) => (CTX.durations
+    ? `${ms}ms isn't one of the project's durations (zehn.project.json motion.durations: ${CTX.durations.join(' ')}ms).`
+    : `${ms}ms is too slow for product UI. zehn motion tokens: 150ms hover/press (duration-fast), 200ms menus/modals/toasts (duration-base), 300ms drawers/panels (duration-slow).`),
+  numericDuration: 'Numeric duration classes render nothing under the zehn preset. Use duration-fast (150ms hover/press), duration-base (200ms menus/modals/toasts) or duration-slow (300ms drawers/panels).',
+  arbDuration: () => (CTX.project && !CTX.zehnTokens ? 'Arbitrary duration. Use the project\'s duration classes or tokens.' : 'Arbitrary duration. Use duration-fast (150ms hover/press), duration-base (200ms menus/modals/toasts) or duration-slow (300ms drawers/panels).'),
+  layoutAnim: 'Animating layout (width/height/top/left/margin/padding) reflows every frame. Animate transform and opacity only; for size changes use the layout prop or a transform.',
+  bounce: 'No bouncy motion in product UI. Use ease-out (ease-out / --zm-ease-out), no bounce or ping.',
+  scale0: 'Start at scale 0.95-0.97 with opacity 0, never from 0.',
+  reducedCss: 'Animation/transition without a reduced-motion path. Use the --zm-duration-* vars (they drop to 0ms) or add @media (prefers-reduced-motion: reduce).',
+  reducedJs: 'Add a reduced-motion path (useReducedMotion or <MotionConfig reducedMotion="user"> at the app root).',
   family: 'Only Inter: remove the font-family; it inherits var(--zm-font-sans). For aligned numbers use tabular-nums.',
-  unknownProjectVar: (name) => `Unknown token: ${name} isn't declared in ${PROJECT_REF}. Use an existing token.`,
+  unknownProjectVar: (name) => {
+    const near = closestVar(name, new Set([...CTX.project.vars, ...CTX.fileVars]));
+    return `Unknown token: ${name} isn't declared in ${PROJECT_REF}.${near ? ` Did you mean ${near}?` : ''} Use an existing token.`;
+  },
   unknownVar: (name) => `Unknown zehn token: ${name} does not exist.${closestVar(name) ? ` Did you mean ${closestVar(name)}?` : ''} See ${REF}.`,
   ignore: `zehn-ignore needs who asked and why: ${IGNORE_FMT}, and a Design gaps line.`,
 };
 
+function sameSet(a, b) { if (a === b) return true; if (a.size !== b.size) return false; for (const x of a) if (!b.has(x)) return false; return true; }
+
 const SINGLE_WORD_UTILS = new Set('flex grid block inline inline-block inline-flex inline-grid hidden contents table relative absolute fixed sticky static truncate underline uppercase lowercase capitalize italic rounded border shadow grow shrink container ring outline transition invisible visible isolate group peer sr-only antialiased overflow-hidden'.split(' '));
+// A lone token in quotes ('p-101', 'm-2') is an id or a key as often as a class; count it only with a variant (md:p-4)
+// or when the line names classes/styles.
+const CLASS_HINT = /class|cls\b|styles?\b|variants?\b|\btw\b|size/i;
 function quotedSegment(line, idx) {
   // The quoted string ('', "", ``) that contains position idx, or null.
   const re = /(["'`])((?:\\.|(?!\1).)*)\1/g;
@@ -176,9 +347,10 @@ function quotedSegment(line, idx) {
   while ((m = re.exec(line))) if (m.index < idx && idx < m.index + m[0].length) return m[2];
   return null;
 }
-function classLike(s) {
+function classLike(s, line = '') {
   const toks = s.trim().split(/\s+/).filter(Boolean);
   if (!toks.length) return false;
+  if (toks.length === 1 && !/:/.test(toks[0]) && !CLASS_HINT.test(line)) return false;
   return toks.every((t) => /[-:[]/.test(t) ? /^[!\-]?[\w:[\]()/.\-%#,'=&>~*@]+$/.test(t) : SINGLE_WORD_UTILS.has(t)) && toks.some((t) => /-/.test(t));
 }
 const CLASS_CTX = /\bclass(Name)?\s*=|:class=|\b(cn|clsx|cx|cva|twMerge|twJoin|classNames|classnames)\(|\btw`|@apply|classList/;
@@ -186,10 +358,19 @@ function inClassContext(line, idx, kind) {
   if (kind === 'css') return /@apply/.test(line);
   const seg = quotedSegment(line, idx);
   if (seg === null) return /@apply/.test(line);
-  return CLASS_CTX.test(line) || classLike(seg);
+  return CLASS_CTX.test(line) || classLike(seg, line);
 }
+const AI_GRADIENT = /ai-gradient|--zm-ai\b|--zm-ai-|variant=["'{`]*ai-|\b(?:from|via|to|bg|text)-ai(?:-bg)?\b/;
+const tokenFile = () => /token/i.test(path.basename(FILE));
+const PILL_EL = /<(?:button|Button|input|Input|select|Select|textarea|Textarea)\b/;
 
 const WEB_RULES = [
+  { id: 'gradient', msg: MSG.gradient, cls: true,
+    re: new RegExp(`(?<![\\w-])${V}(?:bg-(?:gradient|linear|radial|conic)-[\\w[\\]().,%/-]+|(?:from|via|to)-(?!\\d+%)(?:[a-z][\\w-]*|\\[[^\\]]+\\])(?:\\/\\d+)?)(?![\\w-])`, 'g'),
+    ok: (line) => AI_GRADIENT.test(line) || tokenFile() },
+  { id: 'gradient', msg: MSG.gradient, re: /\b(?:repeating-)?(?:linear|radial|conic)-gradient\(/g,
+    ok: (line) => /^\s*(\/\/|\*|\/\*)/.test(line) || AI_GRADIENT.test(line) || tokenFile() },
+  { id: 'pill', msg: MSG.pill, cls: true, re: new RegExp(`(?<![\\w-])${V}rounded-full(?![\\w-])`, 'g'), ok: (line) => !PILL_EL.test(line) },
   { id: 'hex-color', msg: MSG.hex, re: /(?<![\w&])#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3,4})\b(?![\w-])/g,
     ok: (line, i, kind) => {
       if (/^\s*(\/\/|\*|<!--|\/\*)/.test(line) || /&#/.test(line)) return true;
@@ -232,16 +413,22 @@ const WEB_RULES = [
   { id: 'off-scale-class', msg: MSG.offSpace, cls: true,
     re: new RegExp(`(?<![\\w-])${V}-?(?:p|px|py|pt|pr|pb|pl|ps|pe|m|mx|my|mt|mr|mb|ml|ms|me|gap|gap-x|gap-y|space-x|space-y)-([\\d.]+|px)(?![\\w.-]|\\/)`, 'g'),
     ok: (line, i, kind, m) => CTX.spaceKeys.has(m[1]) },
-  { id: 'radius', zehnScale: true, msg: MSG.radius, cls: true,
-    re: new RegExp(`(?<![\\w-])${V}rounded(?:-[trblse]{1,2})?-(md|\\d+)(?![\\w-])`, 'g') },
+  // Radius, text size and weight run in every mode: the allowed keys are zehn's, or the project's (tokens.radiusKeys /
+  // fontSizeKeys / fontWeights, plus keys its Tailwind config or theme sources declare).
+  { id: 'radius', msg: MSG.radius, cls: true,
+    re: new RegExp(`(?<![\\w-])${V}rounded(?:-(?:t|r|b|l|s|e|tl|tr|br|bl|ss|se|es|ee))?(?:-([a-z0-9.]+))?(?![\\w-])`, 'g'),
+    ok: (line, i, kind, m) => CTX.radiusKeys.has(m[1] || '') },
   { id: 'shadow', zehnScale: true, msg: MSG.shadow, cls: true,
     re: new RegExp(`(?<![\\w-])${V}shadow(?:-(?:sm|md|lg|xl|2xl|inner))?(?![\\w-])`, 'g'),
     ok: (line, i) => /^\s*(\/\/|\*)/.test(line) },
-  { id: 'text-size', zehnScale: true, msg: MSG.textSize, cls: true, re: new RegExp(`(?<![\\w-])${V}text-(?:8xl|9xl)(?![\\w-])`, 'g') },
-  { id: 'font-weight', zehnScale: true, msg: MSG.weight,
-    re: /font-weight\s*:\s*(?:[12357-9]00|bold|bolder|lighter)\b|fontWeight\s*:\s*['"]?(?:[12357-9]00|bold|bolder|lighter)\b/g },
-  { id: 'font-weight-class', zehnScale: true, msg: MSG.weight, cls: true,
-    re: new RegExp(`(?<![\\w-])${V}font-(?:thin|extralight|light|medium|bold|extrabold|black)(?![\\w-])`, 'g') },
+  { id: 'text-size', msg: MSG.textSize, cls: true, re: new RegExp(`(?<![\\w-])${V}text-(xxs|xs|sm|md|base|lg|xl|[2-9]xl|tiny)(?![\\w-])`, 'g'),
+    ok: (line, i, kind, m) => CTX.textKeys.has(m[1]) },
+  { id: 'font-weight', msg: MSG.weightFn,
+    re: /(?<![\w-])font-weight\s*:\s*['"]?([a-z]+|\d{3})\b|\bfontWeight\s*:\s*['"]?([a-z]+|\d{3})\b/g,
+    ok: (line, i, kind, m) => { const n = weightOf(m[1] || m[2]); return !n || CTX.weights.has(n); } },
+  { id: 'font-weight-class', msg: MSG.weightFn, cls: true,
+    re: new RegExp(`(?<![\\w-])${V}font-(thin|extralight|light|normal|medium|semibold|bold|extrabold|black)(?![\\w-])`, 'g'),
+    ok: (line, i, kind, m) => CTX.weights.has(WEIGHT_NUM[m[1]]) },
   { id: 'font-family', msg: MSG.family,
     re: /font-family\s*:\s*(?!\s*(?:var\(--zm-font|['"]?Inter\b|inherit|initial|unset))[^;}]+|fontFamily\s*:\s*['"`]+(?!Inter\b|var\(--zm)[^'"`,]+/g,
     ok: (line, i, kind, m) => !!CTX.project && /var\(--/.test(m[0]) },
@@ -282,7 +469,7 @@ function importantClasses(line, push) {
   const re = /(["'`])((?:\\.|(?!\1).)*)\1/g;
   let m;
   while ((m = re.exec(line))) {
-    if (!classLike(m[2]) && !CLASS_CTX.test(line)) continue;
+    if (!classLike(m[2], line) && !CLASS_CTX.test(line)) continue;
     const t = /(?:^|\s)((?:[a-z0-9-]+:)*![a-z][\w\-[\]/.:]*)/g;
     let c;
     while ((c = t.exec(m[2]))) push(m.index + 1 + c.index, c[1], 'important', 'Tailwind !important override. Use the component\'s props or variant, or a token class. If no prop does it, list it under Design gaps.');
@@ -311,56 +498,193 @@ function rawPrimitives(line, push) {
   }
 }
 
-// Project mode: a new component outside components.dir whose name looks like a mapped one (PrimaryButton, MyModal,
-// StatusPill…). Agents drift by inventing these; the app's own component should be used or extended instead.
+// Project mode: a new component outside the design-system folders that duplicates a mapped one. It fires only when
+// the new component renders the raw element the mapped one covers (PrimaryButton → <button>, styled.button), or when
+// its name ends with a mapped name/synonym and it's exported from a shared/ui-like folder. Compositions and sub-parts
+// (RequestsTableSkeleton, CardTop, Header…) never count.
 const SYNONYMS = { Badge: ['Pill', 'Tag', 'Chip'], Modal: ['Dialog', 'Popup'], AlertDialog: ['Confirm'], Drawer: ['Sheet', 'SidePanel'],
   Toast: ['Snackbar', 'Notification'], Button: ['Btn'], Select: ['Dropdown'], Tooltip: ['Hint'], Input: ['TextField'], Avatar: ['UserPic'] };
 const NOT_COMPONENT = /(Context|Props|Provider|Group|Store|Type|Types|State|Ref|Schema|Variants|Styles|Config)$/;
-function lookalike(name) {
-  if (!CTX.project || NOT_COMPONENT.test(name)) return null;
-  const words = name.match(/[A-Z][a-z0-9]*/g) || [];
+const PART_SUFFIX = /(Skeleton|Placeholder|Loading|Layout|Section|Row|Cell|Header|Footer|Body|Top|Bottom|Wrapper|Container|Root|Inner|Item|Icon)$/;
+const RAW_FOR = {
+  Button: /<button\b|styled\.button\b|styled\(\s*['"]button/, Select: /<select\b|styled\.select\b/, Textarea: /<textarea\b|styled\.textarea\b/,
+  Input: /<input\b(?![^>]*type=["'](?:checkbox|radio))|styled\.input\b/, Checkbox: /type=["']checkbox/, Radio: /type=["']radio/,
+  Switch: /role=["']switch/, Modal: /<dialog\b|role=["']dialog/, AlertDialog: /role=["']alertdialog|<dialog\b/, Tooltip: /role=["']tooltip/,
+  Menu: /role=["']menu["']/, Tabs: /role=["']tablist/,
+};
+const SHARED_DIR = /(^|\/)(shared|ui|common|primitives|design-system|kit|elements|base)\//i;
+const words = (n) => n.match(/[A-Z][a-z0-9]*/g) || [n];
+function lookalike(name, { body = '', exported = false, file = FILE } = {}) {
+  if (!CTX.project || NOT_COMPONENT.test(name) || PART_SUFFIX.test(name)) return null;
+  const w = words(name);
+  const rel = path.relative(CTX.project.root, path.resolve(file)).split(path.sep).join('/');
   for (const [catalog, e] of Object.entries(CTX.project.map)) {
+    if (e && e.component === name) return null; // their own component (a re-export or wrapper of the same name)
     const names = [catalog, e && e.component, ...(SYNONYMS[catalog] || [])].filter((x) => typeof x === 'string' && /^[A-Z]/.test(x));
     for (const n of names) {
-      const nw = n.match(/[A-Z][a-z0-9]*/g) || [n];
-      for (let i = 0; i + nw.length <= words.length; i++) {
-        if (nw.every((w, k) => words[i + k] === w)) return { catalog, entry: e || {} };
-      }
+      const nw = words(n);
+      let at = -1;
+      for (let i = 0; i + nw.length <= w.length; i++) if (nw.every((x, k) => w[i + k] === x)) at = i;
+      if (at < 0) continue;
+      const raw = RAW_FOR[catalog] || (e && RAW_FOR[e.component]);
+      if (raw && raw.test(body)) return { catalog, entry: e || {} };
+      if (at + nw.length === w.length && exported && SHARED_DIR.test(rel)) return { catalog, entry: e || {} };
     }
   }
   return null;
 }
 const dupMsg = (hit) => `Looks like a new ${hit.catalog}. Use ${hit.entry.component || hit.catalog}${hit.entry.import ? ` from ${hit.entry.import}` : ''}; if it can't do this, extend it there and list it as a design gap.`;
-const COMPONENT_DEF = /(?:^|[^\w.])(?:export\s+(?:default\s+)?)?(?:function\s+([A-Z]\w*)\s*[(<]|(?:const|let)\s+([A-Z]\w*)\s*(?::[^=]+)?=\s*(?:React\.)?(?:\(|forwardRef|memo|styled|function|async\s*\()|class\s+([A-Z]\w*)\s+extends)/g;
-function duplicateComponents(line, push) {
-  if (/^\s*(\/\/|\*|\/\*)/.test(line)) return;
+const COMPONENT_DEF = /(?:^|[^\w.])(export\s+(?:default\s+)?)?(?:function\s+([A-Z]\w*)\s*[(<]|(?:const|let)\s+([A-Z]\w*)\s*(?::[^=]+)?=\s*(?:React\.)?(?:\(|forwardRef|memo|styled|function|async\s*\()|class\s+([A-Z]\w*)\s+extends)/g;
+// The definition's source: from its line in the file on disk (else the changed lines) to the next definition, ≤40 lines.
+function bodyFrom(lines, i, file) {
+  const fl = fileLines(path.resolve(file));
+  const n = lines[i].n;
+  const seq = fl && n > 0 && fl[n - 1] !== undefined && fl[n - 1].trim() === lines[i].text.trim()
+    ? fl.slice(n - 1, n + 39) : lines.slice(i, i + 40).map((l) => l.text);
+  const out = [seq[0]];
+  for (let k = 1; k < seq.length; k++) { COMPONENT_DEF.lastIndex = 0; if (COMPONENT_DEF.test(seq[k])) break; out.push(seq[k]); }
+  return out.join('\n');
+}
+function duplicateComponents(lines, i, file, push) {
+  const line = lines[i].text;
+  if (/^\s*(\/\/|\*|\/\*)/.test(line) || /zehn-ignore/.test(line)) return;
   COMPONENT_DEF.lastIndex = 0;
-  let m;
+  let m, body = null;
   while ((m = COMPONENT_DEF.exec(line))) {
-    const name = m[1] || m[2] || m[3];
-    const hit = lookalike(name);
-    if (hit && !(hit.entry.component === name)) push(m.index, name, 'duplicate-component', dupMsg(hit));
+    const name = m[2] || m[3] || m[4];
+    if (body === null) body = bodyFrom(lines, i, file);
+    const hit = lookalike(name, { body, exported: !!m[1], file });
+    if (hit) push(m.index, name, 'duplicate-component', dupMsg(hit));
+    COMPONENT_DEF.lastIndex = m.index + m[0].length;
   }
 }
 
-function cssPx(line, push) {
-  const re = /\b(padding|margin|gap|row-gap|column-gap|inset|top|right|bottom|left|border-radius|font-size)(?:-[a-z]+)?\s*:\s*([^;}{]+)/g;
+const offScaleHint = (kind) => (CTX.project && !CTX.zehnTokens ? 'Use the project\'s tokens (zehn.project.json tokens.sources).'
+  : kind === 'size' ? 'Use a zehn layout size (max-w-column-narrow, w-modal, w-drawer, h-row…), 100%, auto or a token.'
+    : 'Use var(--zm-space-*), var(--zm-radius-*) or a text style.');
+// Raw px in CSS (and CSS-in-JS / styled-components template lines).
+function cssPx(line, push, kind, back) {
+  const re = /(?<![\w-])(padding|margin|gap|row-gap|column-gap|inset|top|right|bottom|left|border-radius|font-size|(?:min-|max-)?(?:width|height))(?:-[a-z]+)?\s*:\s*([^;}{]+)/g;
   let m;
+  // width/height in JS/TSX only where it's clearly styling (style={{}}, sx, styled/css template lines), not data like column widths.
+  const sizeOk = kind === 'css' || /\bstyle\b|\bsx\b|\bcss\b|styled/.test(line) || /^\s*(?:min-|max-)?(?:width|height)\s*:\s*[^;'"`]+;\s*$/.test(line);
   while ((m = re.exec(line))) {
     const prop = m[1];
+    const size = /width|height/.test(prop);
+    if (size && !sizeOk) continue;
     const nums = [...m[2].matchAll(/(-?\d+(?:\.\d+)?)px/g)].map((x) => Math.abs(parseFloat(x[1])));
-    const set = prop === 'border-radius' ? RADIUS : prop === 'font-size' ? FONT_SIZE : SPACE;
-    if (set !== SPACE && !CTX.zehnTokens) continue;
+    const set = prop === 'border-radius' ? CTX.radiusPx : prop === 'font-size' ? CTX.fontPx : size ? LAYOUT_PX : SPACE;
+    if (prop === 'border-radius' && /(?:\d{3,}px|50%|100%)/.test(m[2]) && /button|btn|input|select|textarea/i.test(back())) {
+      push(m.index, m[0].trim(), 'pill', MSG.pill()); continue;
+    }
     const bad = nums.filter((n) => !set.has(n));
-    if (bad.length) push(m.index, m[0].trim(), 'off-scale', `Off-scale ${prop}: ${bad.join('px, ')}px. Use var(--zm-space-*), var(--zm-radius-*) or a text style.`);
+    if (bad.length) push(m.index, m[0].trim(), 'off-scale', `Off-scale ${prop}: ${bad.join('px, ')}px. ${offScaleHint(size ? 'size' : '')}`);
   }
   const js = /\b(padding|margin|gap|rowGap|columnGap|fontSize|borderRadius)(?:Top|Right|Bottom|Left|X|Y|Horizontal|Vertical|Inline|Block)?\s*:\s*(\d+(?:\.\d+)?)\b(?!\s*[%a-z])/g;
   while ((m = js.exec(line))) {
     const n = parseFloat(m[2]);
-    const set = m[1] === 'borderRadius' ? RADIUS : m[1] === 'fontSize' ? FONT_SIZE : SPACE;
-    if (set !== SPACE && !CTX.zehnTokens) continue;
-    if (!set.has(n)) push(m.index, m[0], 'off-scale', `Off-scale ${m[1]}: ${n}. Use the zehn scale.`);
+    const set = m[1] === 'borderRadius' ? CTX.radiusPx : m[1] === 'fontSize' ? CTX.fontPx : SPACE;
+    if (!set.has(n)) push(m.index, m[0], 'off-scale', `Off-scale ${m[1]}: ${n}. ${CTX.project && !CTX.zehnTokens ? 'Use the project\'s scale.' : 'Use the zehn scale.'}`);
   }
+}
+
+// ---------- motion ----------
+const MOTION_EXEMPT = /spin|loader|spinner|shimmer|skeleton|marquee|progress|repeat:\s*Infinity|infinite/i;
+const FRAMER_IMPORT = /from\s+['"](?:framer-motion|motion\/react(?:-client)?|motion)['"]|require\(\s*['"]framer-motion['"]\)/;
+const LAYOUT_PROPS = /^(width|height|top|left|right|bottom|inset|margin(?:-[a-z]+)?|padding(?:-[a-z]+)?|max-height|max-width|min-height|min-width|margin[A-Z]\w*|padding[A-Z]\w*|maxHeight|maxWidth|minHeight|minWidth)$/;
+const tooSlow = (ms) => (CTX.durations ? ms !== 0 && !CTX.durations.includes(ms) : ms > 300);
+function motionRules(line, kind, push) {
+  if (/^\s*(\/\/|\*|\/\*)/.test(line)) return;
+  const exempt = MOTION_EXEMPT.test(line);
+  const cls = (re, fn) => { re.lastIndex = 0; let m; while ((m = re.exec(line))) if (inClassContext(line, m.index, kind)) fn(m); };
+  const any = (re, fn) => { re.lastIndex = 0; let m; while ((m = re.exec(line))) fn(m); };
+  const framerFile = FRAMER_IMPORT.test(fileText(path.resolve(FILE)) || '');
+  // a. transition: all
+  cls(new RegExp(`(?<![\\w-])${V}transition-all(?![\\w-])`, 'g'), (m) => push(m.index, m[0], 'transition-all', MSG.transitionAll));
+  any(/(?<![\w-])transition(?:-property)?\s*:\s*['"`]?\s*all\b|\btransitionProperty\s*:\s*['"`]all\b/g, (m) => push(m.index, m[0], 'transition-all', MSG.transitionAll));
+  // b. durations
+  if (!exempt) {
+    cls(new RegExp(`(?<![\\w-])${V}duration-(\\d+)(?![\\w-])`, 'g'), (m) => {
+      const ms = +m[1];
+      if (tooSlow(ms)) push(m.index, m[0], 'slow-motion', MSG.slow(ms));
+      else if (ms !== 0 && CTX.zehnTokens) push(m.index, m[0], 'duration-token', MSG.numericDuration);
+    });
+    cls(new RegExp(`(?<![\\w-])${V}duration-\\[([^\\]]+)\\]`, 'g'), (m) => {
+      if (/^var\(--zm-duration-/.test(m[1]) || (CTX.project && /^var\(--/.test(m[1]))) return;
+      push(m.index, m[0], 'duration-token', MSG.arbDuration());
+    });
+    any(/(?<![\w-])(transition|transition-duration|animation|animation-duration|transitionDuration|animationDuration)\s*:\s*([^;{}]+)/g, (m) => {
+      const slow = [...m[2].matchAll(/(?<![\w.-])(\d*\.?\d+)(ms|s)(?![\w-])/g)].map((t) => Math.round(parseFloat(t[1]) * (t[2] === 's' ? 1000 : 1))).filter(tooSlow);
+      if (slow.length) push(m.index, m[0].trim(), 'slow-motion', MSG.slow(Math.max(...slow)));
+    });
+    // Framer Motion: duration in seconds inside a transition object.
+    if (kind === 'web' && (framerFile || /transition|animate|initial|exit|while[A-Z]/.test(line))) {
+      any(/\bduration\s*:\s*(\d*\.?\d+)(?!\s*(?:m?s\b|['"`\w%.]))/g, (m) => {
+        const v = parseFloat(m[1]);
+        if (v >= 10) return; // ms values belong to other APIs (toast timeouts…)
+        const ms = Math.round(v * 1000);
+        if (tooSlow(ms)) push(m.index, m[0], 'slow-motion', MSG.slow(ms));
+      });
+    }
+  }
+  // c. layout properties
+  any(/(?<![\w-])(?:transition|transition-property|transitionProperty)\s*:\s*([^;{}]+)/g, (m) => {
+    const props = m[1].replace(/['"`]/g, '').split(',').map((s) => s.trim().split(/\s+/)[0]);
+    if (props.some((p) => LAYOUT_PROPS.test(p))) push(m.index, m[0].trim(), 'layout-animation', MSG.layoutAnim);
+  });
+  cls(new RegExp(`(?<![\\w-])${V}transition-\\[([^\\]]+)\\]`, 'g'), (m) => {
+    if (m[1].split(',').some((p) => LAYOUT_PROPS.test(p.trim()))) push(m.index, m[0], 'layout-animation', MSG.layoutAnim);
+  });
+  if (kind === 'web' && !/\slayout(?=[\s/>={])/.test(line)) {
+    any(/\b(?:animate|exit)=\{\{[^}]*?\b(height|width|top|left|right|bottom|margin\w*|padding\w*|maxHeight|minHeight|maxWidth|minWidth)\s*:/g,
+      (m) => push(m.index, m[0], 'layout-animation', MSG.layoutAnim));
+  }
+  // d. bounce
+  cls(new RegExp(`(?<![\\w-])${V}animate-(?:bounce|ping)(?![\\w-])`, 'g'), (m) => push(m.index, m[0], 'bounce', MSG.bounce));
+  any(/\bbounce\s*:\s*(\d*\.?\d+)/g, (m) => { if (parseFloat(m[1]) > 0.3) push(m.index, m[0], 'bounce', MSG.bounce); });
+  // e. enter from scale 0
+  if (!exempt) {
+    cls(new RegExp(`(?<![\\w-])${V}-?scale(?:-[xy])?-0(?![\\w.%/-])`, 'g'), (m) => push(m.index, m[0], 'scale-zero', MSG.scale0));
+    any(/\bscale(?:3d|X|Y)?\(\s*0\s*[,)]/g, (m) => push(m.index, m[0], 'scale-zero', MSG.scale0));
+    if (kind === 'css') any(/(?<![\w-])scale\s*:\s*0(?![.\d\w])/g, (m) => push(m.index, m[0], 'scale-zero', MSG.scale0));
+    else if (framerFile || /\b(?:initial|exit|animate)=/.test(line)) any(/\bscale\s*:\s*0(?![.\d\w])/g, (m) => push(m.index, m[0], 'scale-zero', MSG.scale0));
+  }
+}
+// f. reduced motion: one flag per file whose changed lines add motion with no reduced-motion path.
+function reducedMotion(lines, file) {
+  const kind = lang(file);
+  const live = lines.filter((l) => !/zehn-ignore/.test(l.text) && !/^\s*(\/\/|\*|\/\*)/.test(l.text));
+  const text = fileText(path.resolve(file));
+  const all = text === null ? lines.map((l) => l.text).join('\n') : text;
+  if (kind === 'css') {
+    const hit = live.find((l) => /@keyframes|(?<![\w-])animation(?:-name)?\s*:(?!\s*none)|(?<![\w-])transition\s*:(?!\s*none)/.test(l.text));
+    if (hit && !/prefers-reduced-motion/.test(all) && !/--zm-duration-/.test(all)) return { line: hit.n, text: hit.text, msg: MSG.reducedCss };
+  } else if (kind === 'web' && /\.(tsx|jsx|ts|js|mjs)$/i.test(file) && !CTX.reducedGlobal && FRAMER_IMPORT.test(all)) {
+    const hit = live.find((l) => /<motion\.|\bmotion\(|\buseAnimate\b|(?<![\w.])animate\(/.test(l.text));
+    if (hit && !/useReducedMotion|MotionConfig/.test(all)) return { line: hit.n, text: hit.text, msg: MSG.reducedJs };
+  }
+  return null;
+}
+
+// ---------- design-system folders ----------
+// Editing the shared components restyles every screen: one flag per file (hook / stop only). The plugin's own
+// components/react is exempt when the repo is the plugin itself.
+const pluginRepo = memo((dir) => {
+  for (let d = dir; ; d = path.dirname(d)) {
+    const t = readSmall(path.join(d, '.claude-plugin/plugin.json'));
+    if (t) return /"name"\s*:\s*"zehn-design"/.test(t);
+    if (path.dirname(d) === d) return false;
+  }
+});
+function designSystemDir(file) {
+  const abs = path.resolve(file);
+  const dir = existingDir(path.dirname(abs));
+  if (!dir || abs.startsWith(PLUGIN_ROOT + path.sep) || pluginRepo(dir)) return null;
+  const proj = findProject(dir);
+  const rootOf = (d) => path.relative(proj ? proj.root : gitRoot(dir) || dir, d).split(path.sep).join('/') || '.';
+  if (proj) { const d = proj.dirs.find((x) => inside(abs, [x])); if (d) return rootOf(d); }
+  const z = /^(.*[\\/]components[\\/]zehn)[\\/]/.exec(abs);
+  return z ? rootOf(z[1]) : null;
 }
 
 // ---------- native rules ----------
@@ -401,8 +725,9 @@ const NATIVE_SCALES = {
 };
 
 // ---------- line checker ----------
-function checkLine(line, file, prev = '', ctx = contextFor(file)) {
+function checkLine(line, file, prev = '', ctx = contextFor(file), back = () => prev) {
   CTX = ctx;
+  FILE = file;
   const out = [];
   if (/zehn-ignore/.test(line)) {
     if (!/zehn-ignore:\s*\S.{3,}/.test(line)) out.push({ id: 'ignore-reason', text: 'zehn-ignore', msg: MSG.ignore });
@@ -413,6 +738,7 @@ function checkLine(line, file, prev = '', ctx = contextFor(file)) {
   const push = (idx, text, id, msg) => {
     const end = idx + text.length;
     if (taken.some(([a, b]) => idx < b && end > a)) return; // one report per spot (no double hits like text-[#333])
+    if (id === 'gradient' && out.some((p) => p.id === id)) return; // bg-gradient-to-r from-x to-y is one gradient
     taken.push([idx, end]);
     out.push({ id, text: text.trim(), msg });
   };
@@ -430,11 +756,9 @@ function checkLine(line, file, prev = '', ctx = contextFor(file)) {
     }
     deadColorClasses(line, kind, push);
     importantClasses(line, push);
-    if (kind === 'web' && !inComponentLibrary(file)) {
-      rawPrimitives(line, push);
-      if (CTX.project) duplicateComponents(line, push);
-    }
-    if (!/^\s*(\/\/|\*|\/\*)/.test(line)) cssPx(line, push);
+    if (kind === 'web' && !inComponentLibrary(file)) rawPrimitives(line, push);
+    if (!/^\s*(\/\/|\*|\/\*)/.test(line)) cssPx(line, push, kind, back);
+    motionRules(line, kind, push);
   } else {
     if (/^\s*(\/\/|\*|\/\*)/.test(line)) return out;
     // .font(.system(size:)) on an SF Symbol / icon image sizes the glyph, not text.
@@ -457,14 +781,37 @@ function checkLine(line, file, prev = '', ctx = contextFor(file)) {
   return out;
 }
 
-// lines: [{n, text}]
-function checkLines(lines, file) {
+// lines: [{n, text}]. opts.changed: these are lines the agent changed (hook / stop), not a whole-file review.
+function checkLines(lines, file, opts = {}) {
   const probs = [];
   const ctx = contextFor(file);
+  const kind = lang(file);
   lines.forEach(({ n, text }, i) => {
     const prev = lines.slice(Math.max(0, i - 2), i).map((l) => l.text).join('\n');
-    for (const p of checkLine(text, file, prev, ctx)) probs.push({ file, line: n, ...p });
+    // The CSS rule / styled block this line sits in (for selector-aware rules like pill buttons).
+    const back = () => {
+      const fl = fileLines(path.resolve(file));
+      const before = fl && n > 0 ? fl.slice(Math.max(0, n - 16), n - 1) : prev.split('\n');
+      for (let k = before.length - 1; k >= 0; k--) if (/\{\s*$|styled|css`/.test(before[k])) return before[k];
+      return prev;
+    };
+    for (const p of checkLine(text, file, prev, ctx, back)) probs.push({ file, line: n, ...p });
+    if (kind === 'web' && ctx.project && !inComponentLibrary(file)) {
+      duplicateComponents(lines, i, file, (idx, t, id, msg) => {
+        if (!probs.some((p) => p.line === n && p.id === id && p.text === t)) probs.push({ file, line: n, id, text: t, msg });
+      });
+    }
   });
+  CTX = ctx; FILE = file;
+  if (kind === 'web' || kind === 'css') {
+    const rm = reducedMotion(lines, file);
+    if (rm) probs.push({ file, line: rm.line, id: 'reduced-motion', text: rm.text.trim(), msg: rm.msg });
+  }
+  if (opts.changed) {
+    const ds = designSystemDir(file);
+    const hit = ds && lines.find((l) => l.text.trim() && !/zehn-ignore/.test(l.text));
+    if (hit) probs.unshift({ file, line: hit.n, id: 'design-system-edit', text: ds, msg: MSG.dsEdit(ds) });
+  }
   return probs;
 }
 
@@ -524,16 +871,19 @@ function hookMode(raw) {
   let input;
   try { input = JSON.parse(raw); } catch { process.exit(0); }
   const ti = input.tool_input || {};
-  const file = ti.file_path || ti.path || '';
+  const rawFile = ti.file_path || ti.path || '';
+  const file = rawFile && input.cwd ? path.resolve(input.cwd, rawFile) : rawFile;
   if (skipped(file)) process.exit(0);
+  if (!gated(file, input.cwd)) process.exit(0); // not a zehn app: stay silent
   const lines = changedLines(input);
-  const problems = checkLines(lines, file);
-  // A new file (Write) whose name looks like a mapped component, e.g. src/pages/StatusPill.tsx.
+  const problems = checkLines(lines, file, { changed: true });
+  // A new file (Write) whose name looks like a mapped component, e.g. src/shared/ui/StatusPill.tsx.
   const tr = input.tool_response || {};
   if (typeof ti.content === 'string' && (tr.type === 'create' || !tr.originalFile) && !problems.some((p) => p.id === 'duplicate-component')) {
-    CTX = contextFor(file);
+    CTX = contextFor(file); FILE = file;
     const base = path.basename(file).replace(/\.[^.]+$/, '');
-    const hit = /^[A-Z]/.test(base) && !inComponentLibrary(file) ? lookalike(base) : null;
+    const hit = /^[A-Z]/.test(base) && lang(file) === 'web' && !inComponentLibrary(file)
+      ? lookalike(base, { body: ti.content, exported: /\bexport\b/.test(ti.content), file }) : null;
     if (hit) problems.push({ file, line: 0, id: 'duplicate-component', text: path.basename(file), msg: dupMsg(hit) });
   }
   if (problems.length) {
@@ -581,7 +931,15 @@ function workingAdds(cwd) {
 }
 const snapPath = (id) => path.join(os.tmpdir(), `zehn-design-${String(id || 'default').replace(/[^\w-]/g, '')}.json`);
 
+// Is the session's repo (or any package in it) a zehn app?
+function repoGated(cwd) {
+  const root = gitRoot(existingDir(path.resolve(cwd)));
+  if (zehnRoot(root || cwd) || findProject(path.resolve(cwd))) return true;
+  return !!root && !!(git(['ls-files', '--', `*${PROJECT_FILE}`], root) || '').trim();
+}
+
 function sessionStart(input) {
+  if (!repoGated(input.cwd || process.cwd())) return;
   const adds = workingAdds(input.cwd || process.cwd());
   if (!adds) return;
   const snap = {};
@@ -593,8 +951,13 @@ function stopMode(raw) {
   let input = {};
   try { input = JSON.parse(raw); } catch {}
   if (input.stop_hook_active) process.exit(0);
-  const adds = workingAdds(input.cwd || process.cwd());
+  const cwd = input.cwd || process.cwd();
+  if (!repoGated(cwd)) process.exit(0); // not a zehn app: stay silent
+  const adds = workingAdds(cwd);
   if (!adds) process.exit(0);
+  // In a repo that isn't zehn as a whole (a monorepo with one zehn package), check only files under a zehn.project.json.
+  const root = gitRoot(existingDir(path.resolve(cwd)));
+  if (!zehnRoot(root || cwd)) for (const f of Object.keys(adds)) if (!findProject(path.dirname(f))) delete adds[f];
   let snap = {};
   try { snap = JSON.parse(fs.readFileSync(snapPath(input.session_id), 'utf8')); } catch {}
   const problems = [];
@@ -604,7 +967,7 @@ function stopMode(raw) {
     for (const t of snap[f] || []) before.set(t, (before.get(t) || 0) + 1);
     const fresh = ls.filter((l) => { const k = l.text.trim(); if (before.get(k)) { before.set(k, before.get(k) - 1); return false; } return true; });
     ignores += fresh.filter((l) => /zehn-ignore/.test(l.text)).length;
-    problems.push(...checkLines(fresh, f));
+    problems.push(...checkLines(fresh, f, { changed: true }));
   }
   if (!problems.length) process.exit(0);
   process.stderr.write(
@@ -620,8 +983,10 @@ if (args[0] === '--stop') readStdin(stopMode);
 else if (args[0] === '--session-start') readStdin((raw) => { try { sessionStart(JSON.parse(raw)); } catch {} });
 else if (args.length) {
   const all = [];
-  for (const f of args) {
-    if (skipped(f) || !fs.existsSync(f)) continue;
+  const files = args.filter((f) => !skipped(f) && fs.existsSync(f));
+  const ungated = files.filter((f) => !gated(f));
+  if (ungated.length) console.log(`zehn style check: note: ${ungated.length === files.length ? 'this repo' : ungated.map((f) => path.basename(f)).join(', ')} isn't a zehn app (no zehn.project.json or --zm- tokens); the hooks skip it, checking anyway with zehn's rules.`);
+  for (const f of files) {
     all.push(...checkLines(fs.readFileSync(f, 'utf8').split('\n').map((text, i) => ({ n: i + 1, text })), f));
   }
   if (!all.length) { console.log('zehn style check: clean'); process.exit(0); }

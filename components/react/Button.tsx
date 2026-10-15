@@ -40,7 +40,12 @@ const sizeClasses: Record<ButtonSize, string> = {
 
 export const baseButtonClass =
   'relative inline-flex shrink-0 items-center justify-center whitespace-nowrap font-semibold select-none ' +
-  'focus-visible:outline-none focus-visible:shadow-focus motion-safe:transition-colors';
+  'focus-visible:outline-none focus-visible:shadow-focus';
+
+/** Hover colors fade (fast). */
+export const buttonColorMotion = 'transition-colors duration-fast ease-out';
+/** Hover colors plus press feedback: scales to --zm-press-scale (0.96; 1 under reduced motion) while held. */
+export const buttonPressMotion = 'transition duration-fast ease-out active:scale-press';
 
 export const disabledButtonClass =
   'disabled:cursor-not-allowed disabled:bg-disabled-bg disabled:text-disabled-fg ' +
@@ -54,13 +59,14 @@ export function withDisabledReason(button: ReactElement, reason: string | undefi
   return reason ? <Tooltip content={reason}>{button}</Tooltip> : button;
 }
 
-/** Class string for a button-looking element (e.g. an <a> nav tab). */
+/** Class string for a button-looking element (e.g. an <a> nav tab). `press` adds the press scale; off by default. */
 export function buttonClass({
   variant = 'secondary',
   size = 'medium',
+  press = false,
   className,
-}: { variant?: ButtonVariant; size?: ButtonSize; className?: string } = {}) {
-  return cx(baseButtonClass, sizeClasses[size], variantClasses[variant], className);
+}: { variant?: ButtonVariant; size?: ButtonSize; press?: boolean; className?: string } = {}) {
+  return cx(baseButtonClass, sizeClasses[size], variantClasses[variant], press ? buttonPressMotion : buttonColorMotion, className);
 }
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -74,17 +80,20 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   loading?: boolean;
   /** Use instead of `disabled` to say why the action is unavailable: the button stays focusable and shows this in a Tooltip. */
   disabledReason?: string;
+  /** No press scale. For dense, high-frequency UI: table row actions, toolbars. Hover colors still fade. */
+  still?: boolean;
 }
 
 const renderIcon = (icon: ButtonProps['leftIcon'], size: ButtonSize) =>
   typeof icon === 'string' ? <Icon name={icon} className={size === 'small' ? 'text-sm' : 'text-base'} /> : icon;
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { variant = 'secondary', size = 'medium', leftIcon, rightIcon, counter, loading = false, disabled, disabledReason, className, children, type = 'button', onClick, ...rest },
+  { variant = 'secondary', size = 'medium', leftIcon, rightIcon, counter, loading = false, disabled, disabledReason, still = false, className, children, type = 'button', onClick, ...rest },
   ref,
 ) {
   const left = leftIcon === undefined && variant.startsWith('ai-') ? 'sparkling-2' : leftIcon;
   const reason = loading ? undefined : disabledReason;
+  const press = !still && !disabled && !loading && !reason;
   return withDisabledReason(
     <button
       ref={ref}
@@ -94,7 +103,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       aria-busy={loading || undefined}
       onClick={reason ? (e: MouseEvent<HTMLButtonElement>) => e.preventDefault() : onClick}
       className={cx(
-        buttonClass({ variant, size }),
+        buttonClass({ variant, size, press }),
         loading ? 'cursor-wait' : disabledButtonClass,
         variant === 'ghost' && 'disabled:bg-transparent aria-disabled:bg-transparent',
         className,

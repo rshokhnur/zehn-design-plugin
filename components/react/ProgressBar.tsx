@@ -29,8 +29,12 @@ export function ProgressBar({ value, max = 100, label, showValue, size = 'medium
         className={cx('w-full overflow-hidden rounded-full bg-progress-track', size === 'small' ? 'h-1' : 'h-2')}
         {...rest}
       >
-        {/* The fill width is data, not a design value, so it is the one inline style. */}
-        <div className="h-full rounded-full bg-progress-fill motion-safe:transition-all" style={{ width: `${pct}%` }} />
+        {/* The fill position is data, not a design value, so it is the one inline style. A full-width fill slides
+            in from the left (transform, so it animates without layout); the track's overflow-hidden clips it. */}
+        <div
+          className="h-full w-full rounded-full bg-progress-fill transition-transform duration-base ease-out"
+          style={{ transform: `translateX(${pct - 100}%)` }}
+        />
       </div>
     </div>
   );
