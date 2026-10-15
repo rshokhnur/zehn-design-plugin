@@ -30,7 +30,8 @@ a. Read zehn.project.json at the app root.
 b. Use its mapped components (their names, imports and props) and its tokens (tokens.sources, tailwindColors). zehn's own components and --zm-* tokens are a fallback only where the file says so (fallback.zehnDir, fallback.zehnTokens).
 c. Copy the layout of the example screen mapped for that screen type (screens), or the closest existing screen.
 d. Never invent a component, variant or style. If one is truly needed, build it from their existing primitives in their style and list it under Design gaps.
-e. Build only what was asked: no extra actions, filters, stats or statuses, here or on neighbouring screens. Ideas go under "Suggestions". If the sibling screens lack a catalog pattern (HeaderPattern, stat cards), match the siblings and list it as a gap.
+e. Build only what was asked: no extra actions, filters, stats or statuses, here or on neighbouring screens. Ideas go under "Suggestions".
+Hard rules are tokens, styling, components and the list below. Layout (top bar or sidebar, headers, cards vs list vs table, widths, modal vs drawer) is a default: follow the sibling screens, then the app's Figma, then the zehn recipes, and deviate when the content or the developer calls for it, with no pushback: one "Layout: <what>, <why>" line under Design gaps. Never drop real nav items to fit a pattern.
 f. Don't edit the shared components (components.dir) to restyle one screen. Only when the user asks, and list it as "design-system change, designer sign-off needed".
 
 Which skill to load:

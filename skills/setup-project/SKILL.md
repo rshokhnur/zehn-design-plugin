@@ -7,6 +7,8 @@ description: Set up zehn for this project, once per app repo and after a plugin 
 
 zehn is a guardrails layer over the app's **existing** design system. Map what's there; install nothing that already exists. Never overwrite, rename or duplicate the app's tokens or components.
 
+An empty folder isn't the target. If someone starts one, use the team's usual stack if they name it, install the zehn fallback (step 4–5), and keep going; don't spend long on it.
+
 Plugin files are in `${CLAUDE_PLUGIN_ROOT}` (if unset, use the "Plugin files" path from the session rules): `tokens/` (zehn CSS variables, Tailwind preset, native theme files), `components/react/` (zehn React components), `reference/` (rules, catalog, tokens).
 
 ## 0. Enable the plugin for this repo

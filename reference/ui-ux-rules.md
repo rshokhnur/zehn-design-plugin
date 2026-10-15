@@ -15,14 +15,20 @@ zehn is a guardrails layer over the app's own design system. `zehn.project.json`
 
 zehn class names and `--zm-*` tokens in these rules describe the zehn fallback (used when `fallback.zehnTokens` is true). In an app with its own tokens, read them as "the project's token for this Figma variable". The rules themselves (widths, order, which element gets which radius, formats) apply either way.
 
+## Rules vs layout defaults
+
+Two kinds of rules live here:
+- **Hard rules (always):** the project's tokens and styling (color, radius, type, shadow, spacing, motion), its mapped components and nothing invented, primary always black, the accent list (§0), copy and formats (§8), a confirm before destructive actions (§5), accessibility (§5a). The style check enforces most of these.
+- **Layout defaults (adapt to context):** the shell (top bar or sidebar), page and detail headers, HeaderPattern, stat-card rows, cards vs list vs table, content widths, modal vs drawer, screen recipes (§2, §3). Follow the app's existing screens first, then the Figma frames for that app, then these defaults. Deviate when the content calls for it (a settings area with many sections, a dense ops tool, an embedded widget) or the developer asks: no pushback, no `zehn-ignore`, just one `Layout: <what>, <why>` line under Design gaps. Keep every real navigation item; never drop items to fit a pattern.
+
 ## Who wins
 
 When two sources disagree on anything (a value, a component, a layout), walk this list from the top and stop at the first one that decides:
 
 1. **An explicit request from the user in this session.** Only through the off-system protocol (§8a): one-line note, then `zehn-ignore` on each line, then Design gaps.
-2. **The designer's hard decisions in these rules:** the project's tokens only; primary always black; accent only in its allowed list (§0); ghost-tab nav (§2); content widths (§2); modal vs drawer (§3); sentence case, date and money formats (§8); Alert Dialog before destructive actions (§5). Why: these were decided on purpose and beat old Figma frames.
+2. **The hard rules** (above): the project's tokens and styling, mapped components, primary always black, the accent list (§0), sentence case, date and money formats (§8), Alert Dialog before destructive actions (§5). Why: these were decided on purpose and beat old Figma frames. Layout is not on this list; it follows 3 and 4.
 3. **Figma:** first the Figma component (page `UI Elements`) and the project's mapped component that mirrors it (`zehn.project.json`), then the Figma frame for the screen.
-4. **The app's existing sibling screens** (the mapped example screen and the screens next to the one you're building). If they lack a catalog pattern (HeaderPattern, a stat-card row, a page header layout), match the siblings and list the missing pattern under Design gaps, so the designer can roll it out everywhere at once. Why: one new page that looks different from its neighbours is worse than all of them missing a pattern.
+4. **The app's existing sibling screens** (the mapped example screen and the screens next to the one you're building). For layout they come first: if they use a sidebar, cards or no page header, so does the new screen. If they lack a catalog pattern (HeaderPattern, a stat-card row), leave it out. Why: one new page that looks different from its neighbours is worse than all of them missing a pattern.
 5. **The component catalog and the remaining rules**, for anything Figma or the siblings don't show.
 6. **Your own judgement.** List it under Design gaps.
 
@@ -88,22 +94,29 @@ Small things the components can't do for you:
 - **Icons:** one icon set per app. One icon, one meaning (a chevron that expands doesn't also navigate). 8px between an icon and its label (the components do this).
 - **Clickable things** are `<button>` or `<a>`, never `<div onClick>`. Don't wrap a whole card in one `<a>`: make the title the link (and stretch it over the card if needed).
 
-## 2. Desktop shell (all web apps)
+## 2. Desktop shell (default)
+
+Use the app's own shell. These are the zehn defaults for a new app or a screen with no siblings.
 
 - **Top bar:** 56px, `bg-surface-base`, 1px bottom `border-border-default` (`TopBar`).
   - Left: logo `zehn` + `/app` in the accent, a 1×16 divider, then nav as **ghost tabs** (ghost Button, icon + label). The active tab gets the subtle fill.
   - Right: bell IconButton + red Counter, a divider, a ghost "Support" button and the avatar.
-  - No sidebars. No Segmented Control as navigation.
+  - Navigation lives in the top bar by default. An app whose shell has a sidebar (or that needs one: many sections, deep settings) uses a sidebar; keep its items as ghost buttons with icon + label. Don't use a Segmented Control as app navigation.
 - **Page header** (`PageHeader`, list and overview pages): 2px accent bar, 32px accent icon, H1 `text-2xl font-semibold`, a gray subtitle with live counts ("1 request waiting on you"). `HeaderPattern` sits behind its top right.
   - Actions on the right, in this order: up to 2 `secondary` buttons, then a `…` IconButton Menu for the rest, then the one `primary`.
   - Export is a `secondary` button labeled "Export" with the `download-2` icon. When it offers formats, it opens a Menu ("Export as CSV", "Export as XLSX"). File name: `{app}-{items}-{dd.mm.yyyy}.csv`, e.g. `procurement-requests-30.06.2026.csv`.
 - **Detail header** (`DetailHeader`): back IconButton or "< All {items}" link, `#ID` (`text-xs`, gray), the title, a meta row (avatar + name · Submitted 01.06.2026 · Needed by 30.06.2026 (in 28 days)), a `…` menu on the right, a divider below.
-- **Content width.** Pick by what the page shows:
+- **Content width.** Default by what the page shows (siblings win):
   - Columns aligned across rows (a table), a board, a builder or charts → full width, 24px gutters (`px-6`, no max width).
   - The detail of one object → 896 centered (`max-w-column-detail mx-auto`): 560 main + 16 gap + 320 side column.
   - Everything else (card feeds, inbox rows, settings, a form on a page) → 768 centered (`max-w-column-narrow mx-auto`).
 
-## 3. Screen types
+- **Narrow screens:** no sideways scroll down to 1024px wide (or the app's minimum). Card and stat rows wrap (`flex-wrap` or a responsive grid); top-bar nav that doesn't fit moves into a `…` Menu; tables scroll inside their container, not the page.
+- **Which app:** use the `data-app` the repo already sets. A new area that isn't one of the zehn apps: ask; until answered, use the closest app and list it under Design gaps.
+
+## 3. Screen types (default recipes)
+
+Starting points, not requirements. Match the sibling screens first; pick the recipe that fits the content.
 
 | Type | Recipe |
 |---|---|
@@ -115,7 +128,7 @@ Small things the components can't do for you:
 | Dashboard | rows of chart cards and stat cards |
 | Empty | keep the header, search and filters; `EmptyState` centered with a title, one line and an optional small button |
 
-**Create/edit container.** Walk this in order:
+**Create/edit container.** Default order (follow how the app already does it):
 1. Destructive confirm → `AlertDialog` (520).
 2. Repeated sub-items (line items) → a full page (e.g. procurement New Request).
 3. Multi-step, or more than 8 fields → `Drawer` 520 (`size="wide"` 640 when it holds a table), with a stepper if multi-step.
@@ -203,8 +216,8 @@ Use the components mapped in `zehn.project.json` first, then the zehn fallback c
 - **Tone:** short, friendly, second person ("Your requests", "Tell us what you need."). No "please" in buttons and prompts.
 - **Specific labels:** buttons say the outcome ("Save changes", "Send for approval"), never "Submit", "OK" or "Yes". Errors say how to fix it ("Enter an amount above 0"), never "Invalid input" or "Something went wrong" alone. Put the important word first.
 - **Empty and error states** say why and what to do next, with the action as a button ("You haven't created a request yet" + "New request"). Error pages name what failed and offer a specific way out (Retry, Go to requests).
-- **Dates:** `30.06.2026`. Date-time: `30.06.2026 14:27` (24h). Ranges: `12.01.2026 – 31.01.2026 · 10 days`. Add relative time next to deadlines: "(in 28 days)". Same in every locale.
-- **Money:** en `24,000,000 UZS`; ru and uz `24 000 000 UZS` (non-breaking space, decimal comma). The currency code stays `UZS`, after the number.
+- **Dates:** `30.06.2026`. Calendars and date pickers start the week on Monday; month and weekday names come from the locale. Date-time: `30.06.2026 14:27` (24h). Ranges: `12.01.2026 – 31.01.2026 · 10 days`. Add relative time next to deadlines: "(in 28 days)". Same in every locale.
+- **Money:** en `24,000,000 UZS`; ru and uz `24 000 000 UZS` (non-breaking space, decimal comma). The code goes after the number. UZS is the default; when the data has its own currency (a USD price, a foreign supplier), show that currency (`formatMoney(827, locale, 'USD')` → `827 USD`). Never convert or relabel amounts.
 - **Durations:** `14d 3h 22m`. **IDs:** `#REQ-3`. **Meta separator:** ` · `.
 - **Always format with the helpers** and pass the locale: `formatDate(d, locale)`, `formatDateTime`, `formatMoney`, `formatNumber`, `formatDuration`, with `const locale = useZehnLocale()`. They default to `en`, so leaving out the locale gives English output in a ru/uz app. Never hand-build these strings or use `toLocaleString`.
 - **Languages:** web English, plus ru and uz where the app has them; edu Uzbek (Latin); desk English.

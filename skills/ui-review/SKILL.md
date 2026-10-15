@@ -12,13 +12,12 @@ description: Review UI code (the current diff, a PR or branch, or given files) a
    - **Migration** (the user asked to migrate a page, or the branch already rewrites most of the file): fix every issue in the file in one pass, and rebuild hand-made parts with the mapped components, then the zehn fallback components. Keep the layout unless it breaks a hard rule; a new layout is compose-screen work. Don't migrate other screens in the same change.
 3. **Review by eye.** Load the `compose-screen` skill (full rules, catalog and tokens) and check what the script can't see:
    - Invented components, variants or styles: a hand-made button, badge or modal; a new `PrimaryButton`-style wrapper; a zehn component used where the map names the app's own. Use the components mapped in `zehn.project.json` first (their names, imports and props), then the zehn fallback components (`fallback.zehnDir`), then build from the catalog spec with the app's primitives.
-   - Layout that doesn't match the example screen mapped for its type (`screens`).
-   - Wrong container or width: rules §3 create/edit order, rules §2 width.
+   - Layout is a default, not a rule: report a layout that differs from its sibling screens (shell, header, cards vs list, width, container) as a question under **Needs a decision**, never as a violation, and only when no reason is given. Don't "fix" a layout to match the zehn recipes.
    - Accent anywhere outside the rules §0 list, including `Counter`/`Badge` accents and "recommended option" cards, even if Figma shows it. Primary button not black.
    - Badge `status` that doesn't match the meaning (rules §4).
    - Missing states: empty, loading, error, destructive confirm, permission reason (`disabledReason`).
    - Scope: features nobody asked for (extra actions, filters, stats, statuses on neighbouring screens), changed data meaning (a "withdraw" that deletes), edits to shared components for one screen. Report them under Needs a decision.
-   - Drift from sibling screens: a pattern (HeaderPattern, stat cards) on the new page that its neighbours lack, or the reverse.
+   - Drift from sibling screens with no stated reason: a pattern (HeaderPattern, stat cards) on the new page that its neighbours lack, or the reverse (Needs a decision).
    - Motion: load the `motion` skill and run its review checklist (frequency, transform/opacity only, easing, duration, interruptible, origin, reduced motion).
    - Copy: Title Case, dates or money not built with the `format*` helpers and the locale, hard-coded English in a ru/uz app, typos, placeholder or joke data.
    - Dark mode breakage.

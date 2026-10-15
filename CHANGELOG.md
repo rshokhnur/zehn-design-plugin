@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.1.0 (15.10.2026)
+From the designer's own test (a Shopify admin screen rebuilt as zehn, plus a date range picker).
+
+**Layout is a default, not a rule**
+- Hard rules stay hard: tokens and styling, the team's components, nothing invented, black primary, accent list, formats, confirm before destructive actions, light/dark, accessibility.
+- Layout (top bar or sidebar, page headers, HeaderPattern, stat cards, cards vs list vs table, widths, modal vs drawer) follows the app's sibling screens, then the app's Figma, then the zehn recipes. Agents may deviate when the content or the developer calls for it, with no pushback: one `Layout: <what>, <why>` line under Design gaps. Real nav items are never dropped to fit a pattern.
+- ui-review asks about unexplained layout differences under "Needs a decision" and no longer "fixes" layouts to the recipes. The style check has no layout rules.
+
+**Style check**
+- Editing the shared components folder is now a note shown once per file, not a blocking error. Building a missing component there is allowed; it still goes under Design gaps. Whole-file mode prints the same note.
+- New: `tracking-*` (zehn sets letter spacing in the preset), `<div>`/`<span>` with `onClick`, and pill-shaped clickable elements.
+
+**Rules**
+- Money in the data's own currency when it has one (`formatMoney(827, locale, 'USD')`); UZS stays the default. Never convert or relabel amounts.
+- Narrow screens: no sideways scroll down to 1024px; rows wrap, extra nav goes into a `…` menu.
+- Week starts on Monday; month and weekday names come from the locale.
+- Which app: use the repo's `data-app`; for a new area, ask and use the closest app meanwhile.
+- The empty-folder path is kept short: the plugin is built for existing projects.
+
 ## 1.0.0 (15.10.2026)
 First production release, after the final stress test (12 runs with and without the plugin, plus CSS Modules, styled-components, shadcn and non-zehn repos).
 

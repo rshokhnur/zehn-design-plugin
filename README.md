@@ -30,6 +30,9 @@ For the live Figma part, connect the Figma MCP in Claude Code (works with a Dev 
 Devs: `/plugin marketplace update zehn`, then run setup-project again (it keeps your `zehn.project.json` and only adds or fixes entries).
 Designer, after Figma changes: re-export the variables to `tokens/source/figma_vars.json`, run `python3 scripts/gen-tokens.py`, edit `reference/*.md` if rules changed and run `scripts/build-skill.sh`, run `node tests/check-ui.test.js` and `bash tests/build-skill.test.sh`, bump `version` in `.claude-plugin/plugin.json`, push.
 
+## Upgrading to 1.1
+Nothing to run: `/plugin marketplace update zehn`. Layout rules are now defaults (see CHANGELOG.md), and shared-folder edits show a note instead of an error.
+
 ## Upgrading to 1.0 (from 0.4)
 Run "set up zehn for this project" again: it adds `motion`, `i18n` and (if your theme differs from zehn's) `radiusKeys`, `fontSizeKeys`, `fontWeights` to `zehn.project.json`. Then read the style check's first report: it now checks radius, font size and weight in your project too. Full list in `CHANGELOG.md`.
 

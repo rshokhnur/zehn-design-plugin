@@ -313,7 +313,7 @@ const MSG = {
   weightFn: () => (CTX.project && !sameSet(CTX.weights, ZEHN_WEIGHTS) ? `Off-scale font weight. The project's weights: ${[...CTX.weights].join(' ')}.` : MSG.weight),
   gradient: () => (CTX.project ? 'Gradients are off-system. Use a flat color token from the project.' : 'Gradients are off-system: zehn ships none. Use a flat surface token; AI surfaces are flat bg-ai-bg or the ai-* variants.'),
   pill: () => (CTX.project ? 'Pill buttons/inputs are off-system: use the project\'s button/input radius.' : 'Pill buttons/inputs are off-system: buttons and inputs use 8px corners (rounded-lg).'),
-  dsEdit: (dir) => `Changing the shared design system (${dir}): designer sign-off needed. List this change under Design gaps.`,
+  dsEdit: (dir) => `You changed the shared design system (${dir}). That's allowed when the user asked for it or when you build a missing catalog component there; list it under Design gaps as "design-system change, designer sign-off needed". Never restyle a shared component for one screen.`,
   transitionAll: 'Name the properties (transition-colors, transition-opacity, transition-transform); transition: all animates layout and color by accident.',
   slow: (ms) => (CTX.durations
     ? `${ms}ms isn't one of the project's durations (zehn.project.json motion.durations: ${CTX.durations.join(' ')}ms).`
@@ -362,7 +362,7 @@ function inClassContext(line, idx, kind) {
 }
 const AI_GRADIENT = /ai-gradient|--zm-ai\b|--zm-ai-|variant=["'{`]*ai-|\b(?:from|via|to|bg|text)-ai(?:-bg)?\b/;
 const tokenFile = () => /token/i.test(path.basename(FILE));
-const PILL_EL = /<(?:button|Button|input|Input|select|Select|textarea|Textarea)\b/;
+const PILL_EL = /<(?:button|Button|input|Input|select|Select|textarea|Textarea)\b|\bonClick=|role=["']button/;
 
 const WEB_RULES = [
   { id: 'gradient', msg: MSG.gradient, cls: true,
@@ -415,6 +415,12 @@ const WEB_RULES = [
     ok: (line, i, kind, m) => CTX.spaceKeys.has(m[1]) },
   // Radius, text size and weight run in every mode: the allowed keys are zehn's, or the project's (tokens.radiusKeys /
   // fontSizeKeys / fontWeights, plus keys its Tailwind config or theme sources declare).
+  { id: 'tracking', zehnScale: true, msg: 'zehn sets the -1% letter spacing in the preset; remove tracking-*.', cls: true,
+    re: new RegExp(`(?<![\\w-])${V}tracking-(?:tighter|tight|normal|wide|wider|widest)(?![\\w-])`, 'g') },
+  { id: 'div-click', msg: 'Clickable things are a <button> (the project\'s Button or IconButton) or a link, never a <div>/<span> with onClick: those aren\'t keyboard-reachable.',
+    re: /<(?:div|span|li|img)\b(?=[^>]*\bonClick=)(?![^>]*\brole=)[^>]*/g,
+    // a scrim behind a dialog, a click-catcher that only stops propagation, a label that mirrors a real control
+    ok: (line) => /aria-hidden|stopPropagation|\bid=\{?["'`]?\w*[lL]abel/.test(line) },
   { id: 'radius', msg: MSG.radius, cls: true,
     re: new RegExp(`(?<![\\w-])${V}rounded(?:-(?:t|r|b|l|s|e|tl|tr|br|bl|ss|se|es|ee))?(?:-([a-z0-9.]+))?(?![\\w-])`, 'g'),
     ok: (line, i, kind, m) => CTX.radiusKeys.has(m[1] || '') },
@@ -886,19 +892,31 @@ function hookMode(raw) {
       ? lookalike(base, { body: ti.content, exported: /\bexport\b/.test(ti.content), file }) : null;
     if (hit) problems.push({ file, line: 0, id: 'duplicate-component', text: path.basename(file), msg: dupMsg(hit) });
   }
-  if (problems.length) {
-    process.stderr.write(
+  // The design-system note informs; it never blocks (building a missing component there is allowed).
+  const notes = problems.filter((p) => p.id === 'design-system-edit');
+  const errors = problems.filter((p) => p.id !== 'design-system-edit');
+  const noteText = notes.length && firstNotice(input.session_id, file) ? `zehn design system: ${notes[0].msg}` : '';
+  if (errors.length) {
+    process.stderr.write((noteText ? noteText + '\n\n' : '') +
       `zehn design system: lines you just changed in ${path.basename(file)} break the style rules. Fix these now with the project's tokens and components (zehn.project.json, else zehn's):\n` +
-      format(problems, 30) +
+      format(errors, 30) +
       `\nFix each with the zehn token or component. Add ${IGNORE_FMT} ${IGNORE_SYNTAX} only when the user asked for this exact value, on every line that uses it, and list it under Design gaps. If you think no token fits, use the nearest one and list it under Design gaps; never add zehn-ignore yourself.\n`);
     process.exit(2);
   }
   const ignores = lines.filter((l) => /zehn-ignore/.test(l.text)).length;
-  if (ignores) {
-    process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PostToolUse',
-      additionalContext: `You added ${ignores} zehn-ignore override(s) in ${path.basename(file)}. Your final message MUST list each one under "Design gaps" (what, who asked, why) so the designer sees it. Never override silently.` } }));
-  }
+  const ctxText = [noteText, ignores ? `You added ${ignores} zehn-ignore override(s) in ${path.basename(file)}. Your final message MUST list each one under "Design gaps" (what, who asked, why) so the designer sees it. Never override silently.` : ''].filter(Boolean).join('\n');
+  if (ctxText) process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PostToolUse', additionalContext: ctxText } }));
   process.exit(0);
+}
+
+// Show the design-system note once per file per session.
+function firstNotice(session, file) {
+  const f = path.join(os.tmpdir(), `zehn-design-notes-${String(session || 'default').replace(/[^\w-]/g, '')}.json`);
+  let seen = [];
+  try { seen = JSON.parse(fs.readFileSync(f, 'utf8')); } catch {}
+  if (seen.includes(file)) return false;
+  try { fs.writeFileSync(f, JSON.stringify([...seen, file])); } catch {}
+  return true;
 }
 
 // ---------- session snapshot + stop check (git) ----------
@@ -969,10 +987,16 @@ function stopMode(raw) {
     ignores += fresh.filter((l) => /zehn-ignore/.test(l.text)).length;
     problems.push(...checkLines(fresh, f, { changed: true }));
   }
-  if (!problems.length) process.exit(0);
+  const dsDirs = [...new Set(problems.filter((p) => p.id === 'design-system-edit').map((p) => p.text))];
+  const errs = problems.filter((p) => p.id !== 'design-system-edit');
+  const dsNote = dsDirs.length ? `\nAlso: this session changed the shared design system (${dsDirs.join(', ')}). List it under Design gaps as "design-system change, designer sign-off needed".\n` : '';
+  if (!errs.length) {
+    if (dsNote) process.stdout.write(JSON.stringify({ systemMessage: dsNote.trim() }));
+    process.exit(0);
+  }
   process.stderr.write(
     `zehn design system: before you finish, these lines changed in this session (including through Bash or scripts) break the style rules. Fix them. Only for a value the user asked for: ${IGNORE_FMT} ${IGNORE_SYNTAX} on each line, plus a Design gaps line:\n` +
-    format(problems, 30) + '\n');
+    format(errs, 30) + '\n' + dsNote);
   process.exit(2);
 }
 
@@ -986,9 +1010,13 @@ else if (args.length) {
   const files = args.filter((f) => !skipped(f) && fs.existsSync(f));
   const ungated = files.filter((f) => !gated(f));
   if (ungated.length) console.log(`zehn style check: note: ${ungated.length === files.length ? 'this repo' : ungated.map((f) => path.basename(f)).join(', ')} isn't a zehn app (no zehn.project.json or --zm- tokens); the hooks skip it, checking anyway with zehn's rules.`);
+  const shared = new Set();
   for (const f of files) {
     all.push(...checkLines(fs.readFileSync(f, 'utf8').split('\n').map((text, i) => ({ n: i + 1, text })), f));
+    const ds = gated(f) && designSystemDir(path.resolve(f));
+    if (ds) shared.add(ds);
   }
+  if (shared.size) console.log(`zehn style check: note: some of these files are in the shared design system (${[...shared].join(', ')}); changes there need designer sign-off (list them under Design gaps).`);
   if (!all.length) { console.log('zehn style check: clean'); process.exit(0); }
   const byRule = {};
   for (const p of all) byRule[p.id] = (byRule[p.id] || 0) + 1;

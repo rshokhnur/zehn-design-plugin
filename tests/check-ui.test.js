@@ -12,6 +12,13 @@ const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zehn-check-'));
 const CASES = [
   // --- must flag ---
   ['tsx', `<div className="bg-blue-500 p-4" />`, true],
+  ['tsx', `<span className="uppercase tracking-wide">New</span>`, true],
+  ['tsx', `<div className="rounded-full px-4 h-8" onClick={go}>Save</div>`, true],
+  ['tsx', `<div onClick={() => open(row)}>{row.name}</div>`, true],
+  ['tsx', `<div role="button" tabIndex={0} onClick={go} onKeyDown={key}>Go</div>`, false],
+  ['tsx', `<div aria-hidden className="absolute inset-0 bg-scrim" onClick={onClose} />`, false],
+  ['tsx', `<div className="flex" onClick={(e) => e.stopPropagation()}>`, false],
+  ['tsx', `<span className="h-8 w-8 rounded-full bg-surface-subtle" />`, false],
   ['tsx', `<div className="p-[13px]" />`, true],
   ['tsx', `<div className="text-[#333]" />`, true],
   ['tsx', `<div className="w-[340px]" />`, true],
@@ -308,11 +315,16 @@ let gateCases = 0;
     'src/shared/ui/Button.tsx': 'export function Button() { return null; }\n',
     'src/lib/overlay/Dialog.tsx': 'export function Dialog() { return null; }\n',
   });
-  const edit = (rel, old, neu) => run([], { cwd: ds, tool_input: { file_path: path.join(ds, rel), old_string: old, new_string: neu } });
+  // The design-system note informs without blocking, once per file per session.
+  const sid = `ds-${process.pid}-${Date.now()}`;
+  const edit = (rel, old, neu) => run([], { cwd: ds, session_id: sid, tool_input: { file_path: path.join(ds, rel), old_string: old, new_string: neu } });
+  const dsNote = (dir) => new RegExp(`changed the shared design system \\(${dir.replace(/\//g, '\\/')}\\)`, 'g');
   r = edit('src/shared/ui/Button.tsx', 'return null;', 'const a = 1;\n  return a ? null : null;');
-  check(r.status === 2 && (r.stderr.match(/Changing the shared design system \(src\/shared\/ui\)/g) || []).length === 1, 'edit in components.dir should flag once', r);
-  r = edit('src/lib/overlay/Dialog.tsx', 'return null;', 'return 1;');
-  check(r.status === 2 && /Changing the shared design system \(src\/lib\/overlay\)/.test(r.stderr), 'edit in a mapped import folder should flag', r);
+  check(r.status === 0 && (r.stdout.match(dsNote('src/shared/ui')) || []).length === 1, 'edit in components.dir should note once, without blocking', r);
+  r = edit('src/shared/ui/Button.tsx', 'return null;', 'const c = 3;');
+  check(r.status === 0 && !r.stdout, 'second edit of the same shared file should be silent', r);
+  r = edit('src/lib/overlay/Dialog.tsx', 'return null;', 'return <div className="bg-blue-500" />;');
+  check(r.status === 2 && dsNote('src/lib/overlay').test(r.stderr) && /bg-blue-500/.test(r.stderr), 'shared edit with a real issue blocks and carries the note', r);
   r = edit('src/shared/ui/Button.tsx', 'return null;', 'return 1; // zehn-ignore: requested by Aziz, new size');
   check(r.status === 0, 'zehn-ignore line in components.dir should pass', r);
   r = edit('src/pages/Home.tsx', 'a', 'const b = 2;');
@@ -321,8 +333,8 @@ let gateCases = 0;
   r = run([], { cwd: path.resolve(__dirname, '..'), tool_input: { file_path: plug, old_string: 'a', new_string: 'const b = 2;' } });
   check(r.status === 0, "the plugin's own components/react is exempt", r);
   const zapp = mkrepo('zehn-dir-app', { 'tokens.css': ':root { --zm-x: 1px; }\n' });
-  r = run([], { cwd: zapp, tool_input: { file_path: path.join(zapp, 'src/components/zehn/Button.tsx'), old_string: 'a', new_string: 'const b = 2;' } });
-  check(r.status === 2 && /Changing the shared design system \(src\/components\/zehn\)/.test(r.stderr), 'edit in a copied components/zehn should flag', r);
+  r = run([], { cwd: zapp, session_id: sid, tool_input: { file_path: path.join(zapp, 'src/components/zehn/Button.tsx'), old_string: 'a', new_string: 'const b = 2;' } });
+  check(r.status === 0 && dsNote('src/components/zehn').test(r.stdout), 'edit in a copied components/zehn should note', r);
 
   // cssVarPrefixes trap: with readable sources, a --hr- var must be declared.
   const pj = (o) => fs.writeFileSync(path.join(ds, 'zehn.project.json'), JSON.stringify(o));

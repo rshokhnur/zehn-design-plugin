@@ -31,8 +31,8 @@ When sources disagree, follow "Who wins" at the top of the rules. When unsure, f
 4. A value in the frame differs from the rules or a mapped component → apply "Who wins" and add the Design gaps line.
 
 ## Step 2b: No design
-1. Pick the screen type and the create/edit container (rules §3) and the content width (rules §2).
-2. Copy the layout of the example screen mapped for that type (`screens` in `zehn.project.json`), or the closest existing screen. Match the sibling screens: if they lack a catalog pattern (HeaderPattern, stat cards), leave it out and list it under Design gaps (rules, Who wins 4).
+1. Look at the sibling screens in this app first. Then pick the screen type, the create/edit container (rules §3) and the content width (rules §2) as defaults where the siblings don't decide.
+2. Copy the layout of the example screen mapped for that type (`screens` in `zehn.project.json`), or the closest existing screen. Match the sibling screens: their shell, header, cards or list, and widths come first. The zehn recipes are defaults; deviate when the content or the developer calls for it, with a `Layout: <what>, <why>` line under Design gaps.
 3. Use the components mapped in `zehn.project.json` first (their names, imports and props), then the zehn fallback components (`fallback.zehnDir`), then build from the catalog spec with the app's primitives. List the mapping's `gaps` for each component you use under Design gaps. Never invent a component, variant or style; if one is truly needed, build it once from their primitives in their style (catalog intro) and list it.
 4. Design every state of what was asked: empty, loading (Skeleton, Button `loading`), validation error, success toast, permission (`disabledReason`), destructive confirm. States, yes; new features, no: extra actions, filters, stats or statuses go under Suggestions (rules, project map 5).
 5. Motion: only what the mapped components already do, plus the `motion` skill patterns where something opens, closes or changes. Page navigation is instant.
@@ -42,7 +42,7 @@ The zehn style check runs after every edit and again before you finish (Bash and
 - [ ] Only the project's tokens; no hex, unlisted Tailwind colors or arbitrary `[...]` values.
 - [ ] Only mapped (or fallback) components; no new component, variant or style. The layout matches the mapped example screen and its siblings.
 - [ ] Only what was asked; shared components untouched (or listed as a design-system change). Ideas under Suggestions.
-- [ ] Shell: 56px top bar with ghost tabs; list and overview pages have PageHeader + HeaderPattern; detail pages have DetailHeader; width per rules §2.
+- [ ] Layout fits the app: same shell, header and width as the sibling screens (zehn recipes where there are none). Any deliberate difference has a `Layout:` line under Design gaps.
 - [ ] One primary per surface (rules §4). Accent only in the rules §0 list.
 - [ ] Badges use `status` by meaning. Destructive actions open an AlertDialog.
 - [ ] Copy and formats per rules §8, through the app's formatters (or zehn's `format*`) with the locale.
@@ -52,4 +52,4 @@ The zehn style check runs after every edit and again before you finish (Bash and
 Follow rules §8a exactly, including for sed, scripts and codemods.
 
 ## Step 4: Design gaps
-Always end with **Design gaps** (and **Suggestions** if you had ideas beyond the ask): every decision the rules didn't cover, every place a lower source lost (`<element>: Figma <value>, used <value> (why)`), every component you built from the catalog, and every `zehn-ignore` (what, who asked, why). Write "Design gaps: none" if there are none.
+Always end with **Design gaps** (plus **Suggestions** if you had ideas beyond the ask): every decision the rules didn't cover, every place a lower source lost (`<element>: Figma <value>, used <value> (why)`), every component you built from the catalog, and every `zehn-ignore` (what, who asked, why). Write "Design gaps: none" if there are none.
