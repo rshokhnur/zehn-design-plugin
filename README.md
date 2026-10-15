@@ -20,7 +20,7 @@ One developer runs this in the app repo and commits `.claude/settings.json`:
 claude plugin marketplace add rshokhnur/zehn-design-plugin --scope project
 claude plugin install zehn-design@zehn --scope project
 ```
-(In a session: `/plugin marketplace add rshokhnur/zehn-design-plugin --scope project`, then pick "project" when `/plugin install` asks for the scope.) Everyone who opens the repo is prompted to enable it; it stays off in other projects.
+(In a session: `/plugin marketplace add rshokhnur/zehn-design-plugin --scope project`, then pick "project" when `/plugin install` asks for the scope.) Everyone else gets it with no install step: after they trust the folder at the first `claude` start, Claude Code fetches the marketplace and loads the plugin (they need read access to the GitHub repo; without it, use Option C). It stays off in other projects. Cloud sessions (claude.ai/code) never show the trust prompt, so they don't load it from project settings.
 Then, in a session: "set up zehn for this project". It writes `zehn.project.json`; review it and commit it.
 For the live Figma part, connect the Figma MCP in Claude Code (works with a Dev Mode seat).
 - From a zip: unzip to a permanent folder and run `claude plugin marketplace add ~/zehn-design-plugin --scope local`, then install with `--scope local`.

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.5.3 (15.10.2026)
+Checked against the Claude Code plugin docs (plugins overview, manifest reference, hooks, loading). Layout, manifest, marketplace, skills and hooks match; `claude plugin validate --strict` passes.
+- README: a project-scope install loads for teammates after they trust the folder, with no install step (the plugin is a relative-path entry in its marketplace), but they need read access to the GitHub repo, and cloud sessions don't load project-declared marketplaces.
+- plugin.json: added `displayName` and `repository`.
+
 ## 1.5.2 (15.10.2026)
 - **Fix:** the finish check sends a shared-component or theme edit to Claude as Stop `additionalContext`, so it gets listed under Design gaps. `systemMessage` is shown to the person only. On macOS the folder in that note stays inside the repo when the folder does not exist yet (`/var` is a symlink to `/private/var`).
 - **Fix:** how to update. Copy inside the app repo: `vendor.sh`, then commit. Local folder marketplace: replace that folder. GitHub: `claude plugin update zehn-design@zehn`. Then `/reload-plugins`. `/plugin marketplace update zehn` only refreshes the catalog and leaves the installed copy in place.
