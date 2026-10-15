@@ -11,6 +11,16 @@ An empty folder: use the stack the user names (else React + Tailwind), install t
 
 Plugin files are in `${CLAUDE_PLUGIN_ROOT}` (if unset, use the "Plugin files" path from the session rules): `tokens/` (zehn CSS variables, Tailwind preset, native theme files), `components/react/` (zehn React components), `reference/` (rules, catalog, tokens).
 
+## When they ask how to get a new plugin release
+Don't map the project yet. The files you are reading are the copy already loaded, so a newer release stays invisible until they replace that copy and run `/reload-plugins`. Tell them the one command, then stop.
+
+Read `extraKnownMarketplaces.zehn.source` in the repo's `.claude/settings.json`, then `~/.claude/settings.json`.
+- `directory` and `path` is `./.claude/plugins/zehn-design`, or that folder exists → `bash .claude/plugins/zehn-design/scripts/vendor.sh <zip or folder>`, commit, `/reload-plugins`. Never `marketplace update`: it does not touch this folder.
+- `directory` with any other path → replace that folder, then `/reload-plugins`. Never `plugin update`: that install loads in place, so there is no cached copy to replace.
+- Otherwise → `claude plugin update zehn-design@zehn`, then `/reload-plugins`. Never `/plugin marketplace update zehn`. Why: that refreshes the catalog only. The cached plugin stays pinned to `version` in `plugin.json`, and a third-party marketplace does not auto-update.
+
+"update zehn" after that reload means map the project (step 5a). Do not send them to update the plugin again.
+
 ## 0. Enable the plugin for this repo
 If `.claude/settings.json` lacks these keys, merge them in (keep every other key; create the file if missing):
 ```json
@@ -52,7 +62,7 @@ Tell the user to commit it: everyone who opens the repo is then prompted to enab
       "Modal": { "component": "Dialog", "import": "@/components/ui/dialog", "props": {}, "gaps": [] }
     }
   },
-  "pluginVersion": "1.5.1",
+  "pluginVersion": "1.5.2",
   "app": { "id": "office", "accent": "cyan", "modules": { "anbar": "violet" } },
   "decisions": {},
   "screens": { "table list": "src/app/requests/page.tsx", "detail": "src/app/requests/[id]/page.tsx" },

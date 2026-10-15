@@ -786,8 +786,20 @@ function designSystemDir(file) {
   if (!dir || abs.startsWith(PLUGIN_ROOT + path.sep) || pluginRepo(dir)) return null;
   const proj = findProject(dir);
   if (setupCopy(abs, proj)) return null;
-  const real = (x) => { try { return fs.realpathSync(x); } catch { return x; } };
-  const rootOf = (d) => path.relative(real(proj ? proj.root : gitRoot(dir) || dir), real(d)).split(path.sep).join('/') || '.';
+  // Resolve through the longest existing ancestor. On macOS /var is a symlink to /private/var, and realpath throws for a folder that does not exist yet, so path.relative would walk out of the repo.
+  const sameReal = (p) => {
+    let cur = path.resolve(p);
+    const tail = [];
+    while (!fs.existsSync(cur)) {
+      const parent = path.dirname(cur);
+      if (parent === cur) break;
+      tail.push(path.basename(cur));
+      cur = parent;
+    }
+    try { cur = fs.realpathSync(cur); } catch {}
+    return tail.length ? path.join(cur, ...tail.reverse()) : cur;
+  };
+  const rootOf = (d) => path.relative(sameReal(proj ? proj.root : gitRoot(dir) || dir), sameReal(d)).split(path.sep).join('/') || '.';
   if (proj) { const d = proj.dirs.find((x) => inside(abs, [x])); if (d) return rootOf(d); }
   const z = /^(.*[\\/]components[\\/]zehn)[\\/]/.exec(abs);
   return z ? rootOf(z[1]) : null;
@@ -1115,7 +1127,8 @@ function stopMode(raw) {
   const errs = problems.filter((p) => p.id !== 'design-system-edit');
   const dsNote = dsDirs.length ? `\nAlso: this session changed the shared design system (${dsDirs.join(', ')}). List it under Design gaps as "design-system change, designer sign-off needed".\n` : '';
   if (!errs.length) {
-    if (dsNote) process.stdout.write(JSON.stringify({ systemMessage: dsNote.trim() }));
+    // systemMessage is shown to the user only. additionalContext is what Claude reads, so the Design gaps line actually gets written.
+    if (dsNote) process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'Stop', additionalContext: dsNote.trim() } }));
     process.exit(0);
   }
   process.stderr.write(

@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5.2 (15.10.2026)
+- **Fix:** the finish check sends a shared-component or theme edit to Claude as Stop `additionalContext`, so it gets listed under Design gaps. `systemMessage` is shown to the person only. On macOS the folder in that note stays inside the repo when the folder does not exist yet (`/var` is a symlink to `/private/var`).
+- **Fix:** how to update. Copy inside the app repo: `vendor.sh`, then commit. Local folder marketplace: replace that folder. GitHub: `claude plugin update zehn-design@zehn`. Then `/reload-plugins`. `/plugin marketplace update zehn` only refreshes the catalog and leaves the installed copy in place.
+
 ## 1.5.1 (15.10.2026)
 - **Fix (blocker):** in an app with `"type": "module"` in its package.json (typical Vite), a plugin copy inside the repo (Option C) crashed every hook with "require is not defined in ES module scope", so the startup rules and the style check were silently off. The plugin now ships a `package.json` with `"type": "commonjs"` at its root, which `vendor.sh` copies.
 - setup-project checks that the hooks run and says so loudly, with the error, if they don't.

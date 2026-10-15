@@ -367,6 +367,16 @@ let gateCases = 0;
   check(r.status === 0, 'zehn-ignore line in components.dir should pass', r);
   r = edit('src/pages/Home.tsx', 'a', 'const b = 2;');
   check(r.status === 0, 'edit outside the design system should pass', r);
+  // Stop: a shared-file edit with no style error must reach Claude. systemMessage is shown to the user only.
+  const stopDs = mkrepo('ds-stop', {
+    'zehn.project.json': JSON.stringify({ components: { dir: 'src/shared/ui', map: {} } }),
+    'src/shared/ui/Button.tsx': 'export function Button() { return null; }\n',
+  });
+  fs.appendFileSync(path.join(stopDs, 'src/shared/ui/Button.tsx'), 'const marker = 1;\n');
+  r = run(['--stop'], { cwd: stopDs, session_id: `ds-stop-${process.pid}` });
+  let stopNote = null;
+  try { stopNote = JSON.parse(r.stdout); } catch {}
+  check(r.status === 0 && stopNote && !stopNote.systemMessage && stopNote.hookSpecificOutput && stopNote.hookSpecificOutput.hookEventName === 'Stop' && /src\/shared\/ui/.test(stopNote.hookSpecificOutput.additionalContext || ''), '--stop design-system note must reach Claude as additionalContext', r);
   const plug = path.resolve(__dirname, '../components/react/__gate_probe.tsx');
   r = run([], { cwd: path.resolve(__dirname, '..'), tool_input: { file_path: plug, old_string: 'a', new_string: 'const b = 2;' } });
   check(r.status === 0, "the plugin's own components/react is exempt", r);

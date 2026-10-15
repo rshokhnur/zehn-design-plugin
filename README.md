@@ -41,13 +41,20 @@ The plugin folder is committed in the app repo, and the app's `.claude/settings.
 3. Commit both: `git add .claude/plugins/zehn-design .claude/settings.json`.
 4. In a session: "set up zehn for this project", then commit `zehn.project.json`.
 
-**Update:** `bash .claude/plugins/zehn-design/scripts/vendor.sh ~/Downloads/zehn-design-plugin.zip` (a zip or a folder), then commit. It replaces the old copy completely. The copy runs in place, so there's no `marketplace update`; open sessions need `/reload-plugins`.
+**Update:** this copy loads in place. Replace the folder (Update, below, "copy inside the app repo"). Open sessions need `/reload-plugins`.
 - Don't hand-edit the copy; changes go to the designer and come back in the next zip.
 - If your linters or TypeScript scan the whole repo, exclude `.claude/plugins/` (the copy has `.tsx` fallback components).
 - Someone who added zehn from GitHub before: `claude plugin marketplace remove zehn` once, so the repo's copy is used.
 
 ## Update
-Devs: `/plugin marketplace update zehn` (or `vendor.sh` with the new zip, Option C), then say "update zehn": setup-project adds new keys to `zehn.project.json` and re-checks the component fixes listed in `CHANGELOG.md` since your `pluginVersion`. What changed in each version: `CHANGELOG.md`.
+Claude Code keeps the installed copy until something replaces that copy. `/plugin marketplace update zehn` only refreshes the catalog. It does not replace the plugin, and a third-party marketplace does not auto-update.
+
+Where is zehn installed? Read `extraKnownMarketplaces.zehn.source`.
+- **Copy inside the app repo** (`directory`, path `./.claude/plugins/zehn-design`): `bash .claude/plugins/zehn-design/scripts/vendor.sh <new zip or folder>`, then commit. The folder is the plugin, so there is no marketplace update. Open sessions: `/reload-plugins`.
+- **A local folder** (`directory`, any other path): replace that folder, then `/reload-plugins`. It loads in place, so `plugin update` has no cached copy to replace.
+- **GitHub**: `claude plugin update zehn-design@zehn`, then `/reload-plugins` in the open session. A new session loads the new version on its own.
+
+Then say "update zehn". setup-project adds new keys to `zehn.project.json` and re-checks component fixes in `CHANGELOG.md` newer than `pluginVersion`. What changed in each version: `CHANGELOG.md`.
 Designer, after Figma changes: re-export the variables to `tokens/source/figma_vars.json`, run `python3 scripts/gen-tokens.py`, edit `reference/*.md` if rules changed and run `scripts/build-skill.sh`, run `node tests/check-ui.test.js` and `bash tests/build-skill.test.sh`, bump `version` in `.claude-plugin/plugin.json`, push.
 
 ## Files
