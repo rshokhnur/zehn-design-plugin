@@ -19,6 +19,7 @@ If `.claude/settings.json` lacks these keys, merge them in (keep every other key
   "enabledPlugins": { "zehn-design@zehn": true }
 }
 ```
+If the repo has its own copy at `.claude/plugins/zehn-design/` (README, Option C), keep the `zehn` entry as `{ "source": "directory", "path": "./.claude/plugins/zehn-design" }` and never replace it with the GitHub one.
 Tell the user to commit it: everyone who opens the repo is then prompted to enable zehn, and it stays off in other projects.
 
 ## 1. Discover

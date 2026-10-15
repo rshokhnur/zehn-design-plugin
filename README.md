@@ -26,6 +26,26 @@ For the live Figma part, connect the Figma MCP in Claude Code (works with a Dev 
 - From a zip: unzip to a permanent folder and run `claude plugin marketplace add ~/zehn-design-plugin --scope local`, then install with `--scope local`.
 - A user-wide install (`--scope user`) also works: outside zehn repos it adds one line at session start and the style check stays silent. Per project is still the recommended way, so the whole team gets the same version.
 
+### Option C: a copy inside the app repo (devs need no access to this GitHub repo)
+The plugin folder is committed in the app repo, and the app's `.claude/settings.json` points at it with a repo-relative path. Anyone who clones the app gets zehn after they trust the folder at the first `claude` start; there's nothing to install.
+
+1. Get `zehn-design-plugin.zip` (from the designer) and unzip it anywhere.
+2. In the app repo: `bash <unzipped>/zehn-design-plugin/scripts/vendor.sh <unzipped>/zehn-design-plugin`
+   It copies the plugin to `.claude/plugins/zehn-design/` and adds this to `.claude/settings.json` (other keys are kept):
+   ```json
+   {
+     "extraKnownMarketplaces": { "zehn": { "source": { "source": "directory", "path": "./.claude/plugins/zehn-design" } } },
+     "enabledPlugins": { "zehn-design@zehn": true }
+   }
+   ```
+3. Commit both: `git add .claude/plugins/zehn-design .claude/settings.json`.
+4. In a session: "set up zehn for this project", then commit `zehn.project.json`.
+
+**Update:** `bash .claude/plugins/zehn-design/scripts/vendor.sh ~/Downloads/zehn-design-plugin.zip` (a zip or a folder), then commit. It replaces the old copy completely. The copy runs in place, so there's no `marketplace update`; open sessions need `/reload-plugins`.
+- Don't hand-edit the copy; changes go to the designer and come back in the next zip.
+- If your linters or TypeScript scan the whole repo, exclude `.claude/plugins/` (the copy has `.tsx` fallback components).
+- Someone who added zehn from GitHub before: `claude plugin marketplace remove zehn` once, so the repo's copy is used.
+
 ## Update
 Devs: `/plugin marketplace update zehn`, then run setup-project again (it keeps your `zehn.project.json` and only adds or fixes entries).
 Designer, after Figma changes: re-export the variables to `tokens/source/figma_vars.json`, run `python3 scripts/gen-tokens.py`, edit `reference/*.md` if rules changed and run `scripts/build-skill.sh`, run `node tests/check-ui.test.js` and `bash tests/build-skill.test.sh`, bump `version` in `.claude-plugin/plugin.json`, push.
