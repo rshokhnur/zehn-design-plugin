@@ -1,0 +1,6 @@
+{
+  "name": "zehn-design-plugin",
+  "private": true,
+  "description": "Keeps the hook scripts CommonJS when this folder sits inside an app with \"type\": \"module\".",
+  "type": "commonjs"
+}

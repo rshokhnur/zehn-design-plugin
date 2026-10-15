@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5.1 (15.10.2026)
+- **Fix (blocker):** in an app with `"type": "module"` in its package.json (typical Vite), a plugin copy inside the repo (Option C) crashed every hook with "require is not defined in ES module scope", so the startup rules and the style check were silently off. The plugin now ships a `package.json` with `"type": "commonjs"` at its root, which `vendor.sh` copies.
+- setup-project checks that the hooks run and says so loudly, with the error, if they don't.
+
 ## 1.5.0 (15.10.2026)
 From the second writing review (PLUGIN-WRITING-REVIEW-2.md, 63 findings).
 

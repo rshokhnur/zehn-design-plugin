@@ -52,7 +52,7 @@ Tell the user to commit it: everyone who opens the repo is then prompted to enab
       "Modal": { "component": "Dialog", "import": "@/components/ui/dialog", "props": {}, "gaps": [] }
     }
   },
-  "pluginVersion": "1.5.0",
+  "pluginVersion": "1.5.1",
   "app": { "id": "office", "accent": "cyan", "modules": { "anbar": "violet" } },
   "decisions": {},
   "screens": { "table list": "src/app/requests/page.tsx", "detail": "src/app/requests/[id]/page.tsx" },
@@ -119,4 +119,5 @@ The preset replaces Tailwind's colors, radius, type and shadows, so install it o
 On an update, read the plugin's `CHANGELOG.md` entries newer than `pluginVersion` (all of them if it's missing) for component fixes (e.g. 1.2.0: the TopBar active tab lost its fill because a ghost button's transparent background won over the active one), then set `pluginVersion` to the plugin's version. Check the app's mapped components for the same bug and report each one as a gap for designer sign-off; don't edit them unless the user asks.
 
 ## 6. Finish
+Check that the hooks run in this repo: `echo '{}' | node "${CLAUDE_PLUGIN_ROOT}/scripts/session-start.js"` must print JSON. If it prints an error (e.g. `require is not defined in ES module scope`), the plugin's startup rules and style check are silently off: say so first in your message, in bold, with the error. The usual cause is a plugin copy missing its `package.json` (`"type": "commonjs"`); re-copy the plugin.
 Run the style check on one existing screen to confirm the map: `node "${CLAUDE_PLUGIN_ROOT}/scripts/check-ui.js" <screen>`. Its issues should be real drift, not missing map entries; fix the map until they are. Tell the user to commit `zehn.project.json` (and `.claude/settings.json` if you changed it).

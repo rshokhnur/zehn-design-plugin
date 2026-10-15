@@ -336,6 +336,16 @@ let gateCases = 0;
   check(r.status === 2 && /bg-blue-500/.test(r.stderr), '--stop skipped a zehn repo', r);
   check(/repeat until it prints "clean"/.test(r.stderr) && r.stderr.includes(z2f), '--stop should tell the agent to re-run the check on its files', r);
 
+  // The hook scripts must run when the plugin sits inside an ESM app ("type": "module"), e.g. vendored (README, Option C).
+  const esm = mkrepo('esm-app', { 'package.json': '{ "type": "module" }\n' });
+  const vend = path.join(esm, '.claude/plugins/zehn-design');
+  fs.mkdirSync(path.join(vend, 'scripts'), { recursive: true });
+  for (const f of ['package.json', 'scripts/session-start.js', 'scripts/check-ui.js']) fs.copyFileSync(path.resolve(__dirname, '..', f), path.join(vend, f));
+  const ss = spawnSync('node', [path.join(vend, 'scripts/session-start.js')], { input: '{}', encoding: 'utf8', cwd: esm });
+  check(ss.status === 0 && /hookSpecificOutput/.test(ss.stdout), 'session-start crashed inside a "type": "module" app', ss);
+  r = spawnSync('node', [path.join(vend, 'scripts/check-ui.js'), '--stop'], { input: JSON.stringify({ cwd: esm }), encoding: 'utf8', cwd: esm });
+  check(!/require is not defined/.test(r.stderr), 'check-ui crashed inside a "type": "module" app', r);
+
   // Design-system edits: one flag per file, zehn-ignore exempts, the plugin's own components are exempt.
   const ds = mkrepo('ds-app', {
     'zehn.project.json': JSON.stringify({ tokens: { sources: ['src/styles/theme.css'] }, components: { dir: 'src/shared/ui', map: { Button: { component: 'Button', import: '@/shared/ui/Button' }, Modal: { component: 'Dialog', import: '@/lib/overlay/Dialog' } } } }),
