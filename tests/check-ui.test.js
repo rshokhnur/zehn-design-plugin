@@ -112,6 +112,7 @@ const CASES = [
   ['tsx', `<Button className="rounded-full">Save</Button>`, true],
   ['tsx', `<input className="h-9 rounded-full px-3" />`, true],
   ['tsx', `<Avatar className="rounded-full" />`, false],
+  ['tsx', `<Skeleton className="h-4 w-32 rounded-sm" />`, false],
   ['tsx', `<IconButton className="rounded-full" aria-label="Close" />`, false],
   ['css', `.btn-primary {\n  border-radius: 9999px;\n}`, true],
   ['css', `.avatar {\n  border-radius: 9999px;\n}`, false],
@@ -203,7 +204,7 @@ let projectCases = 0;
   put('zehn.project.json', JSON.stringify({
     framework: 'react', styling: 'tailwind',
     tokens: { sources: ['src/styles/theme.css'], cssVarPrefixes: ['--radix-'], tailwindColors: ['primary', 'primary-foreground', 'muted-foreground', 'background', 'border', 'slate-500'], spacingKeys: ['0', '1', '2', '3', '4', '6', '8'] },
-    components: { dir: 'src/components/ui', map: { Button: { component: 'Button', import: '@/components/ui/button' }, Badge: { component: 'Badge', import: '@/components/ui/badge' }, Modal: { component: 'Dialog', import: '@/components/ui/dialog' } } },
+    components: { dir: 'src/components/ui', map: { Button: { component: 'Button', import: '@/components/ui/button' }, Badge: { component: 'Badge', import: '@/components/ui/badge' }, Modal: { component: 'Dialog', import: '@/components/ui/dialog' }, Skeleton: { component: 'Skeleton', import: '@/components/ui/skeleton' }, Bar: { component: 'Bar', import: '@/components/ui/bar', sizedByCaller: true } } },
     screens: { 'table list': 'src/pages/Requests.tsx' },
     fallback: { zehnTokens: false, zehnDir: null },
   }));
@@ -228,6 +229,11 @@ let projectCases = 0;
   expect('src/pages/J.tsx', `<div className="bg-[var(--primary)]" />`, false, 'arbitrary [var(--declared)] passes');
   expect('src/pages/K.tsx', `<div style={{ color: '#2563eb' }} />`, true, 'hex is flagged in app code');
   expect('src/pages/L.tsx', `<div className="shadow-sm" />`, false, 'zehn shadow scale is not enforced on their system');
+  expect('src/pages/S1.tsx', `<Skeleton className="h-4 w-32" />`, false, 'sized Skeleton is not a restyle');
+  expect('src/pages/S2.tsx', `<Skeleton className="h-10 w-10 rounded-full" />`, false, 'round Skeleton is not a restyle');
+  expect('src/pages/S3.tsx', `<Skeleton className="h-4 bg-primary" />`, true, 'recolored Skeleton is still a restyle');
+  expect('src/pages/S4.tsx', `<Bar className="h-2 rounded-sm" />`, false, 'sizedByCaller map entry passes size classes');
+  expect('src/pages/S5.tsx', `<Button className="h-12" />`, true, 'Button height is still a restyle');
   expect('src/pages/L2.tsx', `<div className="rounded-md" />`, true, 'off-scale radius is flagged in project mode');
   expect('src/pages/L3.tsx', `<div className="font-medium" />`, true, 'font-medium is flagged in project mode');
   expect('src/pages/L4.tsx', `<div className="text-md" />`, true, 'off-scale text size is flagged in project mode');

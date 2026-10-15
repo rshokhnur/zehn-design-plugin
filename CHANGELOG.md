@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.4.1 (15.10.2026)
+- **Fix:** the restyle check no longer flags size and shape on components the caller sizes (`<Skeleton className="h-4 w-32">`, `rounded-full` for a round placeholder; also Spinner, Progress, Divider, Icon, Orb, Logo, Image). Colors, borders, shadows and type on them are still flagged. A mapped component of the team's can opt in with `"sizedByCaller": true` in `zehn.project.json`.
+
 ## 1.4.0 (15.10.2026)
 From the PC thread's 1.2.0 round in the team repo (verdict: go).
 
