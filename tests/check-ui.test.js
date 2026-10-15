@@ -204,7 +204,7 @@ let projectCases = 0;
   put('zehn.project.json', JSON.stringify({
     framework: 'react', styling: 'tailwind',
     tokens: { sources: ['src/styles/theme.css'], cssVarPrefixes: ['--radix-'], tailwindColors: ['primary', 'primary-foreground', 'muted-foreground', 'background', 'border', 'slate-500'], spacingKeys: ['0', '1', '2', '3', '4', '6', '8'] },
-    components: { dir: 'src/components/ui', map: { Button: { component: 'Button', import: '@/components/ui/button' }, Badge: { component: 'Badge', import: '@/components/ui/badge' }, Modal: { component: 'Dialog', import: '@/components/ui/dialog' }, Skeleton: { component: 'Skeleton', import: '@/components/ui/skeleton' }, EmptyState: { component: 'EmptyState', import: '@/components/ui/empty' }, Card: { component: 'Card', import: '@/components/ui/card' }, Bar: { component: 'Bar', import: '@/components/ui/bar', sizedByCaller: true } } },
+    components: { dir: 'src/components/ui', map: { Button: { component: 'Button', import: '@/components/ui/button' }, Badge: { component: 'Badge', import: '@/components/ui/badge' }, Modal: { component: 'Dialog', import: '@/components/ui/dialog' }, Skeleton: { component: 'Skeleton', import: '@/components/ui/skeleton' }, EmptyState: { component: 'EmptyState', import: '@/components/ui/empty' }, Card: { component: 'Card', import: '@/components/ui/card' }, Bar: { component: 'Bar', import: '@/components/ui/bar', sizedByCaller: true }, ProgressBar: { component: 'Shimmer', import: '@/components/ui/shimmer' }, Panel: { component: 'NoData', import: '@/components/ui/nodata' } } },
     screens: { 'table list': 'src/pages/Requests.tsx' },
     fallback: { zehnTokens: false, zehnDir: null },
   }));
@@ -237,6 +237,9 @@ let projectCases = 0;
   expect('src/pages/S7.tsx', `<Card className="p-6 h-8" />`, false, 'spacing and height on Card are not a restyle');
   expect('src/pages/S8.tsx', `<Card className="rounded-xl" />`, true, 'radius on Card is still a restyle');
   expect('src/pages/S9.tsx', `<EmptyState className="py-8 text-primary" />`, true, 'color on EmptyState is still a restyle');
+  expect('src/pages/S10.tsx', `<Shimmer className="h-4 rounded-full" />`, false, 'renamed placeholder (map key) takes size and radius');
+  expect('src/pages/S11.tsx', `<NoData className="py-8" />`, false, 'renamed layout block (map key) takes padding');
+  expect('src/pages/S12.tsx', `<NoData className="rounded-sm" />`, true, 'renamed layout block still flags radius');
   expect('src/pages/S5.tsx', `<Button className="h-12" />`, true, 'Button height is still a restyle');
   expect('src/pages/L2.tsx', `<div className="rounded-md" />`, true, 'off-scale radius is flagged in project mode');
   expect('src/pages/L3.tsx', `<div className="font-medium" />`, true, 'font-medium is flagged in project mode');
@@ -331,6 +334,7 @@ let gateCases = 0;
   check(r.status === 2, 'hook skipped a repo that enables zehn-design in .claude/settings.json', r);
   r = run(['--stop'], { cwd: z2, session_id: 'gate-test-z2' });
   check(r.status === 2 && /bg-blue-500/.test(r.stderr), '--stop skipped a zehn repo', r);
+  check(/repeat until it prints "clean"/.test(r.stderr) && r.stderr.includes(z2f), '--stop should tell the agent to re-run the check on its files', r);
 
   // Design-system edits: one flag per file, zehn-ignore exempts, the plugin's own components are exempt.
   const ds = mkrepo('ds-app', {
@@ -359,6 +363,21 @@ let gateCases = 0;
   const zapp = mkrepo('zehn-dir-app', { 'tokens.css': ':root { --zm-x: 1px; }\n' });
   r = run([], { cwd: zapp, session_id: sid, tool_input: { file_path: path.join(zapp, 'src/components/zehn/Button.tsx'), old_string: 'a', new_string: 'const b = 2;' } });
   check(r.status === 0 && dsNote('src/components/zehn').test(r.stdout), 'edit in a copied components/zehn should note', r);
+  // setup-project's own copies: identical to the plugin's file, or listed in fallback.copied → no sign-off note.
+  const zc = path.join(zapp, 'src/components/zehn/Badge.tsx');
+  fs.mkdirSync(path.dirname(zc), { recursive: true });
+  const badgeSrc = fs.readFileSync(path.resolve(__dirname, '../components/react/Badge.tsx'), 'utf8');
+  fs.writeFileSync(zc, badgeSrc);
+  r = run([], { cwd: zapp, session_id: sid + 'c', tool_input: { file_path: zc, content: badgeSrc }, tool_response: { type: 'create' } });
+  check(r.status === 0 && !/shared design system/.test(r.stdout), 'an unchanged copy of a zehn component should not ask for sign-off', r);
+  const cp = mkrepo('copied-app', {
+    'zehn.project.json': JSON.stringify({ tokens: { sources: ['src/globals.css'] }, components: { dir: 'src/ui', map: {} }, fallback: { zehnDir: 'src/components/zehn', copied: ['src/components/zehn/Badge.tsx', 'src/globals.css'] } }),
+    'src/globals.css': ':root { --x: 1px; }\n',
+  });
+  r = run([], { cwd: cp, session_id: sid + 'd', tool_input: { file_path: path.join(cp, 'src/components/zehn/Badge.tsx'), old_string: 'a', new_string: 'const b = 2;' } });
+  check(r.status === 0 && !/shared design system/.test(r.stdout), 'a file in fallback.copied should not ask for sign-off', r);
+  r = run([], { cwd: cp, session_id: sid + 'd', tool_input: { file_path: path.join(cp, 'src/globals.css'), old_string: 'a', new_string: '--y: 2px;' } });
+  check(r.status === 0 && !/changed the theme/.test(r.stdout), 'a token file in fallback.copied should not get the theme note', r);
 
   // cssVarPrefixes trap: with readable sources, a --hr- var must be declared.
   const pj = (o) => fs.writeFileSync(path.join(ds, 'zehn.project.json'), JSON.stringify(o));

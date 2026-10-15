@@ -1,12 +1,10 @@
 # zehn React components (reference)
 
-The zehn React components from the catalog: React 18 + TypeScript + Tailwind 3.4+ with the zehn preset. Only `react` is needed at runtime.
+The zehn React components from the catalog: React 18 + TypeScript + Tailwind (v3 preset or v4 `@theme`). Only `react` is needed at runtime. Every class assumes zehn's color, radius, type, shadow and motion keys. In an app with its own theme, setup-project adapts each copy (motion tokens, `ZehnLocaleProvider labels`, colors through `tokens.figmaMap`). Never copy them into a non-Tailwind app (CSS Modules, styled-components): build from the catalog spec there.
 
 ## Setup
 
 These are a fallback. The zehn-design plugin's `setup-project` skill maps the app's own components in `zehn.project.json` and copies here only the ones the app lacks (plus their helpers). Include `src/components/zehn/**/*.tsx` in Tailwind's `content`.
-
-Icons are Remix names without prefix/suffix: `icon="close"` renders `ri-close-line`.
 
 ## What's here
 
@@ -82,9 +80,8 @@ formatDuration(ms, locale);       // 14d 3h 22m
 
 ## Notes
 
-- Radius per element is in the rules (radius table): cards, banners, toasts, badges and small buttons 4; buttons, inputs and menus 8; modals and alert dialogs 12.
+- Radius per element: rules §1.
 - Built-in strings (Cancel, Close, Back, Retry, pager and notification labels, sr-only text…) come from `ZehnLocaleProvider` (`en` · `ru` · `uz`). Per-instance props such as `cancelLabel` still win.
-- `Badge` matches Figma: tinted = `bg-{hue}-stroke text-{hue}`, filled = `bg-{hue} text-alpha-900`.
 
 - `Button` uses `variant` (Figma calls it `style`). AI variants add a sparkle icon by default; `leftIcon={null}` removes it.
 - `Menu` takes an `items` array and always moves `destructive` items last, after a divider.
@@ -93,7 +90,7 @@ formatDuration(ms, locale);       // 14d 3h 22m
 - `RoleBanner tone`: `accent` (the viewer must act), `info`, `warning` (view-only access). `Counter` has no accent color.
 - `ProgressBar` positions its fill with an inline `style` transform percentage, because the value is data.
 
-- `buttonClass({ variant: 'ghost', selected })` is the filled ghost (active nav tab); `TopBar` uses it with `aria-current="page"`. Never pass a `bg-*` through `className` to change a variant's fill: `cx` doesn't merge Tailwind classes, so both backgrounds end up in the class list and the variant's usually wins. (This was why the active TopBar tab never showed its fill.)
+- `buttonClass({ variant: 'ghost', selected })` is the filled ghost (active nav tab); `TopBar` uses it with `aria-current="page"`. Never pass a `bg-*` through `className` to change a variant's fill: `cx` doesn't merge Tailwind classes, so both backgrounds end up in the class list and the variant's usually wins.
 
 ## Orb
 
@@ -106,13 +103,13 @@ The zehn intelligence assistant's orb: an ai-gradient sphere with a blurred glow
 
 - `state`: `default` (glow the size of the core), `listening` (glow grows ~1.5× and pulses), `thinking` (glow grows and turns). The glow grows with a transform (slow, ease-in-out); the pulse and turn are `motion-safe:` loops, so they stop under reduced motion.
 - `size`: `launcher` (64px) or `hero` (128px). Without `aria-label` the orb is hidden from screen readers (use that when text next to it names it).
-- `OrbLauncher` is a real `<button>`, fixed `bottom-6 right-6`, `z-40` (under modals, drawers and toasts). `aria-label` is required.
+- `OrbLauncher` is a real `<button>`, fixed `bottom-6 right-6`, `z-40` (under modals, drawers and toasts). `aria-label` is required. Toasts cover it while shown; that's intended, so don't move it.
 
 ## Theme
 
 ```tsx
 setTheme('dark');                      // 'light' | 'dark' | 'system' (system removes data-theme)
-const [theme, setTheme] = useTheme();  // persisted to localStorage 'zehn-theme'
+const [theme, changeTheme] = useTheme();  // persisted to localStorage 'zehn-theme'
 ```
 
 Transitions are switched off for the one frame of the switch, so hover fades don't animate the page into the new colors. `useTheme` starts as `'system'` and reads storage after mount (SSR safe); to avoid a flash on load, also set `data-theme` from storage in an inline `<head>` script.

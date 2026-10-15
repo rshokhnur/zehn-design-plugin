@@ -197,6 +197,8 @@ function buildProject(root, j) {
     durations: Array.isArray(motion.durations) ? motion.durations.filter((n) => typeof n === 'number') : null,
     reducedGlobal: motion.reducedMotion === 'global',
     trackingKeys: new Set(arr(t.trackingKeys)),
+    figmaMap: t.figmaMap && typeof t.figmaMap === 'object' ? t.figmaMap : {},
+    copied: new Set(arr(fb.copied).map((s) => path.resolve(root, s))),
   };
 }
 const ZEHN_MODE = { project: null, zehnTokens: true, colors: COLOR_KEYS, spaceKeys: TW_SPACE_KEYS, dirs: [], fileVars: new Set(),
@@ -286,6 +288,11 @@ function mapped(name) {
   return e && e.component ? `${e.component}${e.import ? ` from ${e.import}` : ''}` : null;
 }
 const PROJECT_REF = 'the project\'s tokens (zehn.project.json tokens.sources)';
+// A concrete hint for color messages in project mode: the first figmaMap pairs.
+const colorRef = () => {
+  const pairs = Object.entries((CTX.project && CTX.project.figmaMap) || {}).slice(0, 2).map(([k, v]) => `${k} → ${v}`);
+  return pairs.length ? `the project's token for the role; tokens.figmaMap lists them (e.g. ${pairs.join('; ')})` : PROJECT_REF;
+};
 
 const NAMED = 'aliceblue|antiquewhite|aqua|aquamarine|azure|beige|bisque|black|blanchedalmond|blue|blueviolet|brown|burlywood|cadetblue|chartreuse|chocolate|coral|cornflowerblue|cornsilk|crimson|cyan|darkblue|darkcyan|darkgoldenrod|darkgray|darkgreen|darkgrey|darkkhaki|darkmagenta|darkolivegreen|darkorange|darkorchid|darkred|darksalmon|darkseagreen|darkslateblue|darkslategray|darkslategrey|darkturquoise|darkviolet|deeppink|deepskyblue|dimgray|dimgrey|dodgerblue|firebrick|floralwhite|forestgreen|fuchsia|gainsboro|ghostwhite|gold|goldenrod|gray|grey|green|greenyellow|honeydew|hotpink|indianred|indigo|ivory|khaki|lavender|lavenderblush|lawngreen|lemonchiffon|lightblue|lightcoral|lightcyan|lightgoldenrodyellow|lightgray|lightgreen|lightgrey|lightpink|lightsalmon|lightseagreen|lightskyblue|lightslategray|lightslategrey|lightsteelblue|lightyellow|lime|limegreen|linen|magenta|maroon|mediumaquamarine|mediumblue|mediumorchid|mediumpurple|mediumseagreen|mediumslateblue|mediumspringgreen|mediumturquoise|mediumvioletred|midnightblue|mintcream|mistyrose|moccasin|navajowhite|navy|oldlace|olive|olivedrab|orange|orangered|orchid|palegoldenrod|palegreen|paleturquoise|palevioletred|papayawhip|peachpuff|peru|pink|plum|powderblue|purple|rebeccapurple|red|rosybrown|royalblue|saddlebrown|salmon|sandybrown|seagreen|seashell|sienna|silver|skyblue|slateblue|slategray|slategrey|snow|springgreen|steelblue|tan|teal|thistle|tomato|turquoise|violet|wheat|white|whitesmoke|yellow|yellowgreen';
 const TW_HUES = 'slate|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose';
@@ -294,9 +301,9 @@ const V = '(?:[a-z0-9-]+:)*'; // variants like hover: md: dark:
 
 // ---------- web (JS/TS/JSX/Vue/HTML) + CSS rules ----------
 const MSG = {
-  hex: () => (CTX.project ? `Hardcoded hex color. Use ${PROJECT_REF}.` : `Hardcoded hex color. Use a token: var(--zm-text-primary), bg-status-danger-bg… (${REF}).`),
-  rgb: () => CTX.project ? `Hardcoded rgb/hsl color. Use ${PROJECT_REF}.` : 'Hardcoded rgb/hsl color. Text → text-text-primary/secondary/tertiary; surfaces → bg-surface-base/subtle/raised; borders → border-border-default; status → text-status-* / bg-status-*-bg; translucent black → gray-*.',
-  named: () => (CTX.project ? `Named CSS color. Use ${PROJECT_REF}.` : 'Named CSS color. Use a --zm-* token (e.g. var(--zm-text-primary), var(--zm-const-white)).'),
+  hex: () => (CTX.project ? `Hardcoded hex color. Use ${colorRef()}.` : `Hardcoded hex color. Use a token: var(--zm-text-primary), bg-status-danger-bg… (${REF}).`),
+  rgb: () => CTX.project ? `Hardcoded rgb/hsl color. Use ${colorRef()}.` : 'Hardcoded rgb/hsl color. Text → text-text-primary/secondary/tertiary; surfaces → bg-surface-base/subtle/raised; borders → border-border-default; status → text-status-* / bg-status-*-bg; translucent black → gray-*.',
+  named: () => (CTX.project ? `Named CSS color. Use ${colorRef()}.` : 'Named CSS color. Use a --zm-* token (e.g. var(--zm-text-primary), var(--zm-const-white)).'),
   palette: () => (CTX.project ? 'Tailwind default palette class that isn\'t in the project\'s colors (zehn.project.json tokens.tailwindColors). Use one of the project\'s color classes.' : 'Tailwind default palette class. It renders nothing under the zehn preset. Use bg-surface-*, text-text-*, bg-primary-bg, text-status-*, bg-cyan-fill-2…'),
   deadColor: () => (CTX.project ? 'Not one of the project\'s colors (zehn.project.json tokens.tailwindColors). Use an existing color class.' : 'This color class renders nothing under the zehn preset (no such token). Use a zehn color: text-text-secondary, bg-surface-subtle, border-border-default…'),
   arbColor: () => (CTX.project ? 'Arbitrary Tailwind value. Use a theme class or [var(--<project token>)].' : 'Arbitrary Tailwind value. Use a theme class or [var(--zm-…)].'),
@@ -315,8 +322,8 @@ const MSG = {
   weightFn: () => (CTX.project && !sameSet(CTX.weights, ZEHN_WEIGHTS) ? `Off-scale font weight. The project's weights: ${[...CTX.weights].join(' ')}.` : MSG.weight),
   gradient: () => (CTX.project ? 'Gradients are off-system. Use a flat color token from the project.' : 'Gradients are off-system: zehn ships none. Use a flat surface token; AI surfaces are flat bg-ai-bg or the ai-* variants.'),
   pill: () => (CTX.project ? 'Pill buttons/inputs are off-system: use the project\'s button/input radius.' : 'Pill buttons/inputs are off-system: buttons and inputs use 8px corners (rounded-lg).'),
-  tokenEdit: (f) => `You changed the theme (${f}). New or changed tokens change every screen: only when the user asked for it, reuse an existing token if one is close, and list each one under Design gaps as "token change, designer sign-off needed". Never add a token just to hold a one-off value.`,
-  dsEdit: (dir) => `You changed the shared design system (${dir}). That's allowed when the user asked for it or when you build a missing catalog component there; list it under Design gaps as "design-system change, designer sign-off needed". Never restyle a shared component for one screen.`,
+  tokenEdit: (f) => `You changed the theme (${f}). If the user didn't ask for this and setup-project didn't call for it, revert it. Otherwise list each new or changed token under Design gaps as "token change, designer sign-off needed". Never add a token to hold a one-off value.`,
+  dsEdit: (dir) => `You changed the shared design system (${dir}). That's allowed when the user asked for it ("design-system change, designer sign-off needed" under Design gaps), when you build a missing catalog component there ("new shared component: <name>"), or when setup-project copies or adapts a zehn fallback component (add it to fallback.copied; no sign-off). Never restyle a shared component for one screen.`,
   transitionAll: 'Name the properties (transition-colors, transition-opacity, transition-transform); transition: all animates layout and color by accident.',
   slow: (ms) => (CTX.durations
     ? `${ms}ms isn't one of the project's durations (zehn.project.json motion.durations: ${CTX.durations.join(' ')}ms).`
@@ -536,9 +543,13 @@ const SHAPE_CLASS = /(?:^|:)rounded(?:-[\w-]+)?$/;
 function restyledComponents(line, push) {
   const names = new Set(STYLED);
   const sized = new Set();
-  if (CTX.project) for (const e of Object.values(CTX.project.map || {})) if (e && e.component) {
-    names.add(String(e.component));
-    if (e.sizedByCaller || e.laidOutByCaller) sized.add(String(e.component));
+  const laid = new Set();
+  // The app's own name for a catalog entry (Skeleton → Shimmer) inherits the entry's exemption.
+  if (CTX.project) for (const [key, e] of Object.entries(CTX.project.map || {})) if (e && e.component) {
+    const c = String(e.component);
+    names.add(c);
+    if (e.sizedByCaller || SIZED_BY_CALLER.test(key)) sized.add(c);
+    if (e.laidOutByCaller || LAID_OUT_BY_CALLER.test(key)) laid.add(c);
   }
   const re = /<([A-Z][\w.]*)\b[^>]*?\bclassName=(?:"([^"]*)"|'([^']*)'|\{`([^`]*)`\}|\{\s*(?:cx|cn|clsx)\(([^)]*)\))/g;
   let m;
@@ -548,12 +559,12 @@ function restyledComponents(line, push) {
     const cls = m[2] || m[3] || m[4] || m[5] || '';
     // round IconButtons and avatars are on-system
     const placeholder = SIZED_BY_CALLER.test(name) || sized.has(name);
-    const layout = placeholder || LAID_OUT_BY_CALLER.test(name);
+    const layout = placeholder || laid.has(name) || LAID_OUT_BY_CALLER.test(name);
     const hits = (cls.match(VISUAL_CLASS) || []).filter((c) => !(/(?:^|:)rounded-full$/.test(c) && /^(IconButton|Avatar)$/.test(name))
       && !(layout && SPACING_CLASS.test(c)) && !(placeholder && SHAPE_CLASS.test(c)));
     if (!hits.length) continue;
     push(m.index, `<${name} className="${hits.join(' ')}"`, 'restyled-component',
-      `Don't restyle ${name} through className: visual classes fight the component's own and fork its look. Pick a variant or size; if none fits, it's a gap (or a new variant in the shared component, with sign-off). Layout classes (margin, width, flex, grid) are fine.`);
+      `Don't restyle ${name} through className: visual classes fight the component's own and fork its look. Pick a variant or size; if none fits, it's a gap (or a new variant in the shared component, with sign-off). Layout classes (margin, width, flex, grid) are fine.${CTX.project ? ` If ${name} is a placeholder or layout block whose size or spacing the screen sets, add "sizedByCaller": true to its entry in zehn.project.json components.map instead.` : ''}`);
   }
 }
 
@@ -763,11 +774,18 @@ const pluginRepo = memo((dir) => {
     if (path.dirname(d) === d) return false;
   }
 });
+// Files setup-project put there: listed in fallback.copied, or byte-identical to the plugin's own component.
+function setupCopy(abs, proj) {
+  if (proj && proj.copied && proj.copied.has(abs)) return true;
+  const orig = readSmall(path.join(PLUGIN_ROOT, 'components/react', path.basename(abs)));
+  return orig !== null && readSmall(abs) === orig;
+}
 function designSystemDir(file) {
   const abs = path.resolve(file);
   const dir = existingDir(path.dirname(abs));
   if (!dir || abs.startsWith(PLUGIN_ROOT + path.sep) || pluginRepo(dir)) return null;
   const proj = findProject(dir);
+  if (setupCopy(abs, proj)) return null;
   const real = (x) => { try { return fs.realpathSync(x); } catch { return x; } };
   const rootOf = (d) => path.relative(real(proj ? proj.root : gitRoot(dir) || dir), real(d)).split(path.sep).join('/') || '.';
   if (proj) { const d = proj.dirs.find((x) => inside(abs, [x])); if (d) return rootOf(d); }
@@ -966,6 +984,8 @@ function hookMode(raw) {
   const rawFile = ti.file_path || ti.path || '';
   const file = rawFile && input.cwd ? path.resolve(input.cwd, rawFile) : rawFile;
   if (tokenSource(file) && gated(file, input.cwd)) {
+    const pj = findProject(existingDir(path.dirname(path.resolve(file))) || '.');
+    if (pj && pj.copied.has(path.resolve(file))) process.exit(0);
     if (firstNotice(input.session_id, file)) process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PostToolUse', additionalContext: `zehn design system: ${MSG.tokenEdit(path.basename(file))}` } }));
     process.exit(0);
   }
@@ -990,7 +1010,7 @@ function hookMode(raw) {
     process.stderr.write((noteText ? noteText + '\n\n' : '') +
       `zehn design system: lines you just changed in ${path.basename(file)} break the style rules. Fix these now with the project's tokens and components (zehn.project.json, else zehn's):\n` +
       format(errors, 30) +
-      `\nFix each with the zehn token or component. Add ${IGNORE_FMT} ${IGNORE_SYNTAX} only when the user asked for this exact value, on every line that uses it, and list it under Design gaps. If you think no token fits, use the nearest one and list it under Design gaps; never add zehn-ignore yourself.\n`);
+      `\nFix each with the project's token or component (zehn.project.json; zehn's only where it says fallback). Add ${IGNORE_FMT} ${IGNORE_SYNTAX} only when the user asked for this exact value, on every line that uses it, and list it under Design gaps. If you think no token fits, use the nearest one and list it under Design gaps; never add zehn-ignore yourself.\n`);
     process.exit(2);
   }
   const ignores = lines.filter((l) => /zehn-ignore/.test(l.text)).length;
@@ -1090,7 +1110,7 @@ function stopMode(raw) {
   }
   const root2 = gitRoot(existingDir(path.resolve(cwd)));
   const changedTokens = root2 ? (git(['diff', 'HEAD', '--name-only'], root2) || '').split('\n').concat((git(['ls-files', '--others', '--exclude-standard'], root2) || '').split('\n'))
-    .filter(Boolean).map((f) => path.join(root2, f)).filter((f) => tokenSource(f) && !(snap[f] && fs.existsSync(f) && snap[f].join('\n') === fs.readFileSync(f, 'utf8').split('\n').map((x) => x.trim()).join('\n'))) : [];
+    .filter(Boolean).map((f) => path.join(root2, f)).filter((f) => tokenSource(f) && !((findProject(existingDir(path.dirname(f)) || root2) || { copied: new Set() }).copied.has(f)) && !(snap[f] && fs.existsSync(f) && snap[f].join('\n') === fs.readFileSync(f, 'utf8').split('\n').map((x) => x.trim()).join('\n'))) : [];
   const dsDirs = [...new Set(problems.filter((p) => p.id === 'design-system-edit').map((p) => p.text).concat(changedTokens.map((f) => path.relative(root2, f))))];
   const errs = problems.filter((p) => p.id !== 'design-system-edit');
   const dsNote = dsDirs.length ? `\nAlso: this session changed the shared design system (${dsDirs.join(', ')}). List it under Design gaps as "design-system change, designer sign-off needed".\n` : '';
@@ -1100,7 +1120,8 @@ function stopMode(raw) {
   }
   process.stderr.write(
     `zehn design system: before you finish, these lines changed in this session (including through Bash or scripts) break the style rules. Fix them. Only for a value the user asked for: ${IGNORE_FMT} ${IGNORE_SYNTAX} on each line, plus a Design gaps line:\n` +
-    format(errs, 30) + '\n' + dsNote);
+    format(errs, 30) + '\n' + dsNote +
+    `\nAfter fixing, run node "${__filename}" ${[...new Set(errs.map((p) => p.file))].map((f) => JSON.stringify(f)).join(' ')} and repeat until it prints "clean". This check won't run again before you finish.\n`);
   process.exit(2);
 }
 

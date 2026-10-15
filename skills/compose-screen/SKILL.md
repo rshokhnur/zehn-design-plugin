@@ -5,8 +5,6 @@ description: Build a new zehn screen, page, flow, modal or drawer, or restructur
 
 # Compose a screen the zehn way
 
-You are building UI for a zehn app. Make the result look like the designer made it.
-
 Wrong skill? If the change adds no screen, modal, drawer or flow and keeps the current layout, use `ui-tweak`. Migrating an old page to zehn: `ui-review`.
 
 The references below this workflow:
@@ -14,47 +12,47 @@ The references below this workflow:
 - **REFERENCE: zehn component catalog**: what ships, the real props, and what to build
 - **REFERENCE: zehn tokens cheat sheet**: which token or class to use for what
 
-Animation work: load the `motion` skill too.
-
-When sources disagree, follow "Who wins" at the top of the rules. When unsure, follow Figma.
+When sources disagree, follow "Who wins" at the top of the rules (one order for layout, one for values).
 
 ## Step 1: Context
 1. **Read `zehn.project.json`** at the app root: the components, tokens and example screens to use. Missing → run `setup-project` before anything else.
-2. **Which app?** `app` in `zehn.project.json`, else the repo's `data-app`. It sets the accent. Still unclear: ask the developer (rules, "Ask the developer"). Read `decisions` there too: forks already answered.
+2. **Which app?** `app` in `zehn.project.json` (`app.modules` for a module), else the repo's `data-app`. It sets the accent (rules §0). Still unclear: ask the developer (rules, "Ask the developer"). Read `decisions` too: forks already answered.
 3. **Figma design?** Look for a figma.com link in the task, ticket or PR description.
 4. **Platform:** web (1440 desktop) or mobile (edu, desk: 402 iOS).
 
 ## Step 2a: With a Figma link
-0. **A big link** (a page, a section, or a frame with many screens): don't pull the whole thing. Call `get_metadata` on it, list its top-level frames (name and node id), and ask the developer which ones to build (one question, options = frame groups, the core flow recommended). Save the answer under `decisions`. Then read only those frames, one at a time.
-1. Load figma:figma-design-to-code as it requires, then read the exact node (`get_design_context`, `get_screenshot`). Where that skill conflicts with this one, this one wins: no downloaded icons, header art or component images (use the app's icon set and mapped components, and `HeaderPattern` where the app has no header art), and no generated styles (map every value to the project's token through `tokens.figmaMap`). Why: downloaded assets are frozen copies that don't follow dark mode, the app accent or later redesigns. Download only real photos or illustrations that exist nowhere else.
-2. Treat the generated code as a reference only. Map each element to a mapped component and each value to a project token. Never paste raw styles.
-3. Copy the page structure of the example screen mapped for this screen type (`screens`) and fill it with the frame's content. Build what the frame shows for this task; frames often show extra states or actions, so ask or list them under Suggestions before building them.
+0. **A big link** (a page, a section, or a frame with many screens): never call `get_design_context` or `get_screenshot` on it. `get_metadata` on a page returns every nested layer (~70k chars), so take only the root's direct children: the lines one indent level below the root, their `name` and `id`, ignoring everything nested. Ask the developer which ones to build (one question, options = frame groups, the core flow recommended). Save the answer under `decisions`, then read only those frames, one at a time.
+1. Load figma:figma-design-to-code as it requires, then read the exact node (`get_design_context`, `get_screenshot`). Where it conflicts with this skill, this one wins: no downloaded icons, header art or component images (use the app's icon set, mapped components and `HeaderPattern`); download only real photos or illustrations. Why: downloaded assets are frozen copies that don't follow dark mode, the app accent or later redesigns.
+2. The generated code is a reference only: map each element to a mapped component and each value to a project token (`tokens.figmaMap`). Never paste raw styles.
+3. Copy the page structure of the example screen mapped for this screen type (`screens`) and fill it with the frame's content. Build what the frame shows for this task, plus the states and motion in Step 2c. Actions, filters or screens the frame shows beyond the task go under Suggestions; don't ask about them.
 4. A value in the frame differs from the rules or a mapped component → apply "Who wins" and add the Design gaps line.
 
 ## Step 2b: No design
 1. Look at the sibling screens in this app first. Then pick the screen type, the create/edit container (rules §3) and the content width (rules §2) as defaults where the siblings don't decide.
-2. Copy the layout of the example screen mapped for that type (`screens` in `zehn.project.json`), or the closest existing screen. Match the sibling screens: their shell, header, cards or list, and widths come first. The zehn recipes are defaults; deviate when the content or the developer calls for it, with a `Layout: <what>, <why>` line under Design gaps.
-3. Use the components mapped in `zehn.project.json` first (their names, imports and props), then the zehn fallback components (`fallback.zehnDir`), then build from the catalog spec with the app's primitives. List the mapping's `gaps` for each component you use under Design gaps. Never invent a component, variant or style; if one is truly needed, build it once from their primitives in their style (catalog intro) and list it.
-4. A real fork the siblings and Figma don't settle (container, cards or table, a missing component: build or reuse)? Ask the developer once, recommended option first, and save the answer under `decisions`.
-5. Design every state of what was asked: empty, loading (Skeleton, Button `loading`), validation error, success toast, permission (`disabledReason`), destructive confirm. States, yes; new features, no: extra actions, filters, stats or statuses go under Suggestions (rules, project map 5).
-6. Motion: only what the mapped components already do, plus the `motion` skill patterns where something opens, closes or changes. Page navigation is instant.
+2. Copy the layout of the example screen mapped for that type (`screens` in `zehn.project.json`), or the closest existing screen. Match the sibling screens: their shell, header, cards or list, and widths come first. The zehn recipes are defaults; deviate only as "Rules vs layout defaults" allows, with a `Layout: <what>, <why>` line under Design gaps.
+3. Components: catalog, "Which component" (mapped, then `fallback.zehnDir` when set, then build once). List the mapping's `gaps` for each component you use under Design gaps. Never invent a component, variant or style.
+4. A real fork (rules, "Ask the developer": forks 3 and 4)? Ask once, recommended option first, and save the answer under `decisions`.
+
+## Step 2c: States and motion (both paths)
+1. Design every state of what was asked: empty, loading (Skeleton, Button `loading`), validation error, success toast, permission (`disabledReason`), destructive confirm. States, yes; new features, no: extra actions, filters, stats or statuses go under Suggestions (rules, "The project map").
+2. Motion: only what the mapped components already do, plus the `motion` skill patterns where something opens, closes or changes (load it). Page navigation is instant.
 
 ## Step 3: Before you finish
-The zehn style check runs after every edit and again before you finish (Bash and sed edits included). Fix every line it reports, or mark a user request per rules §8a. Don't finish while it reports issues.
+The zehn style check runs on each Edit/Write and once when you finish. Edits made through Bash, sed or python are seen only at the finish, so after one, check the file yourself: `node "${CLAUDE_PLUGIN_ROOT}/scripts/check-ui.js" <file>` (it checks the whole file; judge only your lines). Fix every line it reports, or mark a user request per rules §8a, and re-run it until it prints "clean".
 - [ ] Only the project's tokens; no hex, unlisted Tailwind colors or arbitrary `[...]` values.
-- [ ] Only mapped (or fallback) components; no new component, variant or style. The layout matches the mapped example screen and its siblings.
+- [ ] Only mapped (or fallback) components; no new component, variant or style.
 - [ ] Only what was asked; shared components untouched (or listed as a design-system change). Ideas under Suggestions.
-- [ ] Layout fits the app: same shell, header and width as the sibling screens (zehn recipes where there are none). Any deliberate difference has a `Layout:` line under Design gaps.
+- [ ] Same shell, header and width as the sibling screens; any deliberate difference has a `Layout:` line under Design gaps.
 - [ ] One primary per surface (rules §4). Accent only in the rules §0 list.
 - [ ] Badges use `status` by meaning. Destructive actions open an AlertDialog.
-- [ ] Copy and formats per rules §8, through the app's formatters (or zehn's `format*`) with the locale.
+- [ ] Copy and formats per rules §8.
 - [ ] Works in dark mode. Motion follows the `motion` skill and has a reduced-motion path.
 
 ## Off-system requests
 Follow rules §8a exactly, including for sed, scripts and codemods.
 
 ## Step 4: Design gaps
-Always end with **Design gaps** (plus **Suggestions** if you had ideas beyond the ask): every decision the rules didn't cover, every place a lower source lost (`<element>: Figma <value>, used <value> (why)`), every component you built from the catalog, and every `zehn-ignore` (what, who asked, why). Write "Design gaps: none" if there are none.
+Always end with **Design gaps** (plus **Suggestions** if you had ideas beyond the ask): every decision the rules didn't cover, every place a lower source lost (`<element>: Figma <value>, used <value> (why)`), every component you built from the catalog, and every `zehn-ignore` (what, who asked, why). Write "Design gaps: none" if there are none. Put the same list in the commit message or PR body, so the designer can see it in the repo.
 
 
 ---
@@ -65,48 +63,40 @@ When reading Figma, use only the styles and components local to file `ywFHunM35g
 
 ## The project map
 
-zehn is a guardrails layer over the app's own design system. `zehn.project.json` at the app root (written by setup-project) maps the app's tokens, components and example screens to the Figma variables and this catalog. For every UI change:
+zehn is a guardrails layer over the app's own design system. `zehn.project.json` at the app root (written by setup-project) maps the app's tokens, components and example screens to the Figma variables and this catalog. The steps for using it are in the workflow above. Two more rules for every UI change:
 
-1. Read `zehn.project.json`.
-2. Use its mapped components (their names, imports and props) and its tokens (`tokens.sources`, `tailwindColors`; Figma variables through `tokens.figmaMap`).
-3. Copy the layout of the example screen mapped for the screen type (`screens`), or the closest existing screen.
-4. Never invent a component, variant or style. If one is truly needed, build it from their existing primitives in their style and list it under Design gaps.
-5. **Build only what was asked.** No extra actions, filters, stats, pagers, statuses or chips on neighbouring screens. Ideas go under **Suggestions** in your message, not in the code. Keep the data meaning the user gave you (withdraw sets a status, it doesn't delete). Why: the designer and the team decide scope; extra UI is drift too.
-6. **Don't edit the shared components** (`components.dir` and the mapped imports) **or the theme** (token files, Tailwind config) to restyle one screen. Never add a token to hold a one-off value. A change there changes every screen: only when the user asked for it, and list it under Design gaps as "design-system change, designer sign-off needed". The style check flags every edit there.
+1. **Build only what was asked.** No extra actions, filters, stats, pagers, statuses or chips on neighbouring screens. Ideas go under **Suggestions** in your message, not in the code. Keep the data meaning the user gave you (withdraw sets a status, it doesn't delete). Why: the designer and the team decide scope; extra UI is drift too.
+2. **Don't edit the shared components** (`components.dir`, the mapped imports, `fallback.zehnDir`) **or the theme** (token files, Tailwind config) to restyle one screen. Never add a token to hold a one-off value. Why: a change there changes every screen. Two exceptions, each listed under Design gaps: the user asked for the change ("design-system change, designer sign-off needed"), or you add a new catalog component the developer chose to build (fork 4) or that setup-project copied ("new shared component: <name>"). Adding a file is not restyling; editing an existing one is.
 
-zehn class names and `--zm-*` tokens in these rules describe the zehn fallback (used when `fallback.zehnTokens` is true). In an app with its own tokens, read them as "the project's token for this Figma variable". The rules themselves (widths, order, which element gets which radius, formats) apply either way.
+zehn class names and `--zm-*` tokens in these rules describe the zehn fallback (used when `fallback.zehnTokens` is true). In an app with its own tokens, read them as "the project's token for this Figma variable". The rules themselves (widths, order, which element gets which radius, formats) apply either way. Class names here are Tailwind with the zehn preset. In an app without Tailwind (CSS Modules, styled-components, plain CSS), use the pixel value the rule gives and the project's token in the app's own styling; never add Tailwind classes or copy a zehn component there.
 
 ## Rules vs layout defaults
 
 Two kinds of rules live here:
-- **Hard rules (always):** the project's tokens and styling (color, radius, type, shadow, spacing, motion), its mapped components and nothing invented, primary always black, the accent list (§0), copy and formats (§8), a confirm before destructive actions (§5), accessibility (§5a). The style check enforces most of these.
-- **Layout defaults (adapt to context):** the shell (top bar or sidebar), page and detail headers, HeaderPattern, stat-card rows, cards vs list vs table, content widths, modal vs drawer, screen recipes (§2, §3). Follow the app's existing screens first, then the Figma frames for that app, then these defaults. Deviate when the content calls for it (a settings area with many sections, a dense ops tool, an embedded widget) or the developer asks: no pushback, no `zehn-ignore`, just one `Layout: <what>, <why>` line under Design gaps. Keep every real navigation item; never drop items to fit a pattern.
+- **Hard rules (always):** the project's tokens and styling (color, radius, type, shadow, spacing, motion), its mapped components and nothing invented, the primary button (black in zehn), the accent list (§0), copy and formats (§8), a confirm before destructive actions (§5), accessibility (§5a). The style check enforces most of these.
+- **Layout defaults (adapt to context):** the shell (top bar or sidebar), page and detail headers, HeaderPattern, stat-card rows, cards vs list vs table, content widths, modal vs drawer, screen recipes (§2, §3). Order: "Who wins", layout. Deviate only when the developer asks, or the content is one of: more than 7 sections (→ sidebar), dense data with more than 20 rows a page (→ full width, `dense`), or a widget embedded in another page (→ no page header). No pushback, no `zehn-ignore`, just one `Layout: <what>, <why>` line under Design gaps. Keep every real navigation item; never drop items to fit a pattern.
 
 ## Ask the developer at real forks
 
-When the work forks and nothing here decides it, ask the developer in the session instead of guessing: one question with 2–4 short options and your recommended pick first (Claude Code's AskUserQuestion tool; in other agents a short question). Ask only at these forks:
+When nothing here decides a fork, ask the developer instead of guessing: one question, 2–4 short options, your recommended pick first (AskUserQuestion). Ask only at these forks:
 1. **An app with no accent** (a module not in §0, e.g. anbar, abat): which accent. Asked once in setup-project.
-2. **A big Figma link** (a page or section with many frames): which frames to build.
-3. **A layout fork** with no sibling screen and no Figma frame to follow (e.g. modal or drawer, table or cards).
+2. **A big Figma link** (a page or section with many frames): which frames to build. Read only the top-level frames (compose-screen, Step 2a.0).
+3. **A layout fork** where the siblings and Figma are silent and the recipes allow both options: a form of 6–8 fields that could be a Modal or a Drawer, or 6–20 objects that could be cards or a table. Where a recipe picks one, use it without asking.
 4. **A component the library lacks:** build it once from their pieces, or reuse the closest existing one.
 5. **Several equally good mappings** in setup-project (two Button components, two token files).
 
-Don't ask about anything the rules, the siblings or Figma already decide, or about small details: pick and list them under Design gaps. Save each answer in `zehn.project.json` under `decisions` (e.g. `"decisions": { "date-range picker": "reuse Select with presets" }`; the accent goes in `app`), so nobody is asked twice. Read `decisions` before asking. If the developer can't be asked (a headless run), take the recommended option and list it under Design gaps.
+Don't ask about what the rules, the siblings or Figma decide, or about small details: pick and list them under Design gaps. Save each answer in `zehn.project.json` under `decisions`, keyed `"<screen or component>: <fork>"` in lowercase (e.g. `"requests list: modal or drawer": "drawer"`), so nobody is asked twice; accents go in `app` (§0). Before asking, search the `decisions` keys for the component or screen name. If AskUserQuestion isn't available, or you run with `-p` and no user, take the recommended option and list it under Design gaps.
 
 ## Who wins
 
-When two sources disagree on anything (a value, a component, a layout), walk this list from the top and stop at the first one that decides:
+Walk the matching order from the left; the first source that decides wins.
 
-1. **An explicit request from the user in this session.** Only through the off-system protocol (§8a): one-line note, then `zehn-ignore` on each line, then Design gaps.
-2. **The hard rules** (above): the project's tokens and styling, mapped components, primary always black, the accent list (§0), sentence case, date and money formats (§8), Alert Dialog before destructive actions (§5). Why: these were decided on purpose and beat old Figma frames. Layout is not on this list; it follows 3 and 4.
-3. **Figma:** first the Figma component (page `UI Elements`) and the project's mapped component that mirrors it (`zehn.project.json`), then the Figma frame for the screen.
-4. **The app's existing sibling screens** (the mapped example screen and the screens next to the one you're building). For layout they come first: if they use a sidebar, cards or no page header, so does the new screen. If they lack a catalog pattern (HeaderPattern, a stat-card row), leave it out. Why: one new page that looks different from its neighbours is worse than all of them missing a pattern.
-5. **The component catalog and the remaining rules**, for anything Figma or the siblings don't show.
-6. **Your own judgement.** List it under Design gaps.
+- **Layout** (shell, headers, widths, cards vs list vs table, modal vs drawer): the user's request (just a `Layout:` line) > the sibling screens and the mapped example screen > the Figma frame > the recipes in §2–3 > your judgement. If the siblings use a sidebar, cards or no page header, so does the new screen; if they lack a catalog pattern (HeaderPattern, a stat-card row), leave it out. Why: one new page that looks different from its neighbours is worse than all of them missing a pattern.
+- **Values** (color, size, radius, component, variant, copy, format): the user's request through §8a > the hard rules (why: decided on purpose, they beat old Figma frames) > the Figma component (page `UI Elements`) and its mapped component, then the Figma frame > the sibling screens > the catalog and remaining rules > your judgement.
 
-When unsure, follow Figma.
+Still unsure: Figma for a value, the siblings for layout. Judgement calls go under Design gaps.
 
-Every time a lower level lost to a higher one, add a Design gaps line: `<element>: Figma <value>, used <value> (why)`. When you swap in something simpler than what was asked (native date inputs for a date-range picker, a checkbox list for a multi-select), that's a gap too. When you commit or open a PR, put the Design gaps list in its message, so the designer can see it in the repo.
+Every time a lower source lost, add a Design gaps line (format: compose-screen Step 4). Swapping in something simpler than what was asked (native date inputs for a date-range picker) is a gap too.
 
 ---
 
@@ -116,31 +106,32 @@ zehn is one platform with many apps. All apps share one shell, one component lib
 
 Each app has **one accent color**. The accent tells you which app you're in; it never signals state or action. Allowed uses, complete list:
 
-1. the app name in the logo (`zehn` + `/app`)
+1. the app name in the logo (`zehn` + `/app`; the module wordmarks in ObjectCard and AppSwitcher count as the logo)
 2. the page header's 2px bar and 32px icon
 3. the first stat card tint (`StatCard highlighted`)
 4. `RoleBanner tone="accent"` fill
-5. TaskCard 2px top bar
+5. a task card's 2px top bar (`ObjectCard accentBar`, task cards on a Board only)
 6. MobileTabBar active item
 7. the intelligence chat send button and bubbles
 
-Anything else is off-system: buttons, badges, counters, links, selection, body text, "recommended" or highlighted cards. Colors the user picks for their own data (board, label or calendar colors) may use the hue tokens (`violet`, `coral`, `teal`…, their `-fill`/`-stroke`); they're data, not the accent. Use Neutral or a status color there. The Switch "on" color is Cyan in every app; it's a component color, not the accent.
+Anything else is off-system: buttons, badges, counters, links, selection, body text, "recommended" or highlighted cards. Use Neutral or a status color there. Colors the user picks for their own data (board, label or calendar colors) may use the hue tokens (`violet`, `coral`, `teal`…, their `-fill`/`-stroke`): they're data, not the accent. The Switch "on" color is Cyan in every app; it's a component color, not the accent.
 
 | App (`data-app` value) | Accent |
 |---|---|
 | procurement, intelligence, aip, desk, office | `Cyan` |
-| hr, tasks (task), analytics, edge | `Orange` |
+| hr, task, analytics, edge | `Orange` |
 | meet | `Pink` |
 | docs | `Blue` |
 | geo | `Yellow-Green` |
 | edu | `Edu Green` (`--zm-edu-green*`) |
 
-A module not in this table (anbar, abat, any new one) has no accent yet: ask the developer once which one to use (see "Ask the developer"), recommending Cyan unless the designer named one, and save it in `zehn.project.json` `app`. A page that shows several modules (a launcher, an app switcher) sets `data-app` per item, so each `zehn/<app>` takes its own accent.
+**Where the accent is saved:** `zehn.project.json` `app`. The repo's own app: `"app": { "id": "office", "accent": "cyan" }`. Modules the repo also renders under their own `data-app`: `"modules": { "anbar": "violet" }` inside `app`, one entry per `data-app` value. Read these before asking.
+A module not in this table (anbar, abat, any new one) has no accent yet: ask the developer once which one to use (see "Ask the developer"). Offer hues no app in the table uses: Violet (recommended), Coral, Teal; or Cyan if the module belongs to procurement or office. Save the answer as above. A page that shows several modules (a launcher, an app switcher) sets `data-app` per item, so each `zehn/<app>` takes its own accent.
 
 ## 1. Foundations
 
 - **Font:** Inter, weights 400 and 600 only. In code: `text-{xs…3xl}` plus `font-normal` / `font-semibold`. The preset already sets the -1% letter spacing, so never add `tracking-*`. (Figma style names look like `text-sm-14pt/semibold`; they are not classes.)
-- **Icons:** the app's icon set; zehn's is Remix Icon, `-line` style; `-fill` only for an active or selected state. The icon size matches the text it sits in: 16px in small buttons, `text-xs`/`text-sm` rows, chips and inputs; 20px in medium and large buttons, IconButtons and the top bar. Page header: a 32×32 box (`w-header-icon h-header-icon`) with a 32px glyph (`text-header-icon`), accent color, no background.
+- **Icons:** the app's icon set; zehn's is Remix Icon, `-line` style; `-fill` only for an active or selected state. Icon size (the components set it; match it in anything you build): 14 (`text-sm`) in small buttons and small IconButtons; 16 (`text-base`) in medium and large buttons, medium IconButtons, inputs, menus, rows, chips and top-bar tabs; 20 (`text-xl`) in large IconButtons. Page header: a 32×32 box (`w-header-icon h-header-icon`) with a 32px glyph (`text-header-icon`), accent color, no background.
 - **Color:** the project's tokens only. No hex, rgb, named colors or unlisted Tailwind colors. Light and dark must both work.
 - **Spacing:** the project's `spacingKeys` if it has them, else the zehn subset (tokens cheat sheet).
 - **Radius by element.** An element not listed takes the radius of the closest one, and you list it under Design gaps.
@@ -189,7 +180,6 @@ Use the app's own shell. These are the zehn defaults for a new app or a screen w
 - **Narrow screens:** no sideways scroll down to 1024px wide (or the app's minimum). Card and stat rows wrap (`flex-wrap` or a responsive grid); top-bar nav that doesn't fit moves into a `…` Menu; tables scroll inside their container, not the page.
 - **Cross-module navigation** (zehn office: moving between modules): `AppSwitcher`, a 240px sidebar list, active item neutral. A module's own pages keep their TopBar tabs.
 - **Grids of objects** (boards, dashboards, projects): `ObjectCard` in `ObjectGrid`, full width. The whole card opens the object; its `…` menu stays separately clickable.
-- **Which app:** `app` in `zehn.project.json`, else the `data-app` the repo already sets. Neither, or a new area that isn't a zehn app: ask the developer (see "Ask the developer").
 
 ## 3. Screen types (default recipes)
 
@@ -201,9 +191,9 @@ Starting points, not requirements. Match the sibling screens first; pick the rec
 | Card feed | page header → search → filter chips → cards (768 column) |
 | Detail | detail header → 560 main + 320 side panels (Details, People, Activity) |
 | Builder | 64px sub-bar (Back, title, Preview, Publish) + 240 palette + canvas + 320 inspector |
-| Board | kanban columns of TaskCard |
+| Board | kanban columns of task cards (`ObjectCard accentBar`) |
 | Dashboard | rows of chart cards and stat cards |
-| Empty | keep the header, search and filters; `EmptyState` centered with a title, one line and an optional small button |
+| Empty | keep the header, search and filters; `EmptyState` (catalog) |
 
 **Create/edit container.** Default order (follow how the app already does it):
 1. Destructive confirm → `AlertDialog` (520).
@@ -213,7 +203,7 @@ Starting points, not requirements. Match the sibling screens first; pick the rec
 5. One field group wider than 472px (e.g. an inline 4-column row) → `Modal size="wide"` (600).
 6. Otherwise (one step, up to 8 fields) → `Modal` (520).
 
-**Modal and drawer shell** (the components do this): header 64px (tinted icon + title + subtitle + close), body padding 24 with fields 16px apart and section headings, sticky 56px footer right-aligned with `secondary` Cancel then the action. Backdrop `bg-scrim` (stays dark in dark mode). Modal and alert dialog radius 12, drawer 0, `shadow-300`.
+**Modal and drawer shell** (the components do this; match it if you build one): header 64px (tinted icon, title, subtitle, close), body padding 24 with fields 16px apart, sticky 56px footer with `secondary` Cancel then the action, backdrop `bg-scrim`.
 
 **Toolbar:** one row, 12px gap: Segmented Control or filter chips · search Input (`flex-1`) · filter Selects · pager `< 1 / 45 >`.
 - Segmented Control when the options are 2–5 views of the same list (All / Mine / Archived).
@@ -221,7 +211,7 @@ Starting points, not requirements. Match the sibling screens first; pick the rec
 
 ## 4. Components
 
-Use the components mapped in `zehn.project.json` first, then the zehn fallback components (`fallback.zehnDir`), then build from the catalog spec with the app's primitives. Never rebuild a Button, Badge, Input, Avatar, Menu, Toast or Empty State. A new shared component is built from the existing ones too (a swatch picker from Radio, breadcrumbs from links and Icon): raw `<button>`/`<input>` belong only in the components that wrap them. Never restyle a component through `className` (colors, radius, padding, height, font); pick a variant or size, or list the missing variant under Design gaps. Layout classes (margin, width, flex) are fine. Button variants and their uses: see the catalog, Button.
+Which component, and which `className` a component may take: catalog, top. A new shared component is built from the existing ones too (a swatch picker from Radio, breadcrumbs from links and Icon): raw `<button>`/`<input>` belong only in the components that wrap them. Button variants and their uses: catalog, Button.
 
 - **One `primary` per surface.** A page, a modal, a drawer and an alert dialog each count separately. Web: last on the right. Mobile: the full-width bottom CTA. Approve (`color-primary`) and the destructive confirm (`destructive-primary`) replace the primary; they don't add to it.
 - **Status badges** (`Badge status=…`, always tinted with an icon; never the accent):
@@ -236,12 +226,12 @@ Use the components mapped in `zehn.project.json` first, then the zehn fallback c
 
   Role or type labels that aren't a state (Admin, Maternity leave, E-IMZO): `Badge` with `color` violet, coral or pink. Use the same hue for the same label everywhere. Never `yellow` for a status.
   Priority: High = red flag icon + red text. Normal shows nothing.
-- **Data table:** rows 48px; 36px (`dense`) only when the table shows more than 20 rows per page or sits in a drawer. Header 36px gray, first column bold, status column a Badge, a `…` row menu (Edit, divider, red Delete).
+- **Data table:** rows 48px; 36px (`dense`) only when the table shows more than 20 rows per page or sits in a drawer (or when the siblings' tables are dense). Header 36px gray, first column bold, status column a Badge, a `…` row menu (Edit, divider, red Delete).
 - **People:** `Avatar` (initials) + the full name. `AvatarGroup` for teams.
 - **Menu:** the destructive item goes last, red, after a divider (the component does this).
 - **Toast:** bottom-right stack, 432px, after save, copy or send. Success, or Error with Retry (`onRetry`). One optional action ("View").
 - **Tooltip:** explains an icon-only control, a truncated value, or why an action is disabled. One short sentence. Its child must be focusable. For a disabled action, use `disabledReason` on Button or IconButton (it keeps focus and shows the tooltip). For truncated text, wrap it in `<span tabIndex={0}>`. If the reason is the only way forward ("Ask the owner to share it"), show it as visible text or a RoleBanner, not a tooltip.
-- **Chart cards (dashboards):** 334px tall (`h-chart-card`), radius 4, padding 16, 16px gap in a full-width row; plot area 208px (`h-chart-plot`) under the title and legend. Up to 3 per row at 1440, or one 2/3 + one 1/3.
+- **Chart cards (dashboards):** 334px tall (`h-chart-card`), radius 4, padding 16, 16px gap in a full-width row; plot area 208px (`h-chart-plot`) under the title and legend. Up to 3 per row at 1440, or one 2/3 + one 1/3. (Card size is fixed; how many per row follows the siblings.)
 - **Charts:** `--zm-chart-1…8` in order (Cyan → Blue → Violet → Pink → Coral → Yellow-Green → Teal → Orange). Positive `--zm-chart-positive`, negative `--zm-chart-negative`, plus the grid and axis tokens. Never raw hues. Readable in dark. An empty-data widget shows a gray outline of its chart type.
 - **Tabs inside a page:** Segmented Control. No underline tabs.
 
@@ -267,7 +257,6 @@ Use the components mapped in `zehn.project.json` first, then the zehn fallback c
 - Toasts pause while hovered or focused. Errors use `role="alert"`.
 - Icon-only buttons need an `aria-label`. Inputs wire their label and hints (`aria-describedby`, `aria-invalid`).
 - Loading keeps the button's own color and sets `aria-busy`.
-- Every animation has a reduced-motion path (§9). zehn motion tokens drop to 0ms on their own.
 - The shell has a "Skip to content" link that shows on focus. DOM order matches the visual order (no `order-*` reshuffles).
 - Tooltips hold text only; anything clickable goes in a Popover or Menu.
 - zehn sizes stay as designed on web (32px medium buttons, not 44px). Mobile tap targets are at least 44px.
@@ -296,11 +285,11 @@ Use the components mapped in `zehn.project.json` first, then the zehn fallback c
 - **Dates:** `30.06.2026`. Calendars and date pickers start the week on Monday; month and weekday names come from the locale. Date-time: `30.06.2026 14:27` (24h). Ranges: `12.01.2026 – 31.01.2026 · 10 days`. Add relative time next to deadlines: "(in 28 days)". Same in every locale.
 - **Money:** en `24,000,000 UZS`; ru and uz `24 000 000 UZS` (non-breaking space, decimal comma). The code goes after the number. UZS is the default; when the data has its own currency (a USD price, a foreign supplier), show that currency (`formatMoney(827, locale, 'USD')` → `827 USD`). Never convert or relabel amounts.
 - **Durations:** `14d 3h 22m`. **IDs:** `#REQ-3`. **Meta separator:** ` · `.
-- **Always format with the helpers** and pass the locale: `formatDate(d, locale)`, `formatDateTime`, `formatMoney`, `formatNumber`, `formatDuration`, with `const locale = useZehnLocale()`. They default to `en`, so leaving out the locale gives English output in a ru/uz app. Never hand-build these strings or use `toLocaleString`.
+- **Always format through a helper with the locale**, never by hand and never with `toLocaleString`: the app's formatters first (with its locale source). If it has none, zehn's `formatDate(d, locale)`, `formatDateTime`, `formatMoney`, `formatNumber`, `formatDuration` with `const locale = useZehnLocale()`; they default to `en`, so leaving out the locale gives English in a ru/uz app.
 - **Languages:** web English, plus ru and uz where the app has them; edu Uzbek (Latin); desk English.
 - **Uzbek Latin:** o‘ and g‘ use U+2018 `‘`. The tutuq belgisi uses U+2019 `’` ("ma’no"). Never ASCII `'` or a backtick, and don't mix in `ʻ` (U+02BB). Why: one codepoint keeps search and sort working.
 - **New strings you write** go through the app's i18n (`t('…')`) with en/ru/uz entries. If the app has no i18n, write English and list it under Design gaps.
-- **Shared component strings** (Cancel, Close, Retry, pager…) come from `ZehnLocaleProvider` or a `…Label` prop. Never edit the zehn components to translate them; setup-project overwrites them.
+- **Shared component strings** (Cancel, Close, Retry, pager…) come from the app's i18n; in zehn fallback components, from `ZehnLocaleProvider` or a `…Label` prop. Never edit the zehn components to translate them; setup-project overwrites them.
 - No lorem ipsum, joke names or real people's data in shipped UI. Spell-check every string.
 
 ## 8a. When someone asks for something off-system
@@ -315,12 +304,7 @@ This covers a custom color, font or size, a component zehn doesn't have, and bul
 
 ## 9. Motion
 
-The full rules are in the `motion` skill; load it for any animation work. In short:
-- Page navigation is instant (as in Figma). Frequent or keyboard actions don't animate.
-- Opening and closing: ease-out, 150 (tooltip, menu), 200 (modal, toast), 300 (drawer, panel); exits faster. Never over 300ms.
-- Animate `transform` and `opacity` only; name the properties; no `transition-all`, no bounce, never from `scale(0)`.
-- Use the mapped components' own motion and the project's motion tokens; zehn: `duration-fast|base|slow`, `ease-out|in-out|in`, `scale-press`.
-- Every animation has a reduced-motion path.
+Load the `motion` skill for any animation. Page navigation is instant; nothing over 300ms; every animation has a reduced-motion path.
 
 
 ---
@@ -329,19 +313,25 @@ The full rules are in the `motion` skill; load it for any animation work. In sho
 
 Figma page `UI Elements` (file `ywFHunM35gYeHJozrBJpZO`). Each entry is the spec of one component: what it is for and how it behaves. Figma variant names are listed for reference; the **React** lines are the props of the zehn fallback components. Figma's `style` property is the prop `variant` (`style` is reserved by React).
 
-**Which component to use:** Use the components mapped in `zehn.project.json` first (their names, imports and props), then the zehn fallback components (`fallback.zehnDir`), then build from the catalog spec with the app's primitives. `components.map` in `zehn.project.json` names the app's component for each catalog entry below, its import, how the props translate, and its `gaps` from Figma. The app's component is the one in use; zehn's only fill gaps. Never rebuild a component, and never make a one-off variant inline.
+**Which component:** 1) the app's component from `zehn.project.json` `components.map` (its import, prop translation and `gaps`); 2) the zehn fallback in `fallback.zehnDir`, only when it is set; 3) neither → build it once (below). Never make a second version of a component that exists, and never a one-off variant inline.
+
+**`className` on a component** (what the style check passes):
+- Any component: margin, width, flex/grid placement, position (`mt-4 w-full flex-1`).
+- Placeholders (Skeleton, Spinner, ProgressBar, Divider, Icon, Orb, Logo, Image): also height and radius (`h-4 rounded-full`).
+- Blocks you lay out (EmptyState, Card, ObjectCard, ObjectGrid, Panel, Section, PageHeader, Toolbar, Sidebar): also padding and height (`py-12`).
+- Never: color, border, shadow, font, opacity; radius except on placeholders; padding or height on controls (Button, Input, Badge…): pick a size or variant, or list the missing one under Design gaps. Why: a visual class fights the component's own (`cx` doesn't merge Tailwind classes).
 
 **Neither mapped nor shipped** (in zehn, these are marked "not in code": Multi-select, OTP Input, Breadcrumbs, MobileTabBar): build it once in the app's `components.dir` (or `fallback.zehnDir` in a zehn-fallback app) from the spec here, with the app's existing primitives and tokens and in their style, following the closest existing component. List it under Design gaps. Never inline it in a screen.
 
 A mapped or shipped component and a Figma frame differ (radius, padding, color)? Use the component as it is and note it under Design gaps (for a mapped one, its `gaps` entries). Never restyle it to match the frame. Why: one component must look the same on every screen.
 
-Non-React stacks: build each component once in the shared UI folder with these props.
+Non-React stacks: the zehn fallback components don't apply. For an entry with no mapped component, build it once in `components.dir` using these prop names.
 
 ## Actions
 
 ### Button
 Figma: size large 40 · medium 32 · small 24; style (9 variants).
-React: `<Button variant size leftIcon rightIcon counter loading disabled disabledReason still>`. Theme: switch light/dark with `setTheme()` / `useTheme()` (transitions stay off during the switch). Hover, focus and press feedback (scale 0.96) are automatic; `still` turns press feedback off for dense, high-frequency spots (table row actions, toolbars, pagers).
+React: `<Button variant size leftIcon rightIcon counter loading disabled disabledReason still>`. Hover, focus and press feedback (scale 0.96) are automatic; `still` turns press feedback off for dense, high-frequency spots (table row actions, toolbars, pagers).
 - `size`: `large` · `medium` (default) · `small`. Small is radius 4, the others 8.
 - `leftIcon` / `rightIcon`: Remix name or a node. AI variants add a sparkle; `leftIcon={null}` removes it.
 - `loading`: spinner, keeps the width and the variant's color, sets `aria-busy`.
@@ -406,7 +396,6 @@ React, shared field props: `label`, `required` (red `*`), `topHint`, `bottomHint
 - `<Input size leftIcon rightIcon>`: text and search (`leftIcon="search"`).
 - `<Select size leftIcon placeholder>`: a native select; the chevron is built in.
 - `<Textarea maxLength rows>`: no size or icons; `maxLength` shows the `0/200` counter.
-- Use `className` for layout (e.g. `flex-1`), never to restyle the box.
 
 ### Multi-select Field (not in code)
 Same field props as Input; selected items show as small Badges inside the box. Follow `Select` and `Badge`.
@@ -422,7 +411,7 @@ Figma: size small · medium · large · mega; `dot` (masked). One box per digit,
 ## Navigation
 
 ### SegmentedControl
-React: `<SegmentedControl items={[{value, label, icon, counter, disabled}]} value onValueChange size aria-label>`. 2–5 items, `aria-label` required. In-page views and sections only, never app navigation.
+React: `<SegmentedControl items={[{value, label, icon, counter, disabled, panelId}]} value defaultValue onValueChange size aria-label>`. `panelId` wires the tabpanel for tabs inside a page. 2–5 items, `aria-label` required. In-page views and sections only, never app navigation.
 
 ### FilterChips
 React: `<FilterChips items={[{value, label, count}]} value onValueChange aria-label>`. Small Buttons: active primary, inactive secondary, with a Counter. When to use which: rules §3.
@@ -431,7 +420,7 @@ React: `<FilterChips items={[{value, label, count}]} value onValueChange aria-la
 Figma: size small · tiny; `chevronDivider`. Deep hierarchies only (project → board → task). Follow the `DetailHeader` back link.
 
 ### Menu
-React: `<Menu trigger={<IconButton icon="more-2" aria-label="Actions" />} items footnote align>`.
+React: `<Menu trigger={<IconButton icon="more-2" aria-label="Actions" />} items footnote align>`. `align`: `start` · `end` (default).
 - `items`: `{label, description, icon, right, destructive, disabled, onSelect}`. `right` takes any node (shortcut text, Badge, Counter). Destructive items move last, red, after a divider.
 - `footnote`: a small gray note at the bottom.
 - Avatar, checkbox, radio and switch rows are Figma only. For a multi-select list use Checkbox rows in a Drawer, not a Menu.
@@ -443,7 +432,7 @@ React: wrap the app once in `<ToastProvider>` (inside `ZehnLocaleProvider`), the
 `toast({ type, title, subtitle, action: {label, onClick}, onRetry, duration })`. `type`: default · info · loading · success · warning · error. `onRetry` adds a localized Retry. A loading toast stays until you `update(id, …)` it. When to show one: rules §4.
 
 ### AlertDialog
-React: `<AlertDialog open onClose onConfirm title subtitle confirmLabel loading icon>`. `confirmLabel` (the verb) is required; `icon` defaults to `delete-bin`.
+React: `<AlertDialog open onClose onConfirm title subtitle confirmLabel cancelLabel loading icon>`. `confirmLabel` (the verb) is required; `icon` defaults to `delete-bin`.
 - Title: verb + object, e.g. Delete board “Mobile app”? (curly quotes around the name).
 - Subtitle: one line on the consequence.
 - Initial focus is on Cancel; the scrim does nothing; `loading` keeps it open.
@@ -452,7 +441,7 @@ React: `<AlertDialog open onClose onConfirm title subtitle confirmLabel loading 
 React: `<Tooltip content side delay>{one focusable child}</Tooltip>`. `side`: top · bottom; `delay` 300ms. Dark, `text-xs`, radius 4. When to use it and the focus rule: rules §4. For a disabled button use `disabledReason`, not a Tooltip around `disabled`.
 
 ### ProgressBar
-React: `<ProgressBar value max label showValue size>`. Track 8px (`medium`, default) or 4px (`small`); the label and % sit above it. Fill `bg-progress-fill`; a status color only when the value means something.
+React: `<ProgressBar value max label showValue size>`. Track 8px (`medium`, default) or 4px (`small`); the label and % sit above it. Without `label`, pass `aria-label`. Fill `bg-progress-fill`; a status color only when the value means something.
 
 ### Skeleton
 React: `<Skeleton shape="text|rect|circle">`, sized with `h-`/`w-`. Radius 4 like the card it replaces. Wrap the loading region in `aria-busy="true"`.
@@ -463,15 +452,15 @@ React: `<Skeleton shape="text|rect|circle">`, sized with `h-`/`w-`. Radius 4 lik
 |---|---|---|
 | **TopBar** | `<TopBar app nav={[{label, icon, href, active}]} unreadCount user onNotificationsClick onSupportClick right>` | The whole 56px shell bar. The active tab gets the subtle fill (`buttonClass({ variant: 'ghost', selected })` for your own nav). |
 | **AppSwitcher** | `<AppSwitcher apps={[{id, name, href, icon, badge}]} current version renderLink>` | Cross-module sidebar (240px) in zehn office. Each item takes its own app accent on `/name`; the current one is neutral `surface-subtle`. |
-| **ObjectCard**, **ObjectGrid** | `<ObjectCard title href/onOpen description meta footer menu badge accentBar renderLink>` in `<ObjectGrid>` | Boards, dashboards, projects (Figma Board Card, 389×117, radius 4). The whole card opens the object; `menu` stays clickable; `footer` is display only. `accentBar` = TaskCard's 2px accent top bar. |
+| **ObjectCard**, **ObjectGrid** | `<ObjectCard title href/onOpen description meta footer menu badge accentBar renderLink>` in `<ObjectGrid>` | Boards, dashboards, projects (Figma Board Card, radius 4; width comes from `ObjectGrid`, never set a fixed size). `href` (link) or `onOpen` (button): exactly one. The whole card opens the object; `menu` stays clickable; `footer` is display only. `accentBar`: only on task cards in a Board (rules §0 #5), never on boards, dashboards or projects. |
 | **PageHeader** | `<PageHeader title subtitle icon actions>` | Action order: rules §2. |
 | **DetailHeader** | `<DetailHeader back={{href, label}} id title meta={[…]} menuItems actions>` | `meta` is joined with ` · `. |
 | **StatCard** | `<StatCard label value delta={{label, status}} highlighted>` | Put 3–5 in `<div className="flex gap-4">`; they grow from a 288px basis. Only the first gets `highlighted`. |
-| **DataTable** | `<DataTable columns rows getRowId caption rowActions dense loading empty onRowClick>` | `caption` is required. Clickable rows: `onRowClick`, never a raw button. |
+| **DataTable** | `<DataTable columns rows getRowId getRowLabel caption rowActions dense loading empty onRowClick>` | `caption` is required. Clickable rows: `onRowClick`, never a raw button. |
 | **Toolbar**, **Pager** | `<Toolbar aria-label>…</Toolbar>`, `<Pager page pageCount onPageChange>` | Order: rules §3. |
 | **PanelCard** | `<PanelCard title icon rows={[{label, value}]}>` | Side panels on detail pages. |
-| **InfoChip** | `<InfoChip icon tone>` | Under a field. |
-| **ActivityFeed**, **ActivityItem** | `<ActivityFeed><ActivityItem icon tone name action timestamp dateTime last /></ActivityFeed>` | ActivityItem must sit inside ActivityFeed. |
+| **InfoChip** | `<InfoChip icon tone>` | Under a field. `tone`: neutral · info · success · warning · danger. |
+| **ActivityFeed**, **ActivityItem** | `<ActivityFeed><ActivityItem icon tone name action timestamp dateTime last /></ActivityFeed>` | ActivityItem must sit inside ActivityFeed. `tone`: as InfoChip, plus `ai`. |
 | **RoleBanner** | `<RoleBanner tone title description icon actions>` | `tone`: `accent` (default; the viewer must act) · `info` (cyan) · `warning` (view-only access). |
 | **Modal** | `<Modal open onClose title subtitle icon tone size footer initialFocusRef closeOnScrim>` | `size`: default 520 · wide 600 · xl 904. `tone` includes `ai`. Focus goes to `initialFocusRef`, else the first `data-autofocus` element. |
 | **Drawer** | `<Drawer … size stepper footer>` | `size`: default 520 · wide 640. |
@@ -487,7 +476,7 @@ Which container to pick: rules §3. Modal, Drawer and AlertDialog render in plac
 ## Locale
 
 Wrap the app once: `<ZehnLocaleProvider locale={<the app's current locale: en | ru | uz>} labels={{…}}>` outside `ToastProvider`. Take the locale from the app's i18n, never a literal. Built-in strings (Cancel, Close, Retry, pager…) then localize; `labels` overrides single strings; per-instance props like `cancelLabel` still win.
-`const locale = useZehnLocale()`, then `formatDate(d, locale)`, `formatDateTime`, `formatMoney(n, locale)`, `formatNumber`, `formatDuration(ms, locale)`. Format rules: rules §8.
+Formatters and format rules: rules §8.
 
 
 ---
@@ -501,7 +490,8 @@ A fallback app gets copies of the token files through setup-project (`src/styles
 
 ## Setup in an app (once)
 - setup-project wires `tokens.css` and the Tailwind preset (fallback only). The preset **replaces** colors, radius, font sizes and weights, shadows, transition durations and easings; it **keeps** Tailwind's spacing keys.
-- On `<html>`: `data-app` = procurement | intelligence | desk (cyan) · hr | tasks | analytics | edge (orange) · docs (blue) · geo (yellow-green) · edu (edu-green). Without it the accent is cyan.
+- On `<html>`: `data-app="<app>"`, the key from the rules §0 table (= `app.id` in `zehn.project.json`). Without it the accent is cyan. A module shown inside a host app sets `data-app` on its own root element; its accent goes in `app.modules` (rules §0).
+- Theme toggle (zehn fallback only): `setTheme('light'|'dark'|'system')` or `const [theme, changeTheme] = useTheme()`; transitions are off for that frame. Set `data-theme` from storage in an inline `<head>` script too, or the page flashes.
 - `data-theme="light"|"dark"` forces a theme. Without it the OS setting decides, so a light-only app must set `data-theme="light"`.
 
 ## Use semantic tokens first
@@ -527,7 +517,7 @@ A fallback app gets copies of the token files through setup-project (`src/styles
 | Secondary button | `--zm-secondary-bg` / `-bg-hover` / `-fg` | `bg-secondary-bg text-secondary-fg` |
 | App accent (allowed uses: rules §0) | `--zm-app-accent`, `--zm-app-accent-fill`, `--zm-app-accent-stroke` | `text-app-accent`, `bg-app-accent-fill` |
 | Status | `--zm-status-{success,warning,info,danger,neutral}` + `-bg` | `text-status-success bg-status-success-bg` |
-| AI | `--zm-ai`, `--zm-ai-bg` | `text-ai bg-ai-bg` |
+| AI | `--zm-ai`, `--zm-ai-bg` | `text-ai bg-ai-bg` (`bg-ai-gradient` exists only for `Orb`; never elsewhere) |
 | Disabled control | `--zm-disabled-bg` / `--zm-disabled-fg` | `bg-disabled-bg text-disabled-fg` |
 | Dialog backdrop (stays dark in dark mode) | `--zm-scrim` | `bg-scrim` |
 | Notification counter (red) | `--zm-counter-bg` / `--zm-counter-fg` | `bg-counter-bg text-counter-fg` |
@@ -537,7 +527,7 @@ A fallback app gets copies of the token files through setup-project (`src/styles
 | Always white / always black (switch thumb, text on a solid hue) | `--zm-const-white` / `--zm-const-black` | `bg-const-white`, `text-white` |
 | Charts (in this order; 1–7 keep 3:1 contrast, 8 needs labels) | `--zm-chart-1..8`, `-positive`, `-negative`, `-grid`, `-axis` | `fill-chart-1`, `stroke-chart-1`… |
 
-Dark mode: `const-white`, `const-black` and `gray-*` don't flip the way surfaces do. Never use them for surfaces or body text.
+Dark mode: `const-white`/`const-black` never flip. `gray-*` flips (black alpha → white alpha), so it works as a neutral tint but not as a surface or body text color; use `surface-*` and `text-*` for those.
 
 ## Primitives (only when no semantic token fits)
 - Each hue: `--zm-{hue}`, `-lighter`, `-darker`, `-stroke`, `-fill-1`, `-fill-2`. Tailwind: `text-cyan`, `bg-cyan-fill-2`, `border-cyan-stroke`. Hues: cyan, teal, blue, violet, pink, coral, red, orange, lime, yellow-green, green, edu-green. `edu-green` has `-deep` and no `-lighter`; `green` and `yellow-green` add `-bg-strong`.
@@ -550,9 +540,9 @@ Every size already includes -0.01em tracking; never add `tracking-*`.
 |---|---|---|
 | `text-xxs` | 10/12 | tiny tags, small counters |
 | `text-xs` | 12/16 | meta, IDs, helper text, table headers |
-| `text-sm` | 14/20 | body default, labels, buttons |
+| `text-sm` | 14/20 | body default, labels, buttons, web card titles (`font-semibold`, like ObjectCard) |
 | `text-base` | 16/24 | lead text, banner and dialog titles |
-| `text-lg` | 18/24 | card titles |
+| `text-lg` | 18/24 | mobile card titles |
 | `text-xl` | 20/28 | mobile pushed-screen titles |
 | `text-2xl` | 24/32 | page H1 |
 | `text-3xl` | 30/36 | mobile large titles |
@@ -569,29 +559,28 @@ Classes: `rounded-none` 0 · `rounded-sm` 2 · `rounded` 4 · `rounded-lg` 8 · 
 `shadow-100`, `shadow-200`, `shadow-300`, `shadow-mobile`, `shadow-focus`. Which element gets which: rules §1. Tailwind's `shadow-sm/md/lg` don't exist.
 
 ## Motion
-| Token | Tailwind | Value | Use |
-|---|---|---|---|
-| `--zm-duration-fast` | `duration-fast` (and plain `duration`) | 150ms | hover, press, color, tooltip, menu, all exits of small things |
-| `--zm-duration-base` | `duration-base` | 200ms | modal, alert dialog, toast, list item change; drawer exit |
-| `--zm-duration-slow` | `duration-slow` | 300ms | drawer, side or chat panel enter |
-| `--zm-ease-out` | `ease-out` (and plain `ease`) | `cubic-bezier(0.32, 0.72, 0, 1)` | enter, open, close |
-| `--zm-ease-in-out` | `ease-in-out` | `cubic-bezier(0.645, 0.045, 0.355, 1)` | moving or resizing something on screen |
-| `--zm-ease-in` | `ease-in` | `cubic-bezier(0.55, 0.055, 0.675, 0.19)` | exits only |
-| `--zm-press-scale` | `scale-press` | 0.96 | `active:scale-press` on buttons |
-Under `prefers-reduced-motion: reduce` the durations become 0ms and the press scale 1, so anything built on these stops moving. Tailwind's `duration-200`, `duration-500` don't exist. Rules: the `motion` skill.
+| Token | Tailwind | Value |
+|---|---|---|
+| `--zm-duration-fast` | `duration-fast` (and plain `duration`) | 150ms |
+| `--zm-duration-base` | `duration-base` | 200ms |
+| `--zm-duration-slow` | `duration-slow` | 300ms |
+| `--zm-ease-out` | `ease-out` (and plain `ease`) | `cubic-bezier(0.32, 0.72, 0, 1)` |
+| `--zm-ease-in-out` | `ease-in-out` | `cubic-bezier(0.645, 0.045, 0.355, 1)` |
+| `--zm-ease-in` | `ease-in` | `cubic-bezier(0.55, 0.055, 0.675, 0.19)` |
+| `--zm-press-scale` | `scale-press` | 0.96 |
+Durations drop to 0ms under reduced motion. Tailwind's `duration-200`, `duration-500` don't exist. When to use which: the `motion` skill.
 
 ## Layout constants (CSS var `--zm-<name>`, Tailwind `w-`/`h-`/`max-w-<name>`)
 | Name | px | Use |
 |---|---|---|
-| (none) | full | tables, boards, builders, dashboards: `px-6`, no max width |
-| `column-narrow` | 768 | feeds, settings, a form page: `max-w-column-narrow mx-auto` |
-| `column-detail` | 896 | detail pages (560 `detail-main` + 16 + 320 `side-panel`) |
+| `column-narrow` | 768 | content width: rules §2 |
+| `column-detail` | 896 | 560 `detail-main` + 16 + 320 `side-panel`; content width: rules §2 |
 | `topbar-height` | 56 | top bar |
 | `subbar-height` | 64 | builder sub-bar |
 | `gutter` | 24 | page side padding (`px-6`) |
-| `modal` / `modal-wide` / `modal-xl` | 520 / 600 / 904 | modals |
+| `modal` / `modal-wide` / `modal-xl` | 520 / 600 / 904 | container choice: rules §3 |
 | `alert-dialog` | 520 | destructive confirm |
-| `drawer` / `drawer-wide` | 520 / 640 | drawers (wide when it holds a table) |
+| `drawer` / `drawer-wide` | 520 / 640 | container choice: rules §3 |
 | `header-icon` | 32 | page-header icon box and glyph |
 | `table-header` / `row` / `row-dense` | 36 / 48 / 36 | data tables |
 | `chart-card` / `chart-plot` | 334 / 208 | dashboard chart card / plot area height |

@@ -7,7 +7,8 @@ A fallback app gets copies of the token files through setup-project (`src/styles
 
 ## Setup in an app (once)
 - setup-project wires `tokens.css` and the Tailwind preset (fallback only). The preset **replaces** colors, radius, font sizes and weights, shadows, transition durations and easings; it **keeps** Tailwind's spacing keys.
-- On `<html>`: `data-app` = procurement | intelligence | desk (cyan) · hr | tasks | analytics | edge (orange) · docs (blue) · geo (yellow-green) · edu (edu-green). Without it the accent is cyan.
+- On `<html>`: `data-app="<app>"`, the key from the rules §0 table (= `app.id` in `zehn.project.json`). Without it the accent is cyan. A module shown inside a host app sets `data-app` on its own root element; its accent goes in `app.modules` (rules §0).
+- Theme toggle (zehn fallback only): `setTheme('light'|'dark'|'system')` or `const [theme, changeTheme] = useTheme()`; transitions are off for that frame. Set `data-theme` from storage in an inline `<head>` script too, or the page flashes.
 - `data-theme="light"|"dark"` forces a theme. Without it the OS setting decides, so a light-only app must set `data-theme="light"`.
 
 ## Use semantic tokens first
@@ -33,7 +34,7 @@ A fallback app gets copies of the token files through setup-project (`src/styles
 | Secondary button | `--zm-secondary-bg` / `-bg-hover` / `-fg` | `bg-secondary-bg text-secondary-fg` |
 | App accent (allowed uses: rules §0) | `--zm-app-accent`, `--zm-app-accent-fill`, `--zm-app-accent-stroke` | `text-app-accent`, `bg-app-accent-fill` |
 | Status | `--zm-status-{success,warning,info,danger,neutral}` + `-bg` | `text-status-success bg-status-success-bg` |
-| AI | `--zm-ai`, `--zm-ai-bg` | `text-ai bg-ai-bg` |
+| AI | `--zm-ai`, `--zm-ai-bg` | `text-ai bg-ai-bg` (`bg-ai-gradient` exists only for `Orb`; never elsewhere) |
 | Disabled control | `--zm-disabled-bg` / `--zm-disabled-fg` | `bg-disabled-bg text-disabled-fg` |
 | Dialog backdrop (stays dark in dark mode) | `--zm-scrim` | `bg-scrim` |
 | Notification counter (red) | `--zm-counter-bg` / `--zm-counter-fg` | `bg-counter-bg text-counter-fg` |
@@ -43,7 +44,7 @@ A fallback app gets copies of the token files through setup-project (`src/styles
 | Always white / always black (switch thumb, text on a solid hue) | `--zm-const-white` / `--zm-const-black` | `bg-const-white`, `text-white` |
 | Charts (in this order; 1–7 keep 3:1 contrast, 8 needs labels) | `--zm-chart-1..8`, `-positive`, `-negative`, `-grid`, `-axis` | `fill-chart-1`, `stroke-chart-1`… |
 
-Dark mode: `const-white`, `const-black` and `gray-*` don't flip the way surfaces do. Never use them for surfaces or body text.
+Dark mode: `const-white`/`const-black` never flip. `gray-*` flips (black alpha → white alpha), so it works as a neutral tint but not as a surface or body text color; use `surface-*` and `text-*` for those.
 
 ## Primitives (only when no semantic token fits)
 - Each hue: `--zm-{hue}`, `-lighter`, `-darker`, `-stroke`, `-fill-1`, `-fill-2`. Tailwind: `text-cyan`, `bg-cyan-fill-2`, `border-cyan-stroke`. Hues: cyan, teal, blue, violet, pink, coral, red, orange, lime, yellow-green, green, edu-green. `edu-green` has `-deep` and no `-lighter`; `green` and `yellow-green` add `-bg-strong`.
@@ -56,9 +57,9 @@ Every size already includes -0.01em tracking; never add `tracking-*`.
 |---|---|---|
 | `text-xxs` | 10/12 | tiny tags, small counters |
 | `text-xs` | 12/16 | meta, IDs, helper text, table headers |
-| `text-sm` | 14/20 | body default, labels, buttons |
+| `text-sm` | 14/20 | body default, labels, buttons, web card titles (`font-semibold`, like ObjectCard) |
 | `text-base` | 16/24 | lead text, banner and dialog titles |
-| `text-lg` | 18/24 | card titles |
+| `text-lg` | 18/24 | mobile card titles |
 | `text-xl` | 20/28 | mobile pushed-screen titles |
 | `text-2xl` | 24/32 | page H1 |
 | `text-3xl` | 30/36 | mobile large titles |
@@ -75,29 +76,28 @@ Classes: `rounded-none` 0 · `rounded-sm` 2 · `rounded` 4 · `rounded-lg` 8 · 
 `shadow-100`, `shadow-200`, `shadow-300`, `shadow-mobile`, `shadow-focus`. Which element gets which: rules §1. Tailwind's `shadow-sm/md/lg` don't exist.
 
 ## Motion
-| Token | Tailwind | Value | Use |
-|---|---|---|---|
-| `--zm-duration-fast` | `duration-fast` (and plain `duration`) | 150ms | hover, press, color, tooltip, menu, all exits of small things |
-| `--zm-duration-base` | `duration-base` | 200ms | modal, alert dialog, toast, list item change; drawer exit |
-| `--zm-duration-slow` | `duration-slow` | 300ms | drawer, side or chat panel enter |
-| `--zm-ease-out` | `ease-out` (and plain `ease`) | `cubic-bezier(0.32, 0.72, 0, 1)` | enter, open, close |
-| `--zm-ease-in-out` | `ease-in-out` | `cubic-bezier(0.645, 0.045, 0.355, 1)` | moving or resizing something on screen |
-| `--zm-ease-in` | `ease-in` | `cubic-bezier(0.55, 0.055, 0.675, 0.19)` | exits only |
-| `--zm-press-scale` | `scale-press` | 0.96 | `active:scale-press` on buttons |
-Under `prefers-reduced-motion: reduce` the durations become 0ms and the press scale 1, so anything built on these stops moving. Tailwind's `duration-200`, `duration-500` don't exist. Rules: the `motion` skill.
+| Token | Tailwind | Value |
+|---|---|---|
+| `--zm-duration-fast` | `duration-fast` (and plain `duration`) | 150ms |
+| `--zm-duration-base` | `duration-base` | 200ms |
+| `--zm-duration-slow` | `duration-slow` | 300ms |
+| `--zm-ease-out` | `ease-out` (and plain `ease`) | `cubic-bezier(0.32, 0.72, 0, 1)` |
+| `--zm-ease-in-out` | `ease-in-out` | `cubic-bezier(0.645, 0.045, 0.355, 1)` |
+| `--zm-ease-in` | `ease-in` | `cubic-bezier(0.55, 0.055, 0.675, 0.19)` |
+| `--zm-press-scale` | `scale-press` | 0.96 |
+Durations drop to 0ms under reduced motion. Tailwind's `duration-200`, `duration-500` don't exist. When to use which: the `motion` skill.
 
 ## Layout constants (CSS var `--zm-<name>`, Tailwind `w-`/`h-`/`max-w-<name>`)
 | Name | px | Use |
 |---|---|---|
-| (none) | full | tables, boards, builders, dashboards: `px-6`, no max width |
-| `column-narrow` | 768 | feeds, settings, a form page: `max-w-column-narrow mx-auto` |
-| `column-detail` | 896 | detail pages (560 `detail-main` + 16 + 320 `side-panel`) |
+| `column-narrow` | 768 | content width: rules §2 |
+| `column-detail` | 896 | 560 `detail-main` + 16 + 320 `side-panel`; content width: rules §2 |
 | `topbar-height` | 56 | top bar |
 | `subbar-height` | 64 | builder sub-bar |
 | `gutter` | 24 | page side padding (`px-6`) |
-| `modal` / `modal-wide` / `modal-xl` | 520 / 600 / 904 | modals |
+| `modal` / `modal-wide` / `modal-xl` | 520 / 600 / 904 | container choice: rules §3 |
 | `alert-dialog` | 520 | destructive confirm |
-| `drawer` / `drawer-wide` | 520 / 640 | drawers (wide when it holds a table) |
+| `drawer` / `drawer-wide` | 520 / 640 | container choice: rules §3 |
 | `header-icon` | 32 | page-header icon box and glyph |
 | `table-header` / `row` / `row-dense` | 36 / 48 / 36 | data tables |
 | `chart-card` / `chart-plot` | 334 / 208 | dashboard chart card / plot area height |

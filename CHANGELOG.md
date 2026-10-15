@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.5.0 (15.10.2026)
+From the second writing review (PLUGIN-WRITING-REVIEW-2.md, 63 findings).
+
+- **One answer for `className` on components**, at the top of the catalog, matching the style check: layout classes always; height and radius on placeholders; padding and height on layout blocks; never color, border, shadow, font or opacity. Rules §4 and ui-tweak point to it. The check now also exempts the app's renamed placeholder or layout component when its `components.map` key is a catalog placeholder or block (Skeleton → Shimmer), and its message names the `sizedByCaller` opt-in.
+- **"Who wins" is two orders:** layout (user request > sibling screens > Figma frame > recipes) and values (user request via §8a > hard rules > Figma component and mapped component > siblings > catalog). "When unsure, follow Figma" now applies to values only, everywhere (rules, ui-tweak, startup text). Layout deviations are a closed list (more than 7 sections, dense data over 20 rows, an embedded widget, or the developer asks).
+- **The finish check tells the agent to re-run it** on the listed files until it prints "clean", since it runs once. compose-screen and the startup text now say Bash and script edits are checked only at the finish, so check those files yourself.
+- **ui-tweak:** the off-system pointer goes to the right step.
+- **Module accents** go in `app.modules` (`"anbar": "violet"`) in `zehn.project.json`; setup offers Violet, Coral or Teal (hues no app uses).
+- **Big Figma links:** read only the root's direct children from `get_metadata`, then ask which frames.
+- **Icon sizes** in rules §1 match the components (14 small, 16 medium/large and rows, 20 large IconButton).
+- **No false sign-off notes on setup's own work:** files listed in `fallback.copied` or identical to the plugin's component skip the design-system and theme notes. `zehn.project.json` gains `pluginVersion` (setup re-checks only newer CHANGELOG fixes), `fallback.copied` and `fallback.notCopied`.
+- **Contradictions removed:** ui-review no longer flags a non-black theme primary per button; the layout fork asks only when the recipes allow both; tokens.md points to rules §0 for `data-app` keys; TaskCard is `ObjectCard accentBar` (task cards on a Board only); formatting uses the app's formatters first; the components README matches what setup does.
+- **Smaller:** the startup text is 4.5k characters (was 6k); compose-screen repeats less (its size is back under 1.4.1's with the new blocks); routing names "update zehn" and animation/review skills; project-mode color messages show `tokens.figmaMap` examples; catalog props filled in (SegmentedControl `panelId`, Menu `align`, AlertDialog `cancelLabel`, DataTable `getRowLabel`, tones).
+
 ## 1.4.1 (15.10.2026)
 - **Fix:** the restyle check no longer flags size or spacing on components the screen sizes or lays out. `<Skeleton className="h-4 w-32 rounded-full">`, `<EmptyState className="py-12">` and `<Card className="p-6">` pass. Placeholders (Skeleton, Spinner, Progress, Divider, Icon, Orb, Logo, Image) also take radius; layout components (EmptyState, Card, ObjectCard, Panel, Section, Container, Stack, Grid, Page, Toolbar, Sidebar) take spacing and height. Color, border, shadow and type on them are still flagged, and Buttons, inputs and badges are unchanged. A mapped component with another name can opt in with `"sizedByCaller": true` in `zehn.project.json`.
 - **Install without GitHub access (README, Option C):** `scripts/vendor.sh` copies the plugin into the app repo (`.claude/plugins/zehn-design/`) and registers it in `.claude/settings.json` with a repo-relative path; run it again with a new zip to update.

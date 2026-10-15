@@ -5,7 +5,7 @@ description: Add, fix or review animation in a zehn app - transitions, hover and
 
 # Motion, the zehn way
 
-zehn motion is feedback, not decoration. It should go unnoticed: fast, eased, then out of the way. When in doubt, don't animate. Based on Emil Kowalski's interface animation practice, fitted to zehn: in the Figma prototypes page navigation is instant and in-page panels use a 300ms ease-out.
+zehn motion is feedback, not decoration. It should go unnoticed: fast, eased, then out of the way. When in doubt, don't animate. In the Figma prototypes page navigation is instant and in-page panels use a 300ms ease-out.
 
 ## 0. Before writing anything
 1. **Read `zehn.project.json`.** `motion.library` says what the app animates with (`css`, `tailwind`, `framer-motion`/`motion`, `react-spring`), `motion.durations`/`motion.easings` its tokens, `motion.reducedMotion` whether reduced motion is handled globally. Missing `motion` → look at `package.json` and an existing modal or menu, and use that.
@@ -19,7 +19,7 @@ zehn motion is feedback, not decoration. It should go unnoticed: fast, eased, th
 | Many times a day, or keyboard-driven (table row actions, arrow keys in menus and lists, tab or segment switches by keyboard, command menus, typing) | No animation. Speed wins. |
 | Page navigation | Instant, as in Figma. No page transitions, no route fades. |
 | Occasional (open a modal, drawer, menu, toast) | Standard motion below, 300ms max. |
-| Rare (first-run empty state, success after a long flow) | May be a little richer, still 300ms max per piece. |
+| Rare (first-run empty state, success after a long flow) | Up to 2 animated pieces, each 300ms max, staggered by 50ms. |
 Animate only when it answers a question: where did this come from, did my click register, what changed. Otherwise cut it. Never animate the initial page load state.
 
 ## 2. Easing and duration

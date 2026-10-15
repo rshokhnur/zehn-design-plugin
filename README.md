@@ -12,7 +12,7 @@ Keeps the dev team's AI coding agents on the design system you already have. Age
 | **`ui-review` skill** | Reviews a branch or files before a PR, or migrates an old page. |
 | **`motion` skill** | Animation: what may move, durations and easings as tokens, recipes for modals, drawers, menus, tooltips, toasts, press feedback and list changes, reduced motion. Uses the app's own motion stack. |
 | **`setup-project` skill** | Maps your system into `zehn.project.json`, reports the gaps, and installs zehn tokens or components only where you have none. |
-| **Style check** | Runs only in zehn repos (a `zehn.project.json`, zehn enabled in `.claude/settings.json`, or `--zm-*` tokens). Checks only the lines the agent changed: Edit/Write right after each edit, Bash and script edits once before the agent finishes. With `zehn.project.json` it enforces your tokens (declared CSS variables, your Tailwind colors and spacing keys), flags raw `<button>`/`<select>` outside your components folder, and flags new look-alike components (`PrimaryButton`, `StatusPill`) that duplicate a mapped one. Hex, rgb, named colors, arbitrary `[..]` values, off-scale radius, type and sizes, gradients, pill buttons and off-system motion (`transition-all`, over 300ms, layout animation, bounce, no reduced-motion path) are flagged everywhere outside your token files. Any edit inside your shared components folder is flagged for designer sign-off. Without the file it applies the zehn fallback rules. |
+| **Style check** | Runs only in zehn repos (a `zehn.project.json`, zehn enabled in `.claude/settings.json`, or `--zm-*` tokens). Checks only the lines the agent changed: Edit/Write right after each edit, Bash and script edits once before the agent finishes. With `zehn.project.json` it enforces your tokens (declared CSS variables, your Tailwind colors and spacing keys), flags raw `<button>`/`<select>` outside your components folder, and flags new look-alike components (`PrimaryButton`, `StatusPill`) that duplicate a mapped one. Hex, rgb, named colors, arbitrary `[..]` values, off-scale radius, type and sizes, gradients, pill buttons and off-system motion (`transition-all`, over 300ms, layout animation, bounce, no reduced-motion path) are flagged everywhere outside your token files. An edit inside your shared components folder or theme gets a one-time note for designer sign-off (not for files setup-project copied). Without the file it applies the zehn fallback rules. |
 
 ## Install (once per app repo)
 One developer runs this in the app repo and commits `.claude/settings.json`:
@@ -47,41 +47,8 @@ The plugin folder is committed in the app repo, and the app's `.claude/settings.
 - Someone who added zehn from GitHub before: `claude plugin marketplace remove zehn` once, so the repo's copy is used.
 
 ## Update
-Devs: `/plugin marketplace update zehn`, then run setup-project again (it keeps your `zehn.project.json` and only adds or fixes entries).
+Devs: `/plugin marketplace update zehn` (or `vendor.sh` with the new zip, Option C), then say "update zehn": setup-project adds new keys to `zehn.project.json` and re-checks the component fixes listed in `CHANGELOG.md` since your `pluginVersion`. What changed in each version: `CHANGELOG.md`.
 Designer, after Figma changes: re-export the variables to `tokens/source/figma_vars.json`, run `python3 scripts/gen-tokens.py`, edit `reference/*.md` if rules changed and run `scripts/build-skill.sh`, run `node tests/check-ui.test.js` and `bash tests/build-skill.test.sh`, bump `version` in `.claude-plugin/plugin.json`, push.
-
-## Upgrading to 1.3
-`/plugin marketplace update zehn`, then "set up zehn for this project" once more: it adds `app` (asking for the accent if your module has none) and an empty `decisions` to `zehn.project.json`.
-
-## Upgrading to 1.2
-`/plugin marketplace update zehn`. Apps that copied zehn's components: run setup-project again to pick up the TopBar fix and the new `Orb`, `AppSwitcher`, `ObjectCard` and `setTheme`.
-
-## Upgrading to 1.1
-Nothing to run: `/plugin marketplace update zehn`. Layout rules are now defaults (see CHANGELOG.md), and shared-folder edits show a note instead of an error.
-
-## Upgrading to 1.0 (from 0.4)
-Run "set up zehn for this project" again: it adds `motion`, `i18n` and (if your theme differs from zehn's) `radiusKeys`, `fontSizeKeys`, `fontWeights` to `zehn.project.json`. Then read the style check's first report: it now checks radius, font size and weight in your project too. Full list in `CHANGELOG.md`.
-
-## Upgrading from 0.3
-- **Reframe:** zehn now guards your existing system instead of replacing it. Run "set up zehn for this project" to write `zehn.project.json`; the style check enforces it. `setup-tokens` is now `setup-project`; it installs zehn tokens and components only where you have none.
-- **Install per project:** re-install with `--scope project` (above) and commit `.claude/settings.json`; remove a user-wide install if you had one.
-- New props on the zehn fallback components: `Button`/`IconButton` `disabledReason` (focusable disabled button with a Tooltip), `RoleBanner tone="warning"` (view-only access). Removed: `Counter color="accent"` (use `neutral`); the accent never marks counts.
-- Rules: one "Who wins" order (user request via the off-system steps > hard rules > Figma and your mapped components > catalog > judgement; when unsure, follow Figma), a radius table per element, the complete accent list, a modal vs drawer order, content-width and page-header action rules, locale rules (pass the locale to formatters; Uzbek `‘` U+2018).
-- The catalog now matches the zehn code: real React props, and the 6 Figma-only components are marked with an allowed move.
-- Skill routing: compose-screen for new screens and layout changes, ui-tweak for edits that keep the layout, ui-review for PR review and migrations.
-- Spacing keys `64 80 128` (256/320/512px) are allowed for section spacing, as the check always did.
-
-## Upgrading from 0.2
-- Web cards, panels, tables, toasts and badges use 4px corners (`rounded`), as in Figma. Badge tinted fills, Switch (cyan when on) and Toast (white card) now match the Figma components.
-- New components: `HeaderPattern`, `RoleBanner`, `ZehnLocaleProvider` (en / ru / uz labels) and `format*` helpers (dates, money, numbers, durations). Re-run setup to copy them in.
-- New layout tokens: `h-chart-card` (334), `h-chart-plot` (208), `w-toast` (432).
-- The style check also flags raw `<button>`/`<select>`/`confirm()` in app code, `!important` overrides, and named colors inside shorthands.
-
-## Upgrading from 0.1
-- Tailwind spacing now uses the **standard Tailwind keys** (`p-4` = 16px). Code written with 0.1's pixel keys (`p-16`, `gap-12`) must be converted (`p-4`, `gap-3`). The style check flags the off-scale ones (`p-20`, `gap-40`), but `p-16`, `gap-12`, `p-24` etc. stay valid and silently grow 4×, so search for them.
-- Radius classes are now `rounded` (4), `rounded-lg` (8), `rounded-xl` (12), `rounded-2xl` (16), `rounded-full`; `rounded-4/8/12/16` are flagged.
-- The preset file is now `tailwind.preset.cjs`; delete the old `tailwind.preset.js` copy.
-- Button/IconButton use `variant` (not `style`); Badge uses `appearance` + `color`/`status`; Counter uses `tone`.
 
 ## Files
 - `reference/*.md`: human-readable rules, catalog and token sheet. Edit these, then run `scripts/build-skill.sh` (it inlines them into compose-screen).
@@ -100,4 +67,5 @@ Run "set up zehn for this project" again: it adds `motion`, `i18n` and (if your 
 - Confirm the small (24px) button radius: the code ships 4 (`rounded`), the other sizes 8.
 - Confirm menus use `Drop Shadow/300` (the code ships `shadow-300`).
 - Build or approve specs for the Figma-only components: Multi-select, OTP Input, Breadcrumbs, MobileTabBar.
+- Confirm `RoleBanner tone="info"` stays cyan (it equals the accent in cyan apps; Badge info is blue), and `text-lg` for mobile card titles only.
 - anbar, abat and new modules: setup asks the developer for an accent and saves it per repo; tell them which one you want. office (Cyan) and meet (Pink) come from Figma; confirm them.
