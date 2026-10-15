@@ -204,7 +204,7 @@ let projectCases = 0;
   put('zehn.project.json', JSON.stringify({
     framework: 'react', styling: 'tailwind',
     tokens: { sources: ['src/styles/theme.css'], cssVarPrefixes: ['--radix-'], tailwindColors: ['primary', 'primary-foreground', 'muted-foreground', 'background', 'border', 'slate-500'], spacingKeys: ['0', '1', '2', '3', '4', '6', '8'] },
-    components: { dir: 'src/components/ui', map: { Button: { component: 'Button', import: '@/components/ui/button' }, Badge: { component: 'Badge', import: '@/components/ui/badge' }, Modal: { component: 'Dialog', import: '@/components/ui/dialog' }, Skeleton: { component: 'Skeleton', import: '@/components/ui/skeleton' }, Bar: { component: 'Bar', import: '@/components/ui/bar', sizedByCaller: true } } },
+    components: { dir: 'src/components/ui', map: { Button: { component: 'Button', import: '@/components/ui/button' }, Badge: { component: 'Badge', import: '@/components/ui/badge' }, Modal: { component: 'Dialog', import: '@/components/ui/dialog' }, Skeleton: { component: 'Skeleton', import: '@/components/ui/skeleton' }, EmptyState: { component: 'EmptyState', import: '@/components/ui/empty' }, Card: { component: 'Card', import: '@/components/ui/card' }, Bar: { component: 'Bar', import: '@/components/ui/bar', sizedByCaller: true } } },
     screens: { 'table list': 'src/pages/Requests.tsx' },
     fallback: { zehnTokens: false, zehnDir: null },
   }));
@@ -233,6 +233,10 @@ let projectCases = 0;
   expect('src/pages/S2.tsx', `<Skeleton className="h-10 w-10 rounded-full" />`, false, 'round Skeleton is not a restyle');
   expect('src/pages/S3.tsx', `<Skeleton className="h-4 bg-primary" />`, true, 'recolored Skeleton is still a restyle');
   expect('src/pages/S4.tsx', `<Bar className="h-2 rounded-sm" />`, false, 'sizedByCaller map entry passes size classes');
+  expect('src/pages/S6.tsx', `<EmptyState className="py-8 px-6" />`, false, 'spacing on EmptyState is not a restyle');
+  expect('src/pages/S7.tsx', `<Card className="p-6 h-8" />`, false, 'spacing and height on Card are not a restyle');
+  expect('src/pages/S8.tsx', `<Card className="rounded-xl" />`, true, 'radius on Card is still a restyle');
+  expect('src/pages/S9.tsx', `<EmptyState className="py-8 text-primary" />`, true, 'color on EmptyState is still a restyle');
   expect('src/pages/S5.tsx', `<Button className="h-12" />`, true, 'Button height is still a restyle');
   expect('src/pages/L2.tsx', `<div className="rounded-md" />`, true, 'off-scale radius is flagged in project mode');
   expect('src/pages/L3.tsx', `<div className="font-medium" />`, true, 'font-medium is flagged in project mode');

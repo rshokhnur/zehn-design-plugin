@@ -526,15 +526,19 @@ function rawPrimitives(line, push) {
 // component's own (cx doesn't merge Tailwind classes) and fork its look. Layout classes (margin, width, flex) are fine.
 const STYLED = ['Button', 'IconButton', 'Badge', 'Input', 'Select', 'Textarea', 'Avatar', 'Counter', 'Checkbox', 'Radio', 'Switch', 'Tooltip', 'SegmentedControl'];
 const VISUAL_CLASS = new RegExp(`(?<![\\w-])${V}(?:bg-(?!clip|origin|fixed|local|scroll|repeat|no-repeat|cover|contain|center)[\\w-]+|text-(?!left|center|right|justify|start|end|wrap|nowrap|balance|pretty|ellipsis|clip)[\\w-]+|border-(?!0\\b|x\\b|y\\b)[a-z][\\w-]*|rounded(?:-[\\w-]+)?|shadow(?:-[\\w-]+)?|font-[\\w-]+|ring-[a-z][\\w-]*|p[xytrbl]?-[\\d.]+|h-[\\d.]+|opacity-\\d+)(?![\\w-])`, 'g');
-// Components the caller sizes (a Skeleton's height and shape is the content it stands in for): size and radius pass.
+// Components the caller sizes or lays out (a Skeleton's height and shape is the content it stands in for; an
+// EmptyState or a Card gets its spacing from the screen): size and spacing pass, plus radius on placeholders.
+// Only color, border, shadow and type changes count as a restyle on them.
 const SIZED_BY_CALLER = /^(Skeleton|Spinner|Loader|Progress|ProgressBar|Divider|Separator|Icon|Orb|Logo|Image|Illustration)$/;
-const SIZE_CLASS = /(?:^|:)(?:h-[\d.]+|rounded(?:-[\w-]+)?)$/;
+const LAID_OUT_BY_CALLER = /^(EmptyState|Empty|Card|ObjectCard|Panel|Section|Container|Stack|Grid|ObjectGrid|Page|PageHeader|Toolbar|Sidebar|Content|Box)$/;
+const SPACING_CLASS = /(?:^|:)(?:h-[\d.]+|p[xytrbl]?-[\d.]+)$/;
+const SHAPE_CLASS = /(?:^|:)rounded(?:-[\w-]+)?$/;
 function restyledComponents(line, push) {
   const names = new Set(STYLED);
   const sized = new Set();
   if (CTX.project) for (const e of Object.values(CTX.project.map || {})) if (e && e.component) {
     names.add(String(e.component));
-    if (e.sizedByCaller) sized.add(String(e.component));
+    if (e.sizedByCaller || e.laidOutByCaller) sized.add(String(e.component));
   }
   const re = /<([A-Z][\w.]*)\b[^>]*?\bclassName=(?:"([^"]*)"|'([^']*)'|\{`([^`]*)`\}|\{\s*(?:cx|cn|clsx)\(([^)]*)\))/g;
   let m;
@@ -543,8 +547,10 @@ function restyledComponents(line, push) {
     if (!names.has(name)) continue;
     const cls = m[2] || m[3] || m[4] || m[5] || '';
     // round IconButtons and avatars are on-system
-    const bySize = SIZED_BY_CALLER.test(name) || sized.has(name);
-    const hits = (cls.match(VISUAL_CLASS) || []).filter((c) => !(/(?:^|:)rounded-full$/.test(c) && /^(IconButton|Avatar)$/.test(name)) && !(bySize && SIZE_CLASS.test(c)));
+    const placeholder = SIZED_BY_CALLER.test(name) || sized.has(name);
+    const layout = placeholder || LAID_OUT_BY_CALLER.test(name);
+    const hits = (cls.match(VISUAL_CLASS) || []).filter((c) => !(/(?:^|:)rounded-full$/.test(c) && /^(IconButton|Avatar)$/.test(name))
+      && !(layout && SPACING_CLASS.test(c)) && !(placeholder && SHAPE_CLASS.test(c)));
     if (!hits.length) continue;
     push(m.index, `<${name} className="${hits.join(' ')}"`, 'restyled-component',
       `Don't restyle ${name} through className: visual classes fight the component's own and fork its look. Pick a variant or size; if none fits, it's a gap (or a new variant in the shared component, with sign-off). Layout classes (margin, width, flex, grid) are fine.`);
