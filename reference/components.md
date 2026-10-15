@@ -6,7 +6,7 @@ Figma page `UI Elements` (file `ywFHunM35gYeHJozrBJpZO`). Each entry is the spec
 
 **`className` on a component** (what the style check passes):
 - Any component: margin, width, flex/grid placement, position (`mt-4 w-full flex-1`).
-- Placeholders (Skeleton, Spinner, ProgressBar, Divider, Icon, Orb, Logo, Image): also height and radius (`h-4 rounded-full`).
+- Placeholders (Skeleton, Spinner, ProgressBar, Divider, Icon, Orb, Logo, Image): also height and radius (`h-4 rounded-full`). Icon and Spinner also take `text-*` (font size sets their size, text color their color).
 - Blocks you lay out (EmptyState, Card, ObjectCard, ObjectGrid, Panel, Section, PageHeader, Toolbar, Sidebar): also padding and height (`py-12`).
 - Never: color, border, shadow, font, opacity; radius except on placeholders; padding or height on controls (Button, Input, Badge…): pick a size or variant, or list the missing one under Design gaps. Why: a visual class fights the component's own (`cx` doesn't merge Tailwind classes).
 

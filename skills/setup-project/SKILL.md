@@ -62,7 +62,7 @@ Tell the user to commit it: everyone who opens the repo is then prompted to enab
       "Modal": { "component": "Dialog", "import": "@/components/ui/dialog", "props": {}, "gaps": [] }
     }
   },
-  "pluginVersion": "1.5.2",
+  "pluginVersion": "1.5.4",
   "app": { "id": "office", "accent": "cyan", "modules": { "anbar": "violet" } },
   "decisions": {},
   "screens": { "table list": "src/app/requests/page.tsx", "detail": "src/app/requests/[id]/page.tsx" },

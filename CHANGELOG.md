@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.5.4 (15.10.2026)
+- **Fix:** `<Icon className="text-base">` (and Spinner, or the app's icon component mapped as Icon or Spinner) is no longer flagged as a restyle: font size sets an icon's size and text color its color. Shadows, borders and backgrounds on icons are still flagged. Found 9 times in the 1.5.1 test runs, where agents worked around it with a wrapping span.
+
 ## 1.5.3 (15.10.2026)
 Checked against the Claude Code plugin docs (plugins overview, manifest reference, hooks, loading). Layout, manifest, marketplace, skills and hooks match; `claude plugin validate --strict` passes.
 - README: a project-scope install loads for teammates after they trust the folder, with no install step (the plugin is a relative-path entry in its marketplace), but they need read access to the GitHub repo, and cloud sessions don't load project-declared marketplaces.

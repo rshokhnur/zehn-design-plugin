@@ -540,16 +540,21 @@ const SIZED_BY_CALLER = /^(Skeleton|Spinner|Loader|Progress|ProgressBar|Divider|
 const LAID_OUT_BY_CALLER = /^(EmptyState|Empty|Card|ObjectCard|Panel|Section|Container|Stack|Grid|ObjectGrid|Page|PageHeader|Toolbar|Sidebar|Content|Box)$/;
 const SPACING_CLASS = /(?:^|:)(?:h-[\d.]+|p[xytrbl]?-[\d.]+)$/;
 const SHAPE_CLASS = /(?:^|:)rounded(?:-[\w-]+)?$/;
+// Icons are a glyph: font size sets their size and text color their color, so text-* on them is the way to style them.
+const ICON_LIKE = /^(Icon|Spinner|Loader)$/;
+const TEXT_CLASS = /(?:^|:)text-[\w-]+$/;
 function restyledComponents(line, push) {
   const names = new Set(STYLED);
   const sized = new Set();
   const laid = new Set();
+  const icons = new Set();
   // The app's own name for a catalog entry (Skeleton → Shimmer) inherits the entry's exemption.
   if (CTX.project) for (const [key, e] of Object.entries(CTX.project.map || {})) if (e && e.component) {
     const c = String(e.component);
     names.add(c);
     if (e.sizedByCaller || SIZED_BY_CALLER.test(key)) sized.add(c);
     if (e.laidOutByCaller || LAID_OUT_BY_CALLER.test(key)) laid.add(c);
+    if (ICON_LIKE.test(key)) icons.add(c);
   }
   const re = /<([A-Z][\w.]*)\b[^>]*?\bclassName=(?:"([^"]*)"|'([^']*)'|\{`([^`]*)`\}|\{\s*(?:cx|cn|clsx)\(([^)]*)\))/g;
   let m;
@@ -561,7 +566,8 @@ function restyledComponents(line, push) {
     const placeholder = SIZED_BY_CALLER.test(name) || sized.has(name);
     const layout = placeholder || laid.has(name) || LAID_OUT_BY_CALLER.test(name);
     const hits = (cls.match(VISUAL_CLASS) || []).filter((c) => !(/(?:^|:)rounded-full$/.test(c) && /^(IconButton|Avatar)$/.test(name))
-      && !(layout && SPACING_CLASS.test(c)) && !(placeholder && SHAPE_CLASS.test(c)));
+      && !(layout && SPACING_CLASS.test(c)) && !(placeholder && SHAPE_CLASS.test(c))
+      && !((ICON_LIKE.test(name) || icons.has(name)) && TEXT_CLASS.test(c)));
     if (!hits.length) continue;
     push(m.index, `<${name} className="${hits.join(' ')}"`, 'restyled-component',
       `Don't restyle ${name} through className: visual classes fight the component's own and fork its look. Pick a variant or size; if none fits, it's a gap (or a new variant in the shared component, with sign-off). Layout classes (margin, width, flex, grid) are fine.${CTX.project ? ` If ${name} is a placeholder or layout block whose size or spacing the screen sets, add "sizedByCaller": true to its entry in zehn.project.json components.map instead.` : ''}`);

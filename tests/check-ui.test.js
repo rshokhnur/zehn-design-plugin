@@ -204,7 +204,7 @@ let projectCases = 0;
   put('zehn.project.json', JSON.stringify({
     framework: 'react', styling: 'tailwind',
     tokens: { sources: ['src/styles/theme.css'], cssVarPrefixes: ['--radix-'], tailwindColors: ['primary', 'primary-foreground', 'muted-foreground', 'background', 'border', 'slate-500'], spacingKeys: ['0', '1', '2', '3', '4', '6', '8'] },
-    components: { dir: 'src/components/ui', map: { Button: { component: 'Button', import: '@/components/ui/button' }, Badge: { component: 'Badge', import: '@/components/ui/badge' }, Modal: { component: 'Dialog', import: '@/components/ui/dialog' }, Skeleton: { component: 'Skeleton', import: '@/components/ui/skeleton' }, EmptyState: { component: 'EmptyState', import: '@/components/ui/empty' }, Card: { component: 'Card', import: '@/components/ui/card' }, Bar: { component: 'Bar', import: '@/components/ui/bar', sizedByCaller: true }, ProgressBar: { component: 'Shimmer', import: '@/components/ui/shimmer' }, Panel: { component: 'NoData', import: '@/components/ui/nodata' } } },
+    components: { dir: 'src/components/ui', map: { Button: { component: 'Button', import: '@/components/ui/button' }, Badge: { component: 'Badge', import: '@/components/ui/badge' }, Modal: { component: 'Dialog', import: '@/components/ui/dialog' }, Skeleton: { component: 'Skeleton', import: '@/components/ui/skeleton' }, EmptyState: { component: 'EmptyState', import: '@/components/ui/empty' }, Card: { component: 'Card', import: '@/components/ui/card' }, Bar: { component: 'Bar', import: '@/components/ui/bar', sizedByCaller: true }, ProgressBar: { component: 'Shimmer', import: '@/components/ui/shimmer' }, Panel: { component: 'NoData', import: '@/components/ui/nodata' }, Icon: { component: 'Icon', import: '@/components/ui/icon' }, Spinner: { component: 'Glyph', import: '@/components/ui/glyph' } } },
     screens: { 'table list': 'src/pages/Requests.tsx' },
     fallback: { zehnTokens: false, zehnDir: null },
   }));
@@ -240,6 +240,9 @@ let projectCases = 0;
   expect('src/pages/S10.tsx', `<Shimmer className="h-4 rounded-full" />`, false, 'renamed placeholder (map key) takes size and radius');
   expect('src/pages/S11.tsx', `<NoData className="py-8" />`, false, 'renamed layout block (map key) takes padding');
   expect('src/pages/S12.tsx', `<NoData className="rounded-sm" />`, true, 'renamed layout block still flags radius');
+  expect('src/pages/S13.tsx', `<Icon name="close" className="text-base text-muted-foreground" />`, false, 'text size and color on Icon are not a restyle');
+  expect('src/pages/S14.tsx', `<Glyph name="close" className="text-xl" />`, false, 'renamed Icon (map key) takes text size');
+  expect('src/pages/S15.tsx', `<Icon name="close" className="shadow-200" />`, true, 'shadow on Icon is still a restyle');
   expect('src/pages/S5.tsx', `<Button className="h-12" />`, true, 'Button height is still a restyle');
   expect('src/pages/L2.tsx', `<div className="rounded-md" />`, true, 'off-scale radius is flagged in project mode');
   expect('src/pages/L3.tsx', `<div className="font-medium" />`, true, 'font-medium is flagged in project mode');
